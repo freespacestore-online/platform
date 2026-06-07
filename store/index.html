@@ -173,7 +173,7 @@
 
     <section>
       <div class="tabs">
-          <button class="tab active" onclick="switchTab('all')">All <span class="tab-count">8</span></button>
+          <button class="tab active" onclick="switchTab('all')">All <span class="tab-count">2</span></button>
           <button class="tab" onclick="switchTab('library')">Libraries <span class="tab-count">undefined</span></button>
           <button class="tab" onclick="switchTab('model')">Models <span class="tab-count">0</span></button>
           <button class="tab" onclick="switchTab('agent')">Agents <span class="tab-count">undefined</span></button>
@@ -183,21 +183,16 @@
         <input type="text" class="search-input" id="searchInput" placeholder="Search agents..." autocomplete="off" />
         <button class="filter-btn active" onclick="filterCategory('all')">All</button>
         <button class="filter-btn" onclick="filterCategory('orbits')">Orbits</button>
-        <button class="filter-btn" onclick="filterCategory('maneuvers')">Maneuvers</button>
-        <button class="filter-btn" onclick="filterCategory('propulsion')">Propulsion</button>
-        <button class="filter-btn" onclick="filterCategory('exploration')">Exploration</button>
-        <button class="filter-btn" onclick="filterCategory('design')">Design</button>
         <button class="filter-btn" onclick="filterCategory('physics')">Physics</button>
-        <button class="filter-btn" onclick="filterCategory('mission')">Mission</button>
-        <span class="agent-count" id="agentCount">8 agents</span>
+        <span class="agent-count" id="agentCount">2 agents</span>
       </div>
             <div class="agents-grid" id="agentsGrid">
-        <div class="agent-card" data-category="orbits" data-store-type="behavior" data-name="orbit simulator" data-desc="launch satellites into orbit. adjust altitude, inclination, eccentricity. see kepler's laws in action. 3d earth view.">
+        <div class="agent-card" data-category="orbits" data-store-type="behavior" data-name="orbit simulator" data-desc="launch satellites — adjust altitude, inclination, eccentricity. iss, geostationary, molniya presets. kepler orbits visualized.">
           <a href="/items/orbit-sim/" class="agent-card-body">
             <div class="agent-icon" style="background:#0ea5e9">🛰️</div>
             <div class="agent-body">
               <span class="agent-name">Orbit Simulator</span>
-              <span class="agent-desc">Launch satellites into orbit. Adjust altitude, inclination, ...</span>
+              <span class="agent-desc">Launch satellites — adjust altitude, inclination, eccentrici...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">behavior</span>
                 <span class="tag"></span>
@@ -210,102 +205,12 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="maneuvers" data-store-type="behavior" data-name="hohmann transfer" data-desc="plan orbital transfers between planets. calculate delta-v, travel time, launch windows. interactive solar system view.">
-          <a href="/items/hohmann/" class="agent-card-body">
-            <div class="agent-icon" style="background:#0ea5e9">🔄</div>
-            <div class="agent-body">
-              <span class="agent-name">Hohmann Transfer</span>
-              <span class="agent-desc">Plan orbital transfers between planets. Calculate delta-v, t...</span>
-              <div class="agent-meta">
-                <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">behavior</span>
-                <span class="tag"></span>
-              </div>
-            </div>
-          </a>
-          <a href="/items/hohmann/" class="agent-cta">
-            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
-            Open
-          </a>
-        </div>
-
-        <div class="agent-card" data-category="propulsion" data-store-type="behavior" data-name="rocket equation" data-desc="tsiolkovsky's rocket equation visualized. adjust mass ratio, exhaust velocity. see why rockets are so hard.">
-          <a href="/items/rocket-equation/" class="agent-card-body">
-            <div class="agent-icon" style="background:#f97316">🚀</div>
-            <div class="agent-body">
-              <span class="agent-name">Rocket Equation</span>
-              <span class="agent-desc">Tsiolkovsky's rocket equation visualized. Adjust mass ratio,...</span>
-              <div class="agent-meta">
-                <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">behavior</span>
-                <span class="tag"></span>
-              </div>
-            </div>
-          </a>
-          <a href="/items/rocket-equation/" class="agent-cta">
-            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
-            Open
-          </a>
-        </div>
-
-        <div class="agent-card" data-category="exploration" data-store-type="behavior" data-name="solar system" data-desc="interactive 3d solar system. planets orbit in real proportions. zoom from mercury to pluto. time controls.">
-          <a href="/items/solar-system/" class="agent-card-body">
-            <div class="agent-icon" style="background:#3b82f6">🌍</div>
-            <div class="agent-body">
-              <span class="agent-name">Solar System</span>
-              <span class="agent-desc">Interactive 3D solar system. Planets orbit in real proportio...</span>
-              <div class="agent-meta">
-                <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">behavior</span>
-                <span class="tag"></span>
-              </div>
-            </div>
-          </a>
-          <a href="/items/solar-system/" class="agent-cta">
-            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
-            Open
-          </a>
-        </div>
-
-        <div class="agent-card" data-category="design" data-store-type="behavior" data-name="constellation designer" data-desc="design satellite constellations for global coverage. starlink-style walker patterns. see coverage maps.">
-          <a href="/items/constellation/" class="agent-card-body">
-            <div class="agent-icon" style="background:#a855f7">📡</div>
-            <div class="agent-body">
-              <span class="agent-name">Constellation Designer</span>
-              <span class="agent-desc">Design satellite constellations for global coverage. Starlin...</span>
-              <div class="agent-meta">
-                <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">behavior</span>
-                <span class="tag"></span>
-              </div>
-            </div>
-          </a>
-          <a href="/items/constellation/" class="agent-cta">
-            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
-            Open
-          </a>
-        </div>
-
-        <div class="agent-card" data-category="physics" data-store-type="behavior" data-name="re-entry physics" data-desc="simulate atmospheric re-entry. heat shield physics, drag, g-forces. adjust entry angle — too steep = burn up, too shallow = skip off.">
-          <a href="/items/reentry/" class="agent-card-body">
-            <div class="agent-icon" style="background:#ef4444">🔥</div>
-            <div class="agent-body">
-              <span class="agent-name">Re-entry Physics</span>
-              <span class="agent-desc">Simulate atmospheric re-entry. Heat shield physics, drag, G-...</span>
-              <div class="agent-meta">
-                <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">behavior</span>
-                <span class="tag"></span>
-              </div>
-            </div>
-          </a>
-          <a href="/items/reentry/" class="agent-cta">
-            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
-            Open
-          </a>
-        </div>
-
-        <div class="agent-card" data-category="physics" data-store-type="behavior" data-name="gravity simulator" data-desc="n-body gravity sandbox. place stars, planets, moons. watch orbits form, collisions happen, systems evolve.">
+        <div class="agent-card" data-category="physics" data-store-type="behavior" data-name="gravity simulator" data-desc="n-body gravity sandbox. place stars, planets, moons. click-drag to launch. solar system, binary stars, chaos presets. bodies merge on collision.">
           <a href="/items/gravity-sim/" class="agent-card-body">
             <div class="agent-icon" style="background:#7c3aed">🌌</div>
             <div class="agent-body">
               <span class="agent-name">Gravity Simulator</span>
-              <span class="agent-desc">N-body gravity sandbox. Place stars, planets, moons. Watch o...</span>
+              <span class="agent-desc">N-body gravity sandbox. Place stars, planets, moons. Click-d...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">behavior</span>
                 <span class="tag"></span>
@@ -313,24 +218,6 @@
             </div>
           </a>
           <a href="/items/gravity-sim/" class="agent-cta">
-            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
-            Open
-          </a>
-        </div>
-
-        <div class="agent-card" data-category="mission" data-store-type="behavior" data-name="launch window" data-desc="calculate optimal launch windows between earth and mars. porkchop plots, synodic periods, c3 energy.">
-          <a href="/items/launch-window/" class="agent-card-body">
-            <div class="agent-icon" style="background:#0ea5e9">📅</div>
-            <div class="agent-body">
-              <span class="agent-name">Launch Window</span>
-              <span class="agent-desc">Calculate optimal launch windows between Earth and Mars. Por...</span>
-              <div class="agent-meta">
-                <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">behavior</span>
-                <span class="tag"></span>
-              </div>
-            </div>
-          </a>
-          <a href="/items/launch-window/" class="agent-cta">
             <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
             Open
           </a>
