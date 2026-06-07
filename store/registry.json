@@ -1,1 +1,10 @@
-{"robots":[]}
+{"robots":[
+  {"id":"orbit-sim","name":"Orbit Simulator","description":"Launch satellites into orbit. Adjust altitude, inclination, eccentricity. See Kepler's laws in action. 3D Earth view.","storeType":"behavior","category":"orbits","icon":"🛰️","iconBg":"#0ea5e9"},
+  {"id":"hohmann","name":"Hohmann Transfer","description":"Plan orbital transfers between planets. Calculate delta-v, travel time, launch windows. Interactive solar system view.","storeType":"behavior","category":"maneuvers","icon":"🔄","iconBg":"#0ea5e9"},
+  {"id":"rocket-equation","name":"Rocket Equation","description":"Tsiolkovsky's rocket equation visualized. Adjust mass ratio, exhaust velocity. See why rockets are so hard.","storeType":"behavior","category":"propulsion","icon":"🚀","iconBg":"#f97316"},
+  {"id":"solar-system","name":"Solar System","description":"Interactive 3D solar system. Planets orbit in real proportions. Zoom from Mercury to Pluto. Time controls.","storeType":"behavior","category":"exploration","icon":"🌍","iconBg":"#3b82f6"},
+  {"id":"constellation","name":"Constellation Designer","description":"Design satellite constellations for global coverage. Starlink-style walker patterns. See coverage maps.","storeType":"behavior","category":"design","icon":"📡","iconBg":"#a855f7"},
+  {"id":"reentry","name":"Re-entry Physics","description":"Simulate atmospheric re-entry. Heat shield physics, drag, G-forces. Adjust entry angle — too steep = burn up, too shallow = skip off.","storeType":"behavior","category":"physics","icon":"🔥","iconBg":"#ef4444"},
+  {"id":"gravity-sim","name":"Gravity Simulator","description":"N-body gravity sandbox. Place stars, planets, moons. Watch orbits form, collisions happen, systems evolve.","storeType":"behavior","category":"physics","icon":"🌌","iconBg":"#7c3aed"},
+  {"id":"launch-window","name":"Launch Window","description":"Calculate optimal launch windows between Earth and Mars. Porkchop plots, synodic periods, C3 energy.","storeType":"behavior","category":"mission","icon":"📅","iconBg":"#0ea5e9"}
+]}
