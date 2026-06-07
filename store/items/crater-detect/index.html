@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Crater Detector - FreeSpaceStore</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#e5e5e5;font-family:system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+header{width:100%;padding:16px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #222}
+header span.logo{font-size:20px}
+header h1{font-size:18px;font-weight:600;color:#0ea5e9}
+header small{color:#777;margin-left:auto;font-size:13px}
+.container{max-width:1000px;width:100%;padding:24px;display:flex;flex-direction:column;gap:20px}
+.row{display:flex;gap:20px;flex-wrap:wrap}
+.panel{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;flex:1;min-width:280px}
+h2{font-size:15px;color:#aaa;font-weight:500;margin-bottom:10px}
+canvas{border:1px solid #333;border-radius:6px;display:block;background:#000;cursor:crosshair}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button{background:#262626;color:#e5e5e5;border:1px solid #333;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:13px;transition:background .15s}
+button:hover{background:#333}
+button.primary{background:#0ea5e9;border-color:#0ea5e9;color:#fff}
+button.primary:hover{background:#0284c7}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.stat{background:#0a1628;border:1px solid #1e3a5f;border-radius:8px;padding:10px;text-align:center}
+.stat .num{font-size:24px;font-weight:700;color:#0ea5e9}
+.stat .lbl{font-size:11px;color:#888;margin-top:2px}
+.hist-bar{display:flex;align-items:center;gap:6px;margin:3px 0}
+.hist-label{width:50px;font-size:11px;color:#aaa;text-align:right}
+.hist-track{flex:1;height:14px;background:#111;border-radius:3px;overflow:hidden}
+.hist-fill{height:100%;background:#0ea5e9;border-radius:3px;transition:width .3s}
+.hist-val{font-size:11px;color:#888;width:20px}
+.legend{display:flex;gap:16px;margin-top:8px;font-size:12px;color:#888}
+.legend span{display:flex;align-items:center;gap:4px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+</style>
+</head>
+<body>
+<header>
+<span class="logo">&#x1f680;</span>
+<h1>FreeSpaceStore</h1>
+<small>AI Crater Detector</small>
+</header>
+<div class="container">
+<div class="row">
+<div class="panel" style="flex:2;min-width:420px">
+<h2>Lunar Surface</h2>
+<canvas id="surface" width="512" height="400"></canvas>
+<div class="legend">
+<span><span class="dot" style="background:#0ea5e9"></span> AI detected</span>
+<span><span class="dot" style="background:#f59e0b"></span> Human marked</span>
+</div>
+<div class="btn-row">
+<button class="primary" id="detectBtn">Detect Craters</button>
+<button id="genBtn">Generate Surface</button>
+<button id="clearMarks">Clear Marks</button>
+</div>
+</div>
+<div class="panel">
+<h2>Detection Results</h2>
+<div class="stats" id="stats">
+<div class="stat"><div class="num" id="aiCount">-</div><div class="lbl">AI Detected</div></div>
+<div class="stat"><div class="num" id="humanCount">0</div><div class="lbl">Human Marked</div></div>
+<div class="stat"><div class="num" id="avgConf">-</div><div class="lbl">Avg Confidence</div></div>
+<div class="stat"><div class="num" id="coverage">-</div><div class="lbl">Surface Coverage</div></div>
+</div>
+<h2 style="margin-top:16px">Size Distribution</h2>
+<div id="histogram"></div>
+<h2 style="margin-top:16px">Crater Classification</h2>
+<div id="classList" style="font-size:13px;color:#666">Run detection first.</div>
+</div>
+</div>
+</div>
+<script>
+const canvas = document.getElementById('surface');
+const ctx = canvas.getContext('2d');
+const W = 512, H = 400;
+let craterData = []; // ground truth craters
+let humanMarks = [];
+let detectedCraters = [];
+
+// --- Simplex-like noise (value noise with interpolation) ---
+function makeNoise(seed) {
+  const perm = new Uint8Array(512);
+  let s = seed || 42;
+  function rng() { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }
+  for (let i = 0; i < 256; i++) perm[i] = i;
+  for (let i = 255; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [perm[i], perm[j]] = [perm[j], perm[i]]; }
+  for (let i = 0; i < 256; i++) perm[i + 256] = perm[i];
+  const grad = new Float32Array(256);
+  for (let i = 0; i < 256; i++) grad[i] = rng() * 2 - 1;
+  return function(x, y) {
+    const ix = Math.floor(x) & 255, iy = Math.floor(y) & 255;
+    const fx = x - Math.floor(x), fy = y - Math.floor(y);
+    const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+    const a = grad[perm[ix + perm[iy]]], b = grad[perm[ix + 1 + perm[iy]]];
+    const c = grad[perm[ix + perm[iy + 1]]], d = grad[perm[ix + 1 + perm[iy + 1]]];
+    return (a * (1 - sx) + b * sx) * (1 - sy) + (c * (1 - sx) + d * sx) * sy;
+  };
+}
+
+function generateSurface() {
+  craterData = [];
+  humanMarks = [];
+  detectedCraters = [];
+  const noise = makeNoise(Math.floor(Math.random() * 100000));
+  const imgData = ctx.createImageData(W, H);
+  const d = imgData.data;
+
+  // Base terrain with noise
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      let v = 0.5;
+      v += noise(x * 0.02, y * 0.02) * 0.25;
+      v += noise(x * 0.05, y * 0.05) * 0.12;
+      v += noise(x * 0.1, y * 0.1) * 0.06;
+      const gray = Math.max(30, Math.min(140, Math.floor(v * 180)));
+      const idx = (y * W + x) * 4;
+      d[idx] = gray; d[idx + 1] = gray; d[idx + 2] = gray + 5; d[idx + 3] = 255;
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  // Draw craters
+  const numCraters = 8 + Math.floor(Math.random() * 15);
+  for (let i = 0; i < numCraters; i++) {
+    const cx = 30 + Math.random() * (W - 60);
+    const cy = 30 + Math.random() * (H - 60);
+    const r = 8 + Math.random() * 40;
+    const depth = 0.3 + Math.random() * 0.5;
+    craterData.push({ x: cx, y: cy, r, depth });
+    drawCrater(cx, cy, r, depth);
+  }
+
+  document.getElementById('aiCount').textContent = '-';
+  document.getElementById('humanCount').textContent = '0';
+  document.getElementById('avgConf').textContent = '-';
+  document.getElementById('coverage').textContent = '-';
+  document.getElementById('histogram').innerHTML = '';
+  document.getElementById('classList').textContent = 'Run detection first.';
+}
+
+function drawCrater(cx, cy, r, depth) {
+  // Shadow on upper left, highlight on lower right
+  ctx.save();
+  // Crater floor (darker)
+  const grd = ctx.createRadialGradient(cx - r * 0.2, cy - r * 0.2, 0, cx, cy, r);
+  grd.addColorStop(0, `rgba(0,0,0,${depth * 0.6})`);
+  grd.addColorStop(0.6, `rgba(0,0,0,${depth * 0.3})`);
+  grd.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grd;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  // Rim highlight
+  ctx.strokeStyle = `rgba(180,180,180,${depth * 0.5})`;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI * 0.8, Math.PI * 1.8); ctx.stroke();
+  // Inner shadow
+  ctx.strokeStyle = `rgba(0,0,0,${depth * 0.4})`;
+  ctx.beginPath(); ctx.arc(cx, cy, r * 0.7, -Math.PI * 0.2, Math.PI * 0.8); ctx.stroke();
+  ctx.restore();
+}
+
+// --- Edge detection (Sobel) ---
+function sobelEdge(imageData) {
+  const w = imageData.width, h = imageData.height;
+  const src = imageData.data;
+  const gray = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) gray[i] = src[i * 4] / 255;
+  const edges = new Float32Array(w * h);
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const gx = -gray[(y-1)*w+x-1] + gray[(y-1)*w+x+1] - 2*gray[y*w+x-1] + 2*gray[y*w+x+1] - gray[(y+1)*w+x-1] + gray[(y+1)*w+x+1];
+      const gy = -gray[(y-1)*w+x-1] - 2*gray[(y-1)*w+x] - gray[(y-1)*w+x+1] + gray[(y+1)*w+x-1] + 2*gray[(y+1)*w+x] + gray[(y+1)*w+x+1];
+      edges[y * w + x] = Math.sqrt(gx * gx + gy * gy);
+    }
+  }
+  return edges;
+}
+
+// --- Circular feature detection ---
+function detectCircles(edges, w, h) {
+  const found = [];
+  const radii = [8, 12, 16, 20, 25, 30, 35, 40, 48];
+
+  for (const r of radii) {
+    // Accumulator
+    const acc = new Float32Array(w * h);
+    const steps = Math.max(24, Math.floor(r * 1.5));
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (edges[y * w + x] < 0.15) continue;
+        for (let t = 0; t < steps; t++) {
+          const angle = (t / steps) * Math.PI * 2;
+          const ax = Math.round(x - r * Math.cos(angle));
+          const ay = Math.round(y - r * Math.sin(angle));
+          if (ax >= 0 && ax < w && ay >= 0 && ay < h) acc[ay * w + ax]++;
+        }
+      }
+    }
+    // Find peaks
+    const threshold = steps * 0.25;
+    for (let y = r; y < h - r; y++) {
+      for (let x = r; x < w - r; x++) {
+        if (acc[y * w + x] > threshold) {
+          // Check it's a local max in 5x5
+          let isMax = true;
+          for (let dy = -2; dy <= 2 && isMax; dy++)
+            for (let dx = -2; dx <= 2 && isMax; dx++)
+              if (dx !== 0 || dy !== 0)
+                if (acc[(y+dy)*w+x+dx] >= acc[y*w+x]) isMax = false;
+          if (isMax) {
+            const conf = Math.min(1, acc[y * w + x] / (steps * 0.5));
+            found.push({ x, y, r, conf });
+          }
+        }
+      }
+    }
+  }
+
+  // Non-maximum suppression
+  found.sort((a, b) => b.conf - a.conf);
+  const kept = [];
+  for (const c of found) {
+    let overlap = false;
+    for (const k of kept) {
+      const dist = Math.sqrt((c.x - k.x) ** 2 + (c.y - k.y) ** 2);
+      if (dist < Math.max(c.r, k.r) * 0.8) { overlap = true; break; }
+    }
+    if (!overlap) kept.push(c);
+  }
+  return kept;
+}
+
+function runDetection() {
+  const imgData = ctx.getImageData(0, 0, W, H);
+  // Redraw clean surface (without previous markers)
+  generateSurface();
+  const cleanData = ctx.getImageData(0, 0, W, H);
+
+  const edges = sobelEdge(cleanData);
+  detectedCraters = detectCircles(edges, W, H);
+
+  // Draw detected
+  detectedCraters.forEach(c => {
+    ctx.strokeStyle = `rgba(14,165,233,${0.4 + c.conf * 0.6})`;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  // Redraw human marks
+  humanMarks.forEach(m => {
+    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(m.x, m.y, 8, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(m.x - 5, m.y); ctx.lineTo(m.x + 5, m.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(m.x, m.y - 5); ctx.lineTo(m.x, m.y + 5); ctx.stroke();
+  });
+
+  // Stats
+  document.getElementById('aiCount').textContent = detectedCraters.length;
+  const avgC = detectedCraters.length > 0 ? detectedCraters.reduce((s, c) => s + c.conf, 0) / detectedCraters.length : 0;
+  document.getElementById('avgConf').textContent = (avgC * 100).toFixed(0) + '%';
+  const totalArea = detectedCraters.reduce((s, c) => s + Math.PI * c.r * c.r, 0);
+  document.getElementById('coverage').textContent = ((totalArea / (W * H)) * 100).toFixed(1) + '%';
+
+  // Histogram
+  const bins = { 'Small (<15)': 0, 'Medium (15-30)': 0, 'Large (>30)': 0 };
+  detectedCraters.forEach(c => {
+    if (c.r < 15) bins['Small (<15)']++;
+    else if (c.r < 30) bins['Medium (15-30)']++;
+    else bins['Large (>30)']++;
+  });
+  const maxBin = Math.max(1, ...Object.values(bins));
+  let histHTML = '';
+  for (const [label, count] of Object.entries(bins)) {
+    histHTML += `<div class="hist-bar"><span class="hist-label">${label}</span><div class="hist-track"><div class="hist-fill" style="width:${(count / maxBin) * 100}%"></div></div><span class="hist-val">${count}</span></div>`;
+  }
+  document.getElementById('histogram').innerHTML = histHTML;
+
+  // Classification
+  let classHTML = '';
+  detectedCraters.slice(0, 8).forEach((c, i) => {
+    const type = c.r < 15 ? 'Small crater' : c.r < 30 ? 'Medium crater' : 'Large crater';
+    classHTML += `<div style="margin:4px 0;font-size:12px;color:#ccc">#${i + 1}: ${type} at (${Math.round(c.x)},${Math.round(c.y)}) r=${Math.round(c.r)}px conf=${(c.conf * 100).toFixed(0)}%</div>`;
+  });
+  if (detectedCraters.length > 8) classHTML += `<div style="font-size:12px;color:#666">... and ${detectedCraters.length - 8} more</div>`;
+  document.getElementById('classList').innerHTML = classHTML || 'No craters detected.';
+}
+
+// Human marking
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (W / rect.width);
+  const y = (e.clientY - rect.top) * (H / rect.height);
+  humanMarks.push({ x, y });
+  ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x - 5, y); ctx.lineTo(x + 5, y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x, y - 5); ctx.lineTo(x, y + 5); ctx.stroke();
+  document.getElementById('humanCount').textContent = humanMarks.length;
+});
+
+document.getElementById('genBtn').addEventListener('click', generateSurface);
+document.getElementById('detectBtn').addEventListener('click', runDetection);
+document.getElementById('clearMarks').addEventListener('click', () => {
+  humanMarks = [];
+  document.getElementById('humanCount').textContent = '0';
+  generateSurface();
+});
+
+generateSurface();
+</script>
+</body>
+</html>

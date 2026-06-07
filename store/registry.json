@@ -1,6 +1,30 @@
 {
   "robots": [
     {
+      "id": "crater-detect",
+      "name": "Crater Detector",
+      "description": "Sobel edge detection + Hough transform finds craters on procedural lunar surfaces. Human vs AI comparison mode.",
+      "storeType": "behavior",
+      "category": "perception",
+      "icon": "\ud83e\udd16",
+      "iconBg": "#0ea5e9",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
+      "id": "star-classifier",
+      "name": "Star Classifier",
+      "description": "Neural net classifies stars by temperature/luminosity/radius. HR diagram visualization. Sun, Betelgeuse, Sirius presets.",
+      "storeType": "behavior",
+      "category": "classification",
+      "icon": "\ud83e\udd16",
+      "iconBg": "#0ea5e9",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
       "id": "hohmann",
       "name": "Hohmann Transfer",
       "description": "Calculate interplanetary transfers. Delta-v, travel time, launch windows. Animated spacecraft along transfer ellipse.",
