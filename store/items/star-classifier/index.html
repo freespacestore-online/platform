@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Star Classifier - FreeSpaceStore</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#e5e5e5;font-family:system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+header{width:100%;padding:16px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #222}
+header span.logo{font-size:20px}
+header h1{font-size:18px;font-weight:600;color:#0ea5e9}
+header small{color:#777;margin-left:auto;font-size:13px}
+.container{max-width:1000px;width:100%;padding:24px;display:flex;flex-direction:column;gap:20px}
+.row{display:flex;gap:20px;flex-wrap:wrap}
+.panel{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;flex:1;min-width:280px}
+h2{font-size:15px;color:#aaa;font-weight:500;margin-bottom:10px}
+canvas{border:1px solid #333;border-radius:6px;display:block;background:#000}
+label{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:13px;color:#ccc}
+label span{width:100px;text-align:right}
+label input[type=range]{flex:1}
+label .val{width:80px;font-size:12px;color:#0ea5e9}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button{background:#262626;color:#e5e5e5;border:1px solid #333;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:13px;transition:background .15s}
+button:hover{background:#333}
+button.primary{background:#0ea5e9;border-color:#0ea5e9;color:#fff}
+button.primary:hover{background:#0284c7}
+.result-box{margin-top:12px;padding:12px;background:#0a1628;border:1px solid #1e3a5f;border-radius:8px;font-size:14px}
+.result-box .type{font-size:20px;color:#0ea5e9;font-weight:700}
+.bar-row{display:flex;align-items:center;gap:8px;margin:4px 0}
+.bar-label{width:110px;font-size:12px;color:#ccc;text-align:right}
+.bar-track{flex:1;height:18px;background:#111;border-radius:3px;overflow:hidden;position:relative}
+.bar-fill{height:100%;background:#0ea5e9;border-radius:3px;transition:width .3s}
+.bar-val{position:absolute;right:5px;top:1px;font-size:11px;color:#fff}
+.status{font-size:13px;color:#888;margin-top:8px}
+</style>
+</head>
+<body>
+<header>
+<span class="logo">&#x1f680;</span>
+<h1>FreeSpaceStore</h1>
+<small>AI Star Classifier</small>
+</header>
+<div class="container">
+<div class="row">
+<div class="panel">
+<h2>Star Properties</h2>
+<label><span>Temp (K)</span><input type="range" id="temp" min="2000" max="40000" value="5778"><span class="val" id="tempV">5778</span></label>
+<label><span>Luminosity</span><input type="range" id="lum" min="-4" max="6" step="0.1" value="0"><span class="val" id="lumV">1.00 L</span></label>
+<label><span>Radius</span><input type="range" id="rad" min="-1" max="3" step="0.1" value="0"><span class="val" id="radV">1.00 R</span></label>
+<label><span>Abs Mag</span><input type="range" id="mag" min="-8" max="18" step="0.1" value="4.83"><span class="val" id="magV">4.83</span></label>
+<div class="btn-row">
+<button class="primary" id="classifyBtn">Classify</button>
+<button id="randomBtn">Random Star</button>
+</div>
+<div class="btn-row">
+<button data-s="sun">Sun</button>
+<button data-s="betelgeuse">Betelgeuse</button>
+<button data-s="sirius">Sirius</button>
+<button data-s="proxima">Proxima Cen</button>
+<button data-s="rigel">Rigel</button>
+<button data-s="polaris">Polaris</button>
+</div>
+<div class="result-box" id="resultBox" style="display:none"></div>
+<h2 style="margin-top:16px">All Probabilities</h2>
+<div id="bars"></div>
+</div>
+<div class="panel" style="display:flex;flex-direction:column;gap:16px">
+<h2>Star Visualization</h2>
+<canvas id="starVis" width="300" height="300"></canvas>
+<h2>HR Diagram</h2>
+<canvas id="hrDiag" width="300" height="300"></canvas>
+<div class="status" id="status">Training network...</div>
+</div>
+</div>
+</div>
+<script>
+const CLASSES=['Red Dwarf','Main Sequence','Giant','Supergiant','White Dwarf','Neutron Star'];
+const N_IN=4,N_HID=24,N_OUT=6;
+
+// --- Neural net ---
+function randn(){let u=0,v=0;while(!u)u=Math.random();v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function zeros(n){return new Float32Array(n);}
+function randW(r,c){const w=[],s=Math.sqrt(2/c);for(let i=0;i<r;i++){w[i]=new Float32Array(c);for(let j=0;j<c;j++)w[i][j]=randn()*s;}return w;}
+let W1=randW(N_HID,N_IN),b1=zeros(N_HID),W2=randW(N_OUT,N_HID),b2=zeros(N_OUT);
+
+function forward(x){
+  const h=zeros(N_HID);
+  for(let i=0;i<N_HID;i++){let s=b1[i];for(let j=0;j<N_IN;j++)s+=W1[i][j]*x[j];h[i]=Math.max(0,s);}
+  const o=zeros(N_OUT);let mx=-Infinity;
+  for(let i=0;i<N_OUT;i++){let s=b2[i];for(let j=0;j<N_HID;j++)s+=W2[i][j]*h[j];o[i]=s;if(s>mx)mx=s;}
+  let sm=0;const p=zeros(N_OUT);for(let i=0;i<N_OUT;i++){p[i]=Math.exp(o[i]-mx);sm+=p[i];}for(let i=0;i<N_OUT;i++)p[i]/=sm;
+  return{h,prob:p};
+}
+function trainStep(x,y,lr){
+  const{h,prob}=forward(x);const dO=new Float32Array(prob);dO[y]-=1;
+  const dH=zeros(N_HID);
+  for(let i=0;i<N_OUT;i++){for(let j=0;j<N_HID;j++){W2[i][j]-=lr*dO[i]*h[j];dH[j]+=W2[i][j]*dO[i];}b2[i]-=lr*dO[i];}
+  for(let i=0;i<N_HID;i++){if(h[i]<=0)continue;for(let j=0;j<N_IN;j++)W1[i][j]-=lr*dH[i]*x[j];b1[i]-=lr*dH[i];}
+}
+
+// Normalize inputs: temp->log, lum->log, rad->log, mag as-is
+function normalize(temp,lum,rad,mag){
+  return new Float32Array([(Math.log10(temp)-3.5)/0.8, (Math.log10(Math.max(lum,1e-5))+4)/10, (Math.log10(Math.max(rad,1e-3))+1)/4, (mag+8)/26]);
+}
+
+// Training data (synthetic based on real stellar classifications)
+function genTrainingData(){
+  const data=[];
+  function add(t,l,r,m,c,n=1){for(let i=0;i<n;i++){
+    const jt=t*(0.9+Math.random()*0.2),jl=l*Math.pow(10,(Math.random()-0.5)*0.3),jr=r*(0.9+Math.random()*0.2),jm=m+(Math.random()-0.5)*1;
+    data.push({x:normalize(jt,jl,jr,jm),y:c});
+  }}
+  // 0=Red Dwarf
+  add(3000,0.001,0.15,14,0,30); add(3200,0.005,0.2,13,0,20); add(2800,0.0005,0.1,16,0,15);
+  // 1=Main Sequence
+  add(5778,1,1,4.83,1,20); add(6500,3,1.3,3.5,1,15); add(8000,15,1.7,1.5,1,15); add(4500,0.3,0.8,6.5,1,15);
+  // 2=Giant
+  add(4500,100,15,0.5,2,25); add(4000,200,25,-0.5,2,20); add(5000,50,10,1,2,20);
+  // 3=Supergiant
+  add(3500,50000,800,-6,3,20); add(12000,100000,30,-7,3,15); add(6500,30000,150,-5,3,15); add(4000,80000,500,-6.5,3,15);
+  // 4=White Dwarf
+  add(15000,0.001,0.01,12,4,25); add(25000,0.01,0.015,10,4,20); add(10000,0.0005,0.008,14,4,20);
+  // 5=Neutron Star
+  add(600000,0.00001,0.00001,18,5,15); add(1000000,0.0001,0.000015,16,5,15); add(100000,0.000001,0.00001,19,5,10);
+  return data;
+}
+
+// Presets
+const PRESETS={
+  sun:{t:5778,l:1,r:1,m:4.83},
+  betelgeuse:{t:3500,l:126000,r:764,m:-5.85},
+  sirius:{t:9940,l:25.4,r:1.71,m:1.42},
+  proxima:{t:3042,l:0.0017,r:0.154,m:15.5},
+  rigel:{t:12100,l:120000,r:78.9,m:-6.69},
+  polaris:{t:6015,l:1260,r:37.5,m:-3.6}
+};
+
+const tempS=document.getElementById('temp'),lumS=document.getElementById('lum'),radS=document.getElementById('rad'),magS=document.getElementById('mag');
+const tempV=document.getElementById('tempV'),lumV=document.getElementById('lumV'),radV=document.getElementById('radV'),magV=document.getElementById('magV');
+
+function getInputs(){
+  const t=+tempS.value, l=Math.pow(10,+lumS.value), r=Math.pow(10,+radS.value), m=+magS.value;
+  return{t,l,r,m};
+}
+function setSliders(t,l,r,m){
+  tempS.value=t; lumS.value=Math.log10(Math.max(l,1e-8)); radS.value=Math.log10(Math.max(r,1e-5)); magS.value=m;
+  updateLabels();
+}
+function updateLabels(){
+  const{t,l,r,m}=getInputs();
+  tempV.textContent=Math.round(t)+'K'; lumV.textContent=l.toFixed(l<1?4:1)+' L'; radV.textContent=r.toFixed(r<1?4:2)+' R'; magV.textContent=m.toFixed(1);
+  drawStar(t,r); drawHR(t,l);
+}
+[tempS,lumS,radS,magS].forEach(s=>s.addEventListener('input',updateLabels));
+
+function tempToColor(t){
+  // approximate blackbody color
+  const k=t/1000;
+  let r,g,b;
+  if(k<6.6){r=255;}else{r=329.7*Math.pow(k-6,-.133);}
+  if(k<6.6){g=99.47*Math.log(k)-161.1;}else{g=288.1*Math.pow(k-6,-.076);}
+  if(k>6.6){b=255;}else if(k<2){b=0;}else{b=138.5*Math.log(k-1)-305.04;}
+  return`rgb(${Math.max(0,Math.min(255,r))},${Math.max(0,Math.min(255,g))},${Math.max(0,Math.min(255,b))})`;
+}
+
+function drawStar(temp,rad){
+  const c=document.getElementById('starVis'),cx=c.getContext('2d');
+  cx.fillStyle='#000';cx.fillRect(0,0,300,300);
+  // background stars
+  for(let i=0;i<60;i++){cx.fillStyle=`rgba(255,255,255,${0.2+Math.random()*0.5})`;cx.fillRect(Math.random()*300,Math.random()*300,1,1);}
+  const sz=Math.max(5,Math.min(120,Math.log10(Math.max(rad,0.001))*30+40));
+  const col=tempToColor(temp);
+  const grd=cx.createRadialGradient(150,150,0,150,150,sz*1.5);
+  grd.addColorStop(0,'white'); grd.addColorStop(0.3,col); grd.addColorStop(1,'transparent');
+  cx.fillStyle=grd; cx.beginPath(); cx.arc(150,150,sz*1.5,0,Math.PI*2); cx.fill();
+  cx.fillStyle=col; cx.beginPath(); cx.arc(150,150,sz,0,Math.PI*2); cx.fill();
+  cx.fillStyle='#555';cx.font='11px monospace';cx.fillText(`R = ${rad.toFixed(rad<1?3:1)} R_sun`,10,290);
+}
+
+function drawHR(temp,lum){
+  const c=document.getElementById('hrDiag'),cx=c.getContext('2d');
+  cx.fillStyle='#0a0a14';cx.fillRect(0,0,300,300);
+  cx.strokeStyle='#222';cx.lineWidth=1;
+  for(let i=0;i<5;i++){const y=60+i*50;cx.beginPath();cx.moveTo(40,y);cx.lineTo(290,y);cx.stroke();}
+  for(let i=0;i<5;i++){const x=60+i*50;cx.beginPath();cx.moveTo(x,20);cx.lineTo(x,280);cx.stroke();}
+  // Main sequence band
+  cx.strokeStyle='rgba(14,165,233,0.15)';cx.lineWidth=30;cx.beginPath();cx.moveTo(60,240);cx.lineTo(270,40);cx.stroke();
+  // axes
+  cx.fillStyle='#555';cx.font='10px monospace';
+  cx.fillText('40000K',45,295);cx.fillText('2000K',245,295);
+  cx.fillText('Bright',2,40);cx.fillText('Dim',2,270);
+  cx.fillText('Temperature -->',100,295);
+  // plot star
+  const x=40+((Math.log10(40000)-Math.log10(Math.max(temp,2000)))/(Math.log10(40000)-Math.log10(2000)))*250;
+  const y=270-((Math.log10(Math.max(lum,1e-5))+5)/12)*250;
+  cx.fillStyle='#0ea5e9';cx.beginPath();cx.arc(x,Math.max(25,Math.min(275,y)),6,0,Math.PI*2);cx.fill();
+  cx.fillStyle='#fff';cx.beginPath();cx.arc(x,Math.max(25,Math.min(275,y)),2,0,Math.PI*2);cx.fill();
+}
+
+function classify(){
+  const{t,l,r,m}=getInputs();
+  const x=normalize(t,l,r,m);
+  const{prob}=forward(x);
+  let best=0;for(let i=1;i<N_OUT;i++)if(prob[i]>prob[best])best=i;
+  const rb=document.getElementById('resultBox');
+  rb.style.display='block';
+  rb.innerHTML=`<div class="type">${CLASSES[best]}</div><div style="color:#888;font-size:12px;margin-top:4px">Confidence: ${(prob[best]*100).toFixed(1)}%</div>`;
+  const sorted=CLASSES.map((c,i)=>({c,p:prob[i]})).sort((a,b)=>b.p-a.p);
+  let html='';
+  sorted.forEach(r=>{const pct=(r.p*100).toFixed(1);html+=`<div class="bar-row"><span class="bar-label">${r.c}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div><span class="bar-val">${pct}%</span></div></div>`;});
+  document.getElementById('bars').innerHTML=html;
+}
+
+document.getElementById('classifyBtn').addEventListener('click',classify);
+document.getElementById('randomBtn').addEventListener('click',()=>{
+  const cls=Math.floor(Math.random()*6);
+  const ranges=[[2500,4000,1e-4,0.01,0.08,0.3,10,17],[4000,15000,0.1,50,0.6,2.5,0,7],[3800,5500,30,500,8,40,-1,2],[3200,30000,10000,200000,20,1000,-8,-3],[8000,40000,1e-4,0.05,0.005,0.02,8,15],[50000,2e6,1e-7,1e-3,5e-6,3e-5,14,20]];
+  const R=ranges[cls];
+  const t=R[0]+Math.random()*(R[1]-R[0]),l=R[2]*Math.pow(R[3]/R[2],Math.random()),r=R[4]+Math.random()*(R[5]-R[4]),m=R[6]+Math.random()*(R[7]-R[6]);
+  setSliders(t,l,r,m); classify();
+});
+
+document.querySelectorAll('[data-s]').forEach(btn=>{
+  btn.addEventListener('click',()=>{const p=PRESETS[btn.dataset.s];setSliders(p.t,p.l,p.r,p.m);classify();});
+});
+
+// Train on load
+setTimeout(()=>{
+  const data=genTrainingData();
+  for(let epoch=0;epoch<40;epoch++){
+    for(let i=data.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[data[i],data[j]]=[data[j],data[i]];}
+    const lr=0.05/(1+epoch*0.1);
+    for(const d of data)trainStep(d.x,d.y,lr);
+  }
+  let correct=0;for(const d of data){const{prob}=forward(d.x);let mx=0;for(let i=1;i<N_OUT;i++)if(prob[i]>prob[mx])mx=i;if(mx===d.y)correct++;}
+  document.getElementById('status').textContent=`Network trained. Accuracy: ${(correct/data.length*100).toFixed(1)}% (${data.length} samples)`;
+  updateLabels();
+},50);
+
+updateLabels();
+</script>
+</body>
+</html>
