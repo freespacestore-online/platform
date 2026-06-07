@@ -65,3 +65,5 @@ export type {
   OllamaStatus,
 } from './types.js';
 export { WorkerBridge } from './worker-bridge.js';
+// Orbital mechanics — Keplerian orbits, Hohmann transfers, rocket equation
+export { Orbit, RocketEquation } from './orbit.js';
