@@ -1,1 +1,52 @@
-{"robots": [{"id": "orbit-sim", "name": "Orbit Simulator", "description": "Launch satellites \u2014 altitude, inclination, eccentricity. ISS/GEO/Molniya presets. Kepler orbits with time control.", "storeType": "behavior", "category": "orbits", "icon": "\ud83d\udef0\ufe0f", "iconBg": "#0ea5e9"}, {"id": "gravity-sim", "name": "Gravity Simulator", "description": "N-body sandbox \u2014 place stars, planets, moons. Click-drag to launch. Solar system, binary stars, chaos presets. Merging collisions.", "storeType": "behavior", "category": "physics", "icon": "\ud83c\udf0c", "iconBg": "#7c3aed"}, {"id": "rocket-equation", "name": "Rocket Equation", "description": "Tsiolkovsky visualized \u2014 adjust exhaust velocity and mass ratio. Saturn V, Falcon 9, Starship presets. See which missions you can reach.", "storeType": "behavior", "category": "propulsion", "icon": "\ud83d\ude80", "iconBg": "#f97316"}, {"id": "satellite-segment", "name": "Satellite Segmenter", "description": "Segment satellite imagery by terrain type: water, vegetation, buildings, terrain. NDVI vegetation health analysis.", "storeType": "behavior", "category": "remote-sensing", "icon": "\ud83d\udef0\ufe0f", "iconBg": "#0ea5e9"}]}
+{
+  "robots": [
+    {
+      "id": "orbit-sim",
+      "name": "Orbit Simulator",
+      "description": "Launch satellites \u2014 altitude, inclination, eccentricity. ISS/GEO/Molniya presets. Kepler orbits with time control.",
+      "storeType": "behavior",
+      "category": "orbits",
+      "icon": "\ud83d\udef0\ufe0f",
+      "iconBg": "#0ea5e9",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
+      "id": "gravity-sim",
+      "name": "Gravity Simulator",
+      "description": "N-body sandbox \u2014 place stars, planets, moons. Click-drag to launch. Solar system, binary stars, chaos presets. Merging collisions.",
+      "storeType": "behavior",
+      "category": "physics",
+      "icon": "\ud83c\udf0c",
+      "iconBg": "#7c3aed",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
+      "id": "rocket-equation",
+      "name": "Rocket Equation",
+      "description": "Tsiolkovsky visualized \u2014 adjust exhaust velocity and mass ratio. Saturn V, Falcon 9, Starship presets. See which missions you can reach.",
+      "storeType": "behavior",
+      "category": "propulsion",
+      "icon": "\ud83d\ude80",
+      "iconBg": "#f97316",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
+      "id": "satellite-segment",
+      "name": "Satellite Segmenter",
+      "description": "Segment satellite imagery by terrain type: water, vegetation, buildings, terrain. NDVI vegetation health analysis.",
+      "storeType": "behavior",
+      "category": "remote-sensing",
+      "icon": "\ud83d\udef0\ufe0f",
+      "iconBg": "#0ea5e9",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    }
+  ]
+}
