@@ -41,6 +41,11 @@
     .card h4 a{color:var(--ink)}.card p{font-size:.75rem;color:var(--muted);margin:0;line-height:1.5}
     .card .meta{font-size:.65rem;color:#525252;margin-top:.25rem}
     footer{border-top:1px solid var(--line);padding:1.5rem 0;text-align:center;font-size:.75rem;color:#525252}
+    .kids-explain{display:none;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:10px;padding:.75rem 1rem;margin:.75rem 0;font-size:.85rem;line-height:1.6}
+    .kids-explain .emoji{font-size:1.2rem;margin-right:.35rem}
+    .kids-explain b{color:#fbbf24}
+    body.kids-mode .kids-explain{display:block}
+    body.kids-mode .section h2::after{content:" \1F9D2";font-size:.8em}
   </style>
 </head>
 <body>
@@ -50,7 +55,7 @@
         <span class="brand-emoji">🚀</span>
         <span><span class="brand-text">Space Institute</span><br><span class="brand-tag">Educational Resources</span></span>
       </a>
-      <nav><a href="/institute/">Overview</a><a href="/institute/orbital-mechanics">Orbits</a><a href="/institute/propulsion">Propulsion</a><a href="/institute/spacecraft">Spacecraft</a><a href="/institute/mission-design">Missions</a><a href="/institute/history">History</a><a href="/">Simulations</a></nav>
+      <nav><a href="/institute/">Overview</a><a href="/institute/orbital-mechanics">Orbits</a><a href="/institute/propulsion">Propulsion</a><a href="/institute/spacecraft">Spacecraft</a><a href="/institute/mission-design">Missions</a><a href="/institute/history">History</a><a href="/">Simulations</a><button onclick="document.body.classList.toggle('kids-mode');this.textContent=document.body.classList.contains('kids-mode')?'\uD83C\uDF93 Expert':'\uD83E\uDDD2 Kids'" style="padding:.25rem .6rem;border-radius:6px;border:1px solid #333;background:#171717;color:#fafafa;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit">\uD83E\uDDD2 Kids</button></nav>
     </div>
   </header>
 
@@ -163,6 +168,7 @@
 
       <h3>Legacy</h3>
       <p>Apollo returned 382 kg of lunar samples, deployed scientific instruments (seismometers, retroreflectors, solar wind collectors), and proved that humans could travel to another world. The retroreflectors are still used today for laser ranging experiments (measuring Earth-Moon distance to millimeter precision). The program's technology and management innovations influenced engineering, computing, and project management for decades. Its cancellation after Apollo 17 — driven by budget cuts and shifting political priorities — remains controversial.</p>
+      <div class="kids-explain"><span class="emoji">&#127765;</span> <b>Apollo 11</b> landed humans on the Moon for the first time on July 20, 1969. Neil Armstrong's "one small step" was watched by 600 million people — about 1 in 5 humans alive at the time! The rocket that took them there (Saturn V) was taller than the Statue of Liberty and as loud as a volcano erupting. Only 12 people have ever walked on the Moon.</div>
     </section>
 
     <section class="section" id="shuttle">
@@ -242,6 +248,7 @@
         <li><strong>Relativity Space</strong> — Terran 1 (first 3D-printed rocket, reached space but not orbit, 2023). Developing Terran R (reusable, medium-lift). Automated manufacturing using massive Stargate 3D printers.</li>
         <li><strong>Axiom Space</strong> — commercial space station company. Flew private astronaut missions to ISS (Axiom-1 through Axiom-4). Building commercial modules to attach to ISS, then detach as independent station post-ISS.</li>
       </ul>
+      <div class="kids-explain"><span class="emoji">&#128176;</span> Space used to be only for governments. Now companies like <b>SpaceX</b> are making it way cheaper! SpaceX's Falcon 9 rocket can land itself back on Earth and fly again — like a plane! They've reused rockets over 300 times. Their giant Starship is designed to take 100 people to Mars. Meanwhile, 6,000+ Starlink satellites are beaming internet from space.</div>
     </section>
 
     <section class="section" id="artemis">

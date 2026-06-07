@@ -41,6 +41,11 @@
     .card h4 a{color:var(--ink)}.card p{font-size:.75rem;color:var(--muted);margin:0;line-height:1.5}
     .card .meta{font-size:.65rem;color:#525252;margin-top:.25rem}
     footer{border-top:1px solid var(--line);padding:1.5rem 0;text-align:center;font-size:.75rem;color:#525252}
+    .kids-explain{display:none;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:10px;padding:.75rem 1rem;margin:.75rem 0;font-size:.85rem;line-height:1.6}
+    .kids-explain .emoji{font-size:1.2rem;margin-right:.35rem}
+    .kids-explain b{color:#fbbf24}
+    body.kids-mode .kids-explain{display:block}
+    body.kids-mode .section h2::after{content:" \1F9D2";font-size:.8em}
   </style>
 </head>
 <body>
@@ -50,7 +55,7 @@
         <span class="brand-emoji">🚀</span>
         <span><span class="brand-text">Space Institute</span><br><span class="brand-tag">Educational Resources</span></span>
       </a>
-      <nav><a href="/institute/">Overview</a><a href="/institute/orbital-mechanics">Orbits</a><a href="/institute/propulsion">Propulsion</a><a href="/institute/spacecraft">Spacecraft</a><a href="/institute/mission-design">Missions</a><a href="/institute/history">History</a><a href="/">Simulations</a></nav>
+      <nav><a href="/institute/">Overview</a><a href="/institute/orbital-mechanics">Orbits</a><a href="/institute/propulsion">Propulsion</a><a href="/institute/spacecraft">Spacecraft</a><a href="/institute/mission-design">Missions</a><a href="/institute/history">History</a><a href="/">Simulations</a><button onclick="document.body.classList.toggle('kids-mode');this.textContent=document.body.classList.contains('kids-mode')?'\uD83C\uDF93 Expert':'\uD83E\uDDD2 Kids'" style="padding:.25rem .6rem;border-radius:6px;border:1px solid #333;background:#171717;color:#fafafa;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit">\uD83E\uDDD2 Kids</button></nav>
     </div>
   </header>
 
@@ -90,6 +95,7 @@
         <li><strong>Integration and test</strong> — assemble the spacecraft, run environmental tests (vibration, thermal vacuum, EMC, acoustic). Flight Readiness Review (FRR).</li>
         <li><strong>Operations</strong> — launch, early orbit operations, commissioning, routine operations, end-of-life disposal.</li>
       </ul>
+      <div class="kids-explain"><span class="emoji">&#128752;</span> A <b>spacecraft</b> is like a Swiss Army knife in space — it needs EVERYTHING built in because there's no repair shop! Solar panels for electricity, antennas to phone home, heaters AND coolers (space is -270&#176;C in shadow, +120&#176;C in sunlight), tiny jet thrusters to steer, and a computer brain to run it all. Every gram matters because it costs $3,000+ per kilogram to launch!</div>
     </section>
 
     <section class="section" id="adcs">
@@ -255,6 +261,7 @@
 
       <h3>COTS Components</h3>
       <p>CubeSats use Commercial Off-The-Shelf components: reaction wheels (Blue Canyon XACT, ~$50K), star trackers (Arcsec Sagitta), radios (Astrodev Lithium, ISIS), solar panels (EnduroSat, DHV), flight computers (GomSpace NanoMind, Unibap SpaceCloud). Total 3U CubeSat cost: $200K-$2M (vs $100M-$1B for traditional spacecraft). Launch costs: $50K-$300K for a rideshare slot.</p>
+      <div class="kids-explain"><span class="emoji">&#128230;</span> A <b>CubeSat</b> is a tiny satellite the size of a Rubik's cube! University students build them as class projects, and they actually go to space. Two CubeSats even flew all the way to Mars! They're cheap enough ($200K vs $100 million for a big satellite) that even high school teams are launching them.</div>
     </section>
 
     <section class="section" id="mass-budget">
