@@ -173,7 +173,7 @@
 
     <section>
       <div class="tabs">
-          <button class="tab active" onclick="switchTab('all')">All <span class="tab-count">2</span></button>
+          <button class="tab active" onclick="switchTab('all')">All <span class="tab-count">3</span></button>
           <button class="tab" onclick="switchTab('library')">Libraries <span class="tab-count">undefined</span></button>
           <button class="tab" onclick="switchTab('model')">Models <span class="tab-count">0</span></button>
           <button class="tab" onclick="switchTab('agent')">Agents <span class="tab-count">undefined</span></button>
@@ -184,15 +184,16 @@
         <button class="filter-btn active" onclick="filterCategory('all')">All</button>
         <button class="filter-btn" onclick="filterCategory('orbits')">Orbits</button>
         <button class="filter-btn" onclick="filterCategory('physics')">Physics</button>
-        <span class="agent-count" id="agentCount">2 agents</span>
+        <button class="filter-btn" onclick="filterCategory('propulsion')">Propulsion</button>
+        <span class="agent-count" id="agentCount">3 agents</span>
       </div>
             <div class="agents-grid" id="agentsGrid">
-        <div class="agent-card" data-category="orbits" data-store-type="behavior" data-name="orbit simulator" data-desc="launch satellites — adjust altitude, inclination, eccentricity. iss, geostationary, molniya presets. kepler orbits visualized.">
+        <div class="agent-card" data-category="orbits" data-store-type="behavior" data-name="orbit simulator" data-desc="launch satellites — altitude, inclination, eccentricity. iss/geo/molniya presets. kepler orbits with time control.">
           <a href="/items/orbit-sim/" class="agent-card-body">
             <div class="agent-icon" style="background:#0ea5e9">🛰️</div>
             <div class="agent-body">
               <span class="agent-name">Orbit Simulator</span>
-              <span class="agent-desc">Launch satellites — adjust altitude, inclination, eccentrici...</span>
+              <span class="agent-desc">Launch satellites — altitude, inclination, eccentricity. ISS...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">behavior</span>
                 <span class="tag"></span>
@@ -205,12 +206,12 @@
           </a>
         </div>
 
-        <div class="agent-card" data-category="physics" data-store-type="behavior" data-name="gravity simulator" data-desc="n-body gravity sandbox. place stars, planets, moons. click-drag to launch. solar system, binary stars, chaos presets. bodies merge on collision.">
+        <div class="agent-card" data-category="physics" data-store-type="behavior" data-name="gravity simulator" data-desc="n-body sandbox — place stars, planets, moons. click-drag to launch. solar system, binary stars, chaos presets. merging collisions.">
           <a href="/items/gravity-sim/" class="agent-card-body">
             <div class="agent-icon" style="background:#7c3aed">🌌</div>
             <div class="agent-body">
               <span class="agent-name">Gravity Simulator</span>
-              <span class="agent-desc">N-body gravity sandbox. Place stars, planets, moons. Click-d...</span>
+              <span class="agent-desc">N-body sandbox — place stars, planets, moons. Click-drag to ...</span>
               <div class="agent-meta">
                 <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">behavior</span>
                 <span class="tag"></span>
@@ -218,6 +219,24 @@
             </div>
           </a>
           <a href="/items/gravity-sim/" class="agent-cta">
+            <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            Open
+          </a>
+        </div>
+
+        <div class="agent-card" data-category="propulsion" data-store-type="behavior" data-name="rocket equation" data-desc="tsiolkovsky visualized — adjust exhaust velocity and mass ratio. saturn v, falcon 9, starship presets. see which missions you can reach.">
+          <a href="/items/rocket-equation/" class="agent-card-body">
+            <div class="agent-icon" style="background:#f97316">🚀</div>
+            <div class="agent-body">
+              <span class="agent-name">Rocket Equation</span>
+              <span class="agent-desc">Tsiolkovsky visualized — adjust exhaust velocity and mass ra...</span>
+              <div class="agent-meta">
+                <span class="tag" style="background:rgba(124,58,237,0.15);color:#a78bfa">behavior</span>
+                <span class="tag"></span>
+              </div>
+            </div>
+          </a>
+          <a href="/items/rocket-equation/" class="agent-cta">
             <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
             Open
           </a>

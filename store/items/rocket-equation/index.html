@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rocket Equation — FreeSpaceStore</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#0a0a0a;color:#fafafa;font-family:'Manrope',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh}
+    h1{font-size:1.3rem;font-weight:700;margin:1.25rem 0 .25rem} h1 span{color:#f97316}
+    .sub{color:#737373;font-size:.85rem;margin-bottom:.5rem;text-align:center;max-width:560px}
+    .equation{font-family:'JetBrains Mono',monospace;font-size:1.5rem;color:#0ea5e9;text-align:center;margin:.75rem;padding:1rem;background:#0f172a;border:1px solid #1e293b;border-radius:12px}
+    .equation .var{color:#f97316}
+    .layout{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;margin:.5rem;max-width:900px}
+    .panel{background:#141414;border:1px solid #262626;border-radius:12px;padding:1rem;flex:1;min-width:250px}
+    .panel h3{font-size:.85rem;font-weight:700;color:#0ea5e9;margin-bottom:.5rem}
+    label{font-size:.82rem;color:#a3a3a3;display:flex;justify-content:space-between;align-items:center;margin:.3rem 0}
+    label span{color:#f97316;font-weight:600;min-width:4rem;text-align:right;font-family:'JetBrains Mono',monospace}
+    input[type=range]{width:130px;accent-color:#f97316}
+    canvas{border:1px solid #262626;border-radius:12px}
+    .result{font-family:'JetBrains Mono',monospace;font-size:1.1rem;text-align:center;margin:.5rem;padding:.75rem;background:#0f2a0f;border:1px solid #1a3a1a;border-radius:10px}
+    .result b{color:#10b981;font-size:1.3rem}
+    .presets{display:flex;gap:.35rem;flex-wrap:wrap;margin:.5rem 0}
+    button{padding:.35rem .7rem;border-radius:6px;border:1px solid #333;background:#171717;color:#fafafa;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit}
+    button:hover{border-color:#0ea5e9;color:#0ea5e9}
+    .info{font-size:.75rem;color:#525252;margin:.5rem}
+    a{color:#525252;text-decoration:none}
+  </style>
+</head>
+<body>
+  <h1>Tsiolkovsky's <span>Rocket</span> Equation</h1>
+  <p class="sub">The fundamental equation of spaceflight. It tells you how much velocity change (delta-v) a rocket can achieve based on its fuel and exhaust speed.</p>
+
+  <div class="equation">
+    <span class="var">Δv</span> = <span class="var">v<sub>e</sub></span> × ln( <span class="var">m<sub>0</sub></span> / <span class="var">m<sub>f</sub></span> )
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <h3>Parameters</h3>
+      <label>Exhaust velocity (v<sub>e</sub>) <span id="ve-v">3,000</span> m/s</label>
+      <input type="range" id="ve" min="500" max="50000" value="3000" step="100">
+      <label>Wet mass (m<sub>0</sub>) — total <span id="m0-v">100,000</span> kg</label>
+      <input type="range" id="m0" min="1000" max="1000000" value="100000" step="1000">
+      <label>Dry mass (m<sub>f</sub>) — empty <span id="mf-v">10,000</span> kg</label>
+      <input type="range" id="mf" min="100" max="500000" value="10000" step="100">
+
+      <h3 style="margin-top:.75rem">Presets</h3>
+      <div class="presets">
+        <button data-ve="2500" data-m0="550000" data-mf="22000">Saturn V (1st stage)</button>
+        <button data-ve="3400" data-m0="549054" data-mf="130000">Falcon 9</button>
+        <button data-ve="3100" data-m0="1420000" data-mf="85000">Starship</button>
+        <button data-ve="44000" data-m0="1000" data-mf="800">Ion Drive</button>
+        <button data-ve="3500" data-m0="2000" data-mf="500">Satellite</button>
+      </div>
+    </div>
+
+    <div class="panel" style="min-width:280px">
+      <h3>Visualization</h3>
+      <canvas id="sim" width="320" height="280"></canvas>
+    </div>
+  </div>
+
+  <div class="result">
+    Delta-v = <b id="dv">6,908</b> m/s (<span id="dv-km">6.91</span> km/s)
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <h3>What can you do with this delta-v?</h3>
+      <ul id="missions" style="padding-left:1.25rem;color:#a3a3a3;font-size:.82rem;line-height:1.6">
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>The Tyranny of the Rocket Equation</h3>
+      <p style="color:#a3a3a3;font-size:.82rem;line-height:1.6">
+        Mass ratio = m<sub>0</sub>/m<sub>f</sub> = <b id="ratio" style="color:#f97316">10.0</b><br>
+        Fuel fraction = <b id="fuel-frac" style="color:#f97316">90.0</b>%<br><br>
+        The logarithm is cruel. To double your delta-v, you need to <em>square</em> your mass ratio.
+        Going from 3 km/s to 6 km/s means going from 63% fuel to 87% fuel.
+        Getting to orbit (9.4 km/s) requires ~90% of a rocket to be fuel.
+      </p>
+    </div>
+  </div>
+
+  <div class="info"><a href="https://freespacestore.pages.dev">FreeSpaceStore</a></div>
+
+  <script>
+    const canvas = document.getElementById('sim');
+    const ctx = canvas.getContext('2d');
+    const CW = canvas.width, CH = canvas.height;
+
+    const sl = id => document.getElementById(id);
+    const sliders = { ve: sl('ve'), m0: sl('m0'), mf: sl('mf') };
+
+    const missions = [
+      { name: 'Suborbital hop', dv: 1500 },
+      { name: 'Low Earth Orbit (LEO)', dv: 9400 },
+      { name: 'Geostationary Transfer (GTO)', dv: 12000 },
+      { name: 'Earth escape velocity', dv: 11200 },
+      { name: 'Moon landing (from LEO)', dv: 6000 },
+      { name: 'Mars transfer (from LEO)', dv: 4300 },
+      { name: 'Jupiter transfer', dv: 9000 },
+      { name: 'Solar system escape', dv: 16600 },
+    ];
+
+    function update() {
+      const ve = +sliders.ve.value;
+      const m0 = +sliders.m0.value;
+      let mf = +sliders.mf.value;
+      if (mf >= m0) { mf = m0 - 100; sliders.mf.value = mf; }
+
+      sl('ve-v').textContent = ve.toLocaleString();
+      sl('m0-v').textContent = m0.toLocaleString();
+      sl('mf-v').textContent = mf.toLocaleString();
+
+      const ratio = m0 / mf;
+      const dv = ve * Math.log(ratio);
+      const fuelFrac = (1 - mf / m0) * 100;
+
+      sl('dv').textContent = Math.round(dv).toLocaleString();
+      sl('dv-km').textContent = (dv / 1000).toFixed(2);
+      sl('ratio').textContent = ratio.toFixed(1);
+      sl('fuel-frac').textContent = fuelFrac.toFixed(1);
+
+      // Missions list
+      let html = '';
+      for (const m of missions) {
+        const ok = dv >= m.dv;
+        const icon = ok ? '✅' : '❌';
+        const color = ok ? '#10b981' : '#525252';
+        html += `<li style="color:${color}">${icon} ${m.name} (${(m.dv/1000).toFixed(1)} km/s)${ok ? ' — ACHIEVABLE' : ''}</li>`;
+      }
+      sl('missions').innerHTML = html;
+
+      // Draw visualization
+      drawRocket(m0, mf, ve, dv);
+    }
+
+    function drawRocket(m0, mf, ve, dv) {
+      ctx.fillStyle = '#141414'; ctx.fillRect(0, 0, CW, CH);
+
+      const cx = CW * 0.35, baseY = CH - 30;
+      const maxH = CH - 60;
+      const rocketW = 40;
+      const totalH = maxH * 0.8;
+      const fuelH = totalH * (1 - mf / m0);
+      const dryH = totalH - fuelH;
+
+      // Rocket body
+      ctx.fillStyle = '#262626';
+      ctx.beginPath();
+      ctx.moveTo(cx - rocketW/2, baseY);
+      ctx.lineTo(cx - rocketW/2, baseY - totalH);
+      ctx.lineTo(cx, baseY - totalH - 20); // nose cone
+      ctx.lineTo(cx + rocketW/2, baseY - totalH);
+      ctx.lineTo(cx + rocketW/2, baseY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Fuel section
+      ctx.fillStyle = '#f97316';
+      ctx.fillRect(cx - rocketW/2 + 3, baseY - fuelH, rocketW - 6, fuelH);
+
+      // Dry mass section
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(cx - rocketW/2 + 3, baseY - totalH, rocketW - 6, dryH);
+
+      // Labels
+      ctx.fillStyle = '#f97316'; ctx.font = '10px Manrope'; ctx.textAlign = 'left';
+      ctx.fillText(`Fuel: ${((m0-mf)/1000).toFixed(0)}t`, cx + rocketW/2 + 8, baseY - fuelH/2);
+      ctx.fillStyle = '#64748b';
+      ctx.fillText(`Dry: ${(mf/1000).toFixed(0)}t`, cx + rocketW/2 + 8, baseY - fuelH - dryH/2);
+
+      // Exhaust flames (if has fuel)
+      if (fuelH > 0) {
+        const flameH = 20 + (ve / 5000) * 30;
+        const grad = ctx.createLinearGradient(cx, baseY, cx, baseY + flameH);
+        grad.addColorStop(0, '#fbbf24');
+        grad.addColorStop(0.3, '#f97316');
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(cx - 12, baseY);
+        ctx.lineTo(cx, baseY + flameH + Math.random() * 5);
+        ctx.lineTo(cx + 12, baseY);
+        ctx.fill();
+      }
+
+      // Delta-v bar (right side)
+      const barX = CW - 50, barW = 20;
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(barX, 30, barW, maxH);
+
+      // Max reference (LEO = 9400 m/s)
+      const maxDv = 20000;
+      const dvH = Math.min(maxH, (dv / maxDv) * maxH);
+      ctx.fillStyle = '#10b981';
+      ctx.fillRect(barX, 30 + maxH - dvH, barW, dvH);
+
+      // LEO line
+      const leoY = 30 + maxH - (9400 / maxDv) * maxH;
+      ctx.strokeStyle = '#f97316'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(barX - 10, leoY); ctx.lineTo(barX + barW + 5, leoY); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#f97316'; ctx.font = '8px Manrope'; ctx.textAlign = 'right';
+      ctx.fillText('LEO', barX - 3, leoY + 3);
+
+      // Dv label
+      ctx.fillStyle = '#10b981'; ctx.font = '10px Manrope'; ctx.textAlign = 'center';
+      ctx.fillText(`${(dv/1000).toFixed(1)}`, barX + barW/2, 25);
+      ctx.fillText('km/s', barX + barW/2, CH - 15);
+    }
+
+    for (const s of Object.values(sliders)) s.addEventListener('input', update);
+
+    document.querySelectorAll('button[data-ve]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        sliders.ve.value = btn.dataset.ve;
+        sliders.m0.value = btn.dataset.m0;
+        sliders.mf.value = btn.dataset.mf;
+        update();
+      });
+    });
+
+    update();
+  </script>
+</body>
+</html>

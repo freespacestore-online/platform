@@ -1,4 +1,5 @@
 {"robots":[
-  {"id":"orbit-sim","name":"Orbit Simulator","description":"Launch satellites — adjust altitude, inclination, eccentricity. ISS, geostationary, Molniya presets. Kepler orbits visualized.","storeType":"behavior","category":"orbits","icon":"🛰️","iconBg":"#0ea5e9"},
-  {"id":"gravity-sim","name":"Gravity Simulator","description":"N-body gravity sandbox. Place stars, planets, moons. Click-drag to launch. Solar system, binary stars, chaos presets. Bodies merge on collision.","storeType":"behavior","category":"physics","icon":"🌌","iconBg":"#7c3aed"}
+  {"id":"orbit-sim","name":"Orbit Simulator","description":"Launch satellites — altitude, inclination, eccentricity. ISS/GEO/Molniya presets. Kepler orbits with time control.","storeType":"behavior","category":"orbits","icon":"🛰️","iconBg":"#0ea5e9"},
+  {"id":"gravity-sim","name":"Gravity Simulator","description":"N-body sandbox — place stars, planets, moons. Click-drag to launch. Solar system, binary stars, chaos presets. Merging collisions.","storeType":"behavior","category":"physics","icon":"🌌","iconBg":"#7c3aed"},
+  {"id":"rocket-equation","name":"Rocket Equation","description":"Tsiolkovsky visualized — adjust exhaust velocity and mass ratio. Saturn V, Falcon 9, Starship presets. See which missions you can reach.","storeType":"behavior","category":"propulsion","icon":"🚀","iconBg":"#f97316"}
 ]}
