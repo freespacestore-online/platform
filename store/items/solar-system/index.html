@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>N-Body Solar System - FreeSpaceStore</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; color: #e0e0e0; font-family: 'Courier New', monospace; overflow: hidden; }
+  #app { position: relative; width: 100vw; height: 100vh; }
+  canvas { display: block; position: absolute; top: 0; left: 0; }
+  #hud { position: absolute; top: 10px; left: 10px; z-index: 10; pointer-events: none; }
+  #hud > div { pointer-events: auto; }
+  .controls { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+  .controls button { background: #111; border: 1px solid #222; color: #ccc; padding: 4px 10px; cursor: pointer; font-family: inherit; font-size: 11px; border-radius: 3px; }
+  .controls button:hover { border-color: #0ea5e9; }
+  .controls button.active { background: #0ea5e9; color: #fff; border-color: #0ea5e9; }
+  .time-display { font-size: 12px; color: #0ea5e9; margin-bottom: 4px; }
+  .time-display span { color: #888; }
+  #info-card { position: absolute; top: 60px; right: 10px; width: 260px; background: #0a0a0fdd; border: 1px solid #1a1a2a; border-radius: 6px; padding: 12px; font-size: 11px; z-index: 10; display: none; backdrop-filter: blur(8px); }
+  #info-card h2 { font-size: 14px; color: #0ea5e9; margin-bottom: 8px; }
+  #info-card .row { display: flex; justify-content: space-between; padding: 2px 0; }
+  #info-card .row .label { color: #666; }
+  #info-card .row .value { color: #ccc; }
+  #info-card .close { position: absolute; top: 6px; right: 10px; cursor: pointer; color: #666; font-size: 14px; }
+  #info-card .close:hover { color: #0ea5e9; }
+  .speed-indicator { font-size: 10px; color: #555; }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="sky"></canvas>
+  <div id="hud">
+    <div class="time-display">
+      <span>Date:</span> <span id="sim-date">2024-01-01</span><br>
+      <span>Elapsed:</span> <span id="sim-elapsed">0 days</span>
+    </div>
+    <div class="controls">
+      <button id="btn-pause">Pause</button>
+      <button id="btn-1d" class="active">1 day/s</button>
+      <button id="btn-1m">1 mo/s</button>
+      <button id="btn-1y">1 yr/s</button>
+      <button id="btn-10y">10 yr/s</button>
+    </div>
+    <div class="controls">
+      <button id="btn-trails" class="active">Trails</button>
+      <button id="btn-labels" class="active">Labels</button>
+      <button id="btn-asteroids">Asteroids</button>
+      <button id="btn-dwarfs">Dwarf Planets</button>
+      <button id="btn-orbits" class="active">Orbits</button>
+    </div>
+    <div class="speed-indicator" id="speed-label">Speed: 1 day/sec</div>
+  </div>
+  <div id="info-card">
+    <span class="close" id="info-close">x</span>
+    <h2 id="info-name"></h2>
+    <div id="info-body"></div>
+  </div>
+</div>
+<script>
+const canvas = document.getElementById('sky');
+const ctx = canvas.getContext('2d');
+
+// --- Constants ---
+const AU = 149597870.7; // km
+const DEG = Math.PI / 180;
+
+// --- Planet data (Keplerian elements J2000) ---
+const PLANETS = [
+  {
+    name: 'Mercury', a: 0.387, e: 0.2056, i: 7.00, color: '#b0a090', r: 3,
+    period: 87.97, mass: '3.30e23 kg', radius: '2,440 km', dist: '0.39 AU',
+    moons: 0, composition: 'Iron, silicate rock', discovered: 'Ancient'
+  },
+  {
+    name: 'Venus', a: 0.723, e: 0.0068, i: 3.39, color: '#e8c870', r: 5,
+    period: 224.7, mass: '4.87e24 kg', radius: '6,052 km', dist: '0.72 AU',
+    moons: 0, composition: 'CO2 atmosphere, volcanic surface', discovered: 'Ancient'
+  },
+  {
+    name: 'Earth', a: 1.000, e: 0.0167, i: 0.00, color: '#4488cc', r: 5,
+    period: 365.25, mass: '5.97e24 kg', radius: '6,371 km', dist: '1.00 AU',
+    moons: 1, composition: 'Iron core, silicate mantle, water', discovered: '-',
+    moon: { name: 'Moon', a: 0.00257, period: 27.32, r: 1.5, color: '#aaa' }
+  },
+  {
+    name: 'Mars', a: 1.524, e: 0.0934, i: 1.85, color: '#cc6644', r: 4,
+    period: 687.0, mass: '6.42e23 kg', radius: '3,390 km', dist: '1.52 AU',
+    moons: 2, composition: 'Iron oxide, basalt', discovered: 'Ancient'
+  },
+  {
+    name: 'Jupiter', a: 5.203, e: 0.0484, i: 1.30, color: '#c8a060', r: 14,
+    period: 4333, mass: '1.90e27 kg', radius: '69,911 km', dist: '5.20 AU',
+    moons: 95, composition: 'Hydrogen, helium gas giant', discovered: 'Ancient'
+  },
+  {
+    name: 'Saturn', a: 9.537, e: 0.0542, i: 2.49, color: '#d4b870', r: 12,
+    period: 10759, mass: '5.68e26 kg', radius: '58,232 km', dist: '9.54 AU',
+    moons: 146, composition: 'Hydrogen, helium, ice ring system', discovered: 'Ancient',
+    rings: true
+  },
+  {
+    name: 'Uranus', a: 19.19, e: 0.0472, i: 0.77, color: '#88cccc', r: 8,
+    period: 30687, mass: '8.68e25 kg', radius: '25,362 km', dist: '19.19 AU',
+    moons: 28, composition: 'Ice giant: water, methane, ammonia', discovered: '1781 (Herschel)'
+  },
+  {
+    name: 'Neptune', a: 30.07, e: 0.0086, i: 1.77, color: '#4466cc', r: 7,
+    period: 60190, mass: '1.02e26 kg', radius: '24,622 km', dist: '30.07 AU',
+    moons: 16, composition: 'Ice giant: water, methane, ammonia', discovered: '1846 (Le Verrier)'
+  },
+];
+
+const DWARF_PLANETS = [
+  { name: 'Pluto', a: 39.48, e: 0.2488, i: 17.16, color: '#aa8866', r: 2, period: 90560 },
+  { name: 'Ceres', a: 2.77, e: 0.0758, i: 10.59, color: '#888', r: 2, period: 1682 },
+  { name: 'Eris', a: 67.78, e: 0.4407, i: 44.04, color: '#ccccaa', r: 2, period: 203830 },
+];
+
+// --- State ---
+let simTime = 0; // days from J2000
+let timeSpeed = 1; // days per real second
+let paused = false;
+let showTrails = true, showLabels = true, showAsteroids = false, showDwarfs = false, showOrbits = true;
+let selectedPlanet = null;
+let viewScale = 1;
+let viewCenterX = 0, viewCenterY = 0;
+let trails = {};
+const MAX_TRAIL = 800;
+
+// Asteroids (procedural)
+let asteroids = [];
+function initAsteroids() {
+  asteroids = [];
+  for (let i = 0; i < 600; i++) {
+    const a = 2.2 + Math.random() * 1.3; // between Mars and Jupiter
+    const e = Math.random() * 0.15;
+    const angle = Math.random() * Math.PI * 2;
+    const period = Math.pow(a, 1.5) * 365.25;
+    asteroids.push({ a, e, angle, period, brightness: 0.2 + Math.random() * 0.4 });
+  }
+}
+
+// Stars (background)
+let stars = [];
+function initStars() {
+  stars = [];
+  for (let i = 0; i < 300; i++) {
+    stars.push({
+      x: Math.random(),
+      y: Math.random(),
+      brightness: 0.3 + Math.random() * 0.7,
+      size: Math.random() < 0.1 ? 1.5 : 0.8,
+    });
+  }
+}
+
+// --- Kepler position ---
+function keplerPosition(a, e, period, t, phase) {
+  const M = ((2 * Math.PI * t) / period + (phase || 0)) % (2 * Math.PI);
+  // Solve Kepler's equation E - e*sin(E) = M (Newton's method)
+  let E = M;
+  for (let i = 0; i < 10; i++) {
+    E = E - (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+  }
+  const cosE = Math.cos(E);
+  const sinE = Math.sin(E);
+  const x = a * (cosE - e);
+  const y = a * Math.sqrt(1 - e * e) * sinE;
+  return { x, y };
+}
+
+// --- Coordinate transform ---
+function worldToScreen(wx, wy) {
+  const maxA = showDwarfs ? 70 : 32;
+  const scale = Math.min(canvas.width, canvas.height) / (maxA * 2.4) * viewScale;
+  const cx = canvas.width / 2 + viewCenterX;
+  const cy = canvas.height / 2 + viewCenterY;
+  return { x: cx + wx * scale, y: cy + wy * scale };
+}
+
+// --- Resize ---
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+// --- Draw ---
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Stars
+  stars.forEach(s => {
+    ctx.fillStyle = `rgba(255,255,255,${s.brightness * 0.5})`;
+    ctx.beginPath();
+    ctx.arc(s.x * canvas.width, s.y * canvas.height, s.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Sun
+  const sun = worldToScreen(0, 0);
+  ctx.save();
+  ctx.shadowColor = '#ff8800';
+  ctx.shadowBlur = 30;
+  ctx.beginPath();
+  ctx.arc(sun.x, sun.y, 18, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffcc00';
+  ctx.fill();
+  ctx.restore();
+
+  // Corona
+  const grad = ctx.createRadialGradient(sun.x, sun.y, 18, sun.x, sun.y, 50);
+  grad.addColorStop(0, '#ffcc0040');
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(sun.x, sun.y, 50, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (showLabels) {
+    ctx.fillStyle = '#ffcc00';
+    ctx.font = '10px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText('Sun', sun.x, sun.y - 24);
+  }
+
+  // Orbit paths
+  if (showOrbits) {
+    const bodies = showDwarfs ? [...PLANETS, ...DWARF_PLANETS] : PLANETS;
+    bodies.forEach(planet => {
+      ctx.strokeStyle = planet.color + '30';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      for (let angle = 0; angle <= 360; angle += 2) {
+        const t = (angle / 360) * planet.period;
+        const pos = keplerPosition(planet.a, planet.e, planet.period, t, 0);
+        const sp = worldToScreen(pos.x, pos.y);
+        if (angle === 0) ctx.moveTo(sp.x, sp.y);
+        else ctx.lineTo(sp.x, sp.y);
+      }
+      ctx.closePath();
+      ctx.stroke();
+    });
+  }
+
+  // Asteroid belt
+  if (showAsteroids) {
+    asteroids.forEach(ast => {
+      const pos = keplerPosition(ast.a, ast.e, ast.period, simTime, ast.angle);
+      const sp = worldToScreen(pos.x, pos.y);
+      if (sp.x < -10 || sp.x > canvas.width + 10 || sp.y < -10 || sp.y > canvas.height + 10) return;
+      ctx.fillStyle = `rgba(180,170,150,${ast.brightness * 0.5})`;
+      ctx.beginPath();
+      ctx.arc(sp.x, sp.y, 0.8, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  // Planets
+  const allBodies = showDwarfs ? [...PLANETS, ...DWARF_PLANETS] : PLANETS;
+  allBodies.forEach(planet => {
+    // Unique phase offset per planet (spread them out)
+    const phase = PLANETS.indexOf(planet) * 0.8 + (DWARF_PLANETS.indexOf(planet) + 8) * 1.2;
+    const pos = keplerPosition(planet.a, planet.e, planet.period, simTime, phase);
+    const sp = worldToScreen(pos.x, pos.y);
+
+    // Trail
+    if (showTrails) {
+      if (!trails[planet.name]) trails[planet.name] = [];
+      trails[planet.name].push({ x: sp.x, y: sp.y });
+      if (trails[planet.name].length > MAX_TRAIL) trails[planet.name].shift();
+
+      ctx.beginPath();
+      const trail = trails[planet.name];
+      for (let i = 0; i < trail.length; i++) {
+        ctx.strokeStyle = planet.color + Math.floor((i / trail.length) * 80).toString(16).padStart(2, '0');
+        ctx.lineWidth = 0.5;
+        if (i === 0) ctx.moveTo(trail[i].x, trail[i].y);
+        else {
+          ctx.lineTo(trail[i].x, trail[i].y);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(trail[i].x, trail[i].y);
+        }
+      }
+    }
+
+    // Planet body
+    ctx.save();
+    ctx.shadowColor = planet.color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(sp.x, sp.y, planet.r, 0, Math.PI * 2);
+    ctx.fillStyle = planet.color;
+    ctx.fill();
+    ctx.restore();
+
+    // Saturn rings
+    if (planet.rings) {
+      ctx.save();
+      ctx.strokeStyle = planet.color + '80';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(sp.x, sp.y, planet.r * 2.2, planet.r * 0.6, -0.3, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = planet.color + '40';
+      ctx.beginPath();
+      ctx.ellipse(sp.x, sp.y, planet.r * 1.8, planet.r * 0.5, -0.3, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Moon (Earth only for now)
+    if (planet.moon) {
+      const moonPhase = simTime / planet.moon.period * Math.PI * 2;
+      const moonDist = 15; // pixels
+      const mx = sp.x + Math.cos(moonPhase) * moonDist;
+      const my = sp.y + Math.sin(moonPhase) * moonDist;
+      ctx.beginPath();
+      ctx.arc(mx, my, planet.moon.r, 0, Math.PI * 2);
+      ctx.fillStyle = planet.moon.color;
+      ctx.fill();
+      if (showLabels) {
+        ctx.fillStyle = '#666';
+        ctx.font = '8px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText('Moon', mx, my - 5);
+      }
+    }
+
+    // Label
+    if (showLabels) {
+      ctx.fillStyle = planet.color;
+      ctx.font = '10px Courier New';
+      ctx.textAlign = 'center';
+      ctx.fillText(planet.name, sp.x, sp.y - planet.r - 6);
+    }
+
+    // Selection highlight
+    if (selectedPlanet === planet) {
+      ctx.strokeStyle = '#0ea5e9';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.arc(sp.x, sp.y, planet.r + 6, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  });
+}
+
+// --- Info card ---
+function showInfoCard(planet) {
+  selectedPlanet = planet;
+  const card = document.getElementById('info-card');
+  document.getElementById('info-name').textContent = planet.name;
+
+  let html = '';
+  const rows = [
+    ['Orbital Period', `${planet.period.toLocaleString()} days`],
+    ['Semi-major Axis', planet.dist || `${planet.a.toFixed(2)} AU`],
+    ['Eccentricity', planet.e.toFixed(4)],
+    ['Inclination', `${(planet.i || 0).toFixed(2)} deg`],
+  ];
+  if (planet.mass) rows.push(['Mass', planet.mass]);
+  if (planet.radius) rows.push(['Radius', planet.radius]);
+  if (planet.moons !== undefined) rows.push(['Known Moons', planet.moons]);
+  if (planet.composition) rows.push(['Composition', planet.composition]);
+  if (planet.discovered) rows.push(['Discovered', planet.discovered]);
+
+  html = rows.map(([l, v]) => `<div class="row"><span class="label">${l}</span><span class="value">${v}</span></div>`).join('');
+  document.getElementById('info-body').innerHTML = html;
+  card.style.display = 'block';
+}
+
+// --- Events ---
+canvas.addEventListener('click', e => {
+  const mx = e.clientX, my = e.clientY;
+  const allBodies = showDwarfs ? [...PLANETS, ...DWARF_PLANETS] : PLANETS;
+  for (const planet of allBodies) {
+    const phase = PLANETS.indexOf(planet) * 0.8 + (DWARF_PLANETS.indexOf(planet) + 8) * 1.2;
+    const pos = keplerPosition(planet.a, planet.e, planet.period, simTime, phase);
+    const sp = worldToScreen(pos.x, pos.y);
+    const dx = mx - sp.x, dy = my - sp.y;
+    if (dx * dx + dy * dy < (planet.r + 8) ** 2) {
+      showInfoCard(planet);
+      return;
+    }
+  }
+  // Click on sun
+  const sun = worldToScreen(0, 0);
+  if ((mx - sun.x) ** 2 + (my - sun.y) ** 2 < 400) {
+    showInfoCard({
+      name: 'Sun', a: 0, e: 0, i: 0, period: 0, color: '#ffcc00', r: 18,
+      mass: '1.989e30 kg', radius: '696,340 km', dist: '0 AU',
+      moons: 0, composition: 'Hydrogen (73%), Helium (25%)', discovered: 'Ancient',
+    });
+    return;
+  }
+  selectedPlanet = null;
+  document.getElementById('info-card').style.display = 'none';
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  viewScale *= e.deltaY > 0 ? 0.9 : 1.1;
+  viewScale = Math.max(0.1, Math.min(10, viewScale));
+}, { passive: false });
+
+let panning = false, panStartX, panStartY;
+canvas.addEventListener('mousedown', e => { if (e.button === 0) { panning = true; panStartX = e.clientX; panStartY = e.clientY; } });
+canvas.addEventListener('mousemove', e => { if (panning) { viewCenterX += e.clientX - panStartX; viewCenterY += e.clientY - panStartY; panStartX = e.clientX; panStartY = e.clientY; } });
+canvas.addEventListener('mouseup', () => { panning = false; });
+
+document.getElementById('info-close').addEventListener('click', () => {
+  selectedPlanet = null;
+  document.getElementById('info-card').style.display = 'none';
+});
+
+// Speed buttons
+const speedBtns = [
+  { id: 'btn-1d', speed: 1, label: '1 day/sec' },
+  { id: 'btn-1m', speed: 30, label: '1 month/sec' },
+  { id: 'btn-1y', speed: 365.25, label: '1 year/sec' },
+  { id: 'btn-10y', speed: 3652.5, label: '10 years/sec' },
+];
+speedBtns.forEach(({ id, speed, label }) => {
+  document.getElementById(id).addEventListener('click', () => {
+    timeSpeed = speed;
+    paused = false;
+    document.getElementById('btn-pause').textContent = 'Pause';
+    document.getElementById('btn-pause').classList.remove('active');
+    speedBtns.forEach(b => document.getElementById(b.id).classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.getElementById('speed-label').textContent = `Speed: ${label}`;
+  });
+});
+
+document.getElementById('btn-pause').addEventListener('click', () => {
+  paused = !paused;
+  document.getElementById('btn-pause').textContent = paused ? 'Play' : 'Pause';
+  document.getElementById('btn-pause').classList.toggle('active', paused);
+});
+
+// Toggle buttons
+function toggleBtn(id, getter, setter) {
+  document.getElementById(id).addEventListener('click', () => {
+    setter(!getter());
+    document.getElementById(id).classList.toggle('active', getter());
+  });
+}
+toggleBtn('btn-trails', () => showTrails, v => { showTrails = v; if (!v) trails = {}; });
+toggleBtn('btn-labels', () => showLabels, v => showLabels = v);
+toggleBtn('btn-asteroids', () => showAsteroids, v => showAsteroids = v);
+toggleBtn('btn-dwarfs', () => showDwarfs, v => showDwarfs = v);
+toggleBtn('btn-orbits', () => showOrbits, v => showOrbits = v);
+
+window.addEventListener('resize', resize);
+
+// --- Time display ---
+function updateTimeDisplay() {
+  const baseDate = new Date(2024, 0, 1);
+  const currentDate = new Date(baseDate.getTime() + simTime * 86400000);
+  document.getElementById('sim-date').textContent = currentDate.toISOString().split('T')[0];
+  const years = Math.floor(simTime / 365.25);
+  const days = Math.floor(simTime % 365.25);
+  document.getElementById('sim-elapsed').textContent = years > 0 ? `${years}y ${days}d` : `${Math.floor(simTime)}d`;
+}
+
+// --- Main loop ---
+let lastTime = 0;
+function loop(ts) {
+  const dt = Math.min((ts - lastTime) / 1000, 0.1);
+  lastTime = ts;
+
+  if (!paused) {
+    simTime += timeSpeed * dt;
+  }
+
+  updateTimeDisplay();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+resize();
+initStars();
+initAsteroids();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

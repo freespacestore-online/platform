@@ -1,6 +1,18 @@
 {
   "robots": [
     {
+      "id": "solar-system",
+      "name": "Solar System",
+      "description": "All 8 planets with real Keplerian orbits. Kepler equation solver. Asteroid belt, dwarf planets, Saturn rings. NASA data.",
+      "storeType": "behavior",
+      "category": "exploration",
+      "icon": "\ud83c\udf0d",
+      "iconBg": "#0ea5e9",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
       "id": "crater-detect",
       "name": "Crater Detector",
       "description": "Sobel edge detection + Hough transform finds craters on procedural lunar surfaces. Human vs AI comparison mode.",
