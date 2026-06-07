@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mission Design — Space Institute</title>
+  <meta name="description" content="Space mission design. Launch windows, porkchop plots, gravity assists, interplanetary trajectories, and delta-v budgets explained.">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--accent:#0ea5e9;--paper:#0a0a0a;--ink:#fafafa;--muted:#737373;--panel:#141414;--line:#262626}
+    body{font-family:'Manrope',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.7;-webkit-font-smoothing:antialiased}
+    .container{max-width:900px;margin:0 auto;padding:0 1.5rem}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+    header{border-bottom:1px solid var(--line);padding:.75rem 0}
+    header .container{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:.5rem;text-decoration:none;color:var(--ink)}
+    .brand-emoji{font-size:1.5rem}
+    .brand-text{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700}
+    .brand-tag{font-size:.68rem;color:var(--muted)}
+    nav{display:flex;gap:1rem;font-size:.82rem;font-weight:600;margin-left:auto}
+    nav a{color:var(--muted)}nav a:hover{color:var(--ink)}
+    .hero{text-align:center;padding:2.5rem 0 1.5rem;border-bottom:1px solid var(--line)}
+    .hero h1{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:700;margin-bottom:.5rem}
+    .hero h1 em{color:var(--accent);font-style:normal}
+    .hero p{color:var(--muted);max-width:600px;margin:0 auto;font-size:.95rem}
+    .toc{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem 1.25rem;margin:1.5rem 0}
+    .toc h3{font-size:.85rem;font-weight:700;margin-bottom:.5rem;color:var(--accent)}
+    .toc ul{list-style:none;padding:0;columns:2}
+    .toc li{margin:.2rem 0}.toc a{color:#a3a3a3;font-size:.82rem}.toc a:hover{color:var(--ink)}
+    .section{margin-bottom:2rem;padding-top:1rem}
+    .section h2{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;margin-bottom:.5rem;padding-bottom:.35rem;border-bottom:1px solid var(--line)}
+    .section h3{font-size:.95rem;font-weight:700;margin:1rem 0 .35rem;color:#e5e5e5}
+    .section p,.section li{color:#a3a3a3;font-size:.88rem}
+    ul{padding-left:1.25rem;margin:.35rem 0}
+    li{margin-bottom:.3rem}
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.6rem;margin:.5rem 0}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.85rem;transition:border-color .15s}
+    .card:hover{border-color:var(--accent)}
+    .card h4{font-size:.85rem;font-weight:700;margin-bottom:.2rem}
+    .card h4 a{color:var(--ink)}.card p{font-size:.75rem;color:var(--muted);margin:0;line-height:1.5}
+    .card .meta{font-size:.65rem;color:#525252;margin-top:.25rem}
+    code{background:#1a1a1a;padding:.15rem .35rem;border-radius:4px;font-size:.82rem;color:#e5e5e5}
+    table{width:100%;border-collapse:collapse;margin:.5rem 0;font-size:.82rem}
+    th,td{border:1px solid var(--line);padding:.4rem .6rem;text-align:left}
+    th{background:var(--panel);color:var(--ink);font-weight:600}
+    td{color:#a3a3a3}
+    footer{border-top:1px solid var(--line);padding:1.5rem 0;text-align:center;font-size:.75rem;color:#525252}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/institute/" class="brand">
+        <span class="brand-emoji">🚀</span>
+        <span><span class="brand-text">Space Institute</span><br><span class="brand-tag">Powered by <a href="https://zensical.org" style="color:#525252">Zensical</a></span></span>
+      </a>
+      <nav><a href="/institute/">Overview</a><a href="/institute/orbital-mechanics.html">Orbits</a><a href="/institute/propulsion.html">Propulsion</a><a href="/institute/spacecraft.html">Spacecraft</a><a href="/institute/mission-design.html">Missions</a><a href="/institute/history.html">History</a><a href="/">Simulations</a></nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="hero">
+      <h1>Mission <em>Design</em></h1>
+      <p>Getting from Earth to anywhere in the solar system. Launch windows, trajectory optimization, gravity assists, and the delta-v budget that determines whether a mission is possible.</p>
+    </section>
+
+    <nav class="toc">
+      <h3>Contents</h3>
+      <ul>
+        <li><a href="#launch-windows">Launch Windows</a></li>
+        <li><a href="#porkchop">Porkchop Plots</a></li>
+        <li><a href="#interplanetary">Interplanetary Trajectories</a></li>
+        <li><a href="#gravity-assists">Gravity Assists</a></li>
+        <li><a href="#delta-v">Delta-V Budgets</a></li>
+        <li><a href="#aerobraking">Aerobraking & Aerocapture</a></li>
+        <li><a href="#mission-types">Mission Types</a></li>
+        <li><a href="#resources">Resources</a></li>
+      </ul>
+    </nav>
+
+    <section class="section" id="launch-windows">
+      <h2>Launch Windows</h2>
+      <p>A launch window is the period during which a spacecraft can launch to reach its target with acceptable delta-v cost. For interplanetary missions, launch windows are driven by the relative positions of Earth and the target planet in their orbits. Miss the window and the next opportunity may be months or years away.</p>
+
+      <h3>Synodic Period</h3>
+      <p>The synodic period is the time between successive alignments of Earth and the target planet. It determines how often launch windows recur. Formula: 1/T_syn = |1/T_Earth - 1/T_target|. For Mars: T_syn = 2.135 years (~26 months). For Jupiter: T_syn = 398.9 days (~13 months). For Venus: T_syn = 583.9 days (~19 months). Mars windows are the least frequent among the inner planets, which is why Mars missions cluster in launch years.</p>
+
+      <h3>Daily Launch Windows</h3>
+      <p>Within the interplanetary window (typically 2-4 weeks), there is a daily launch window determined by the launch site's rotation into the correct orbital plane. The window is typically 30-120 minutes. If the rocket doesn't launch within the daily window, it waits for the next day (within the broader interplanetary window). Launch commit criteria (weather, range safety, vehicle health) must all be met within this window.</p>
+
+      <h3>Parking Orbit</h3>
+      <p>Most interplanetary missions launch into a low Earth parking orbit first, then perform a Trans-Mars/Venus/Jupiter Injection (TMI/TVI/TJI) burn at the right point in the orbit. The parking orbit allows decoupling the launch time from the injection geometry. The injection burn occurs over a short arc near perigee (where the Oberth effect maximizes delta-v efficiency).</p>
+    </section>
+
+    <section class="section" id="porkchop">
+      <h2>Porkchop Plots</h2>
+      <p>A porkchop plot visualizes the delta-v cost of a transfer as a function of departure date (x-axis) and arrival date (y-axis). Contour lines show constant C3 (departure energy) or total delta-v. The plot gets its name from its shape — a region of low-energy transfers surrounded by higher-cost regions, resembling a pork chop.</p>
+
+      <h3>How to Read a Porkchop Plot</h3>
+      <ul>
+        <li>The center of the low-energy region represents the optimal departure and arrival dates (minimum delta-v).</li>
+        <li>Moving along the x-axis shows how delta-v changes with departure date for a given flight time.</li>
+        <li>Contours of constant flight time are diagonal lines (departure date + flight time = arrival date).</li>
+        <li>There are often two lobes: Type I trajectories (less than 180 degrees of heliocentric arc) and Type II trajectories (more than 180 degrees). Type I is usually shorter; Type II can sometimes have lower C3.</li>
+        <li>Mission designers pick a point that balances delta-v, flight time, arrival velocity (for orbit insertion), and other constraints (launch vehicle capability, communication geometry, power at arrival).</li>
+      </ul>
+
+      <h3>C3 (Characteristic Energy)</h3>
+      <p>C3 = v_infinity^2, where v_infinity is the spacecraft's hyperbolic excess velocity relative to Earth. C3 characterizes the energy needed to depart Earth. C3 = 0 means escape velocity (parabolic). C3 &gt; 0 means the spacecraft has excess velocity after escaping Earth. Launch vehicles are rated by the mass they can deliver to a given C3 value. Example: Falcon Heavy can deliver ~16,800 kg to C3 = 0 (Earth escape) but only ~3,500 kg to C3 = 40 km^2/s^2 (Mars direct trajectory).</p>
+    </section>
+
+    <section class="section" id="interplanetary">
+      <h2>Interplanetary Trajectories</h2>
+
+      <h3>Patched Conics</h3>
+      <p>Interplanetary trajectory design uses the "patched conics" approximation: divide the trajectory into segments, each dominated by a single body's gravity. Near Earth: Earth-centered hyperbola. In transit: Sun-centered ellipse (heliocentric transfer). Near the target: target-centered hyperbola. The segments are "patched" at the sphere of influence (SOI) boundaries. Earth's SOI radius: ~925,000 km (defined as the distance where Earth's gravity dominates over the Sun's).</p>
+
+      <h3>Lambert's Problem</h3>
+      <p>Given two position vectors (departure and arrival) and the flight time, Lambert's problem finds the orbit connecting them. This is the mathematical foundation of porkchop plots. Solving Lambert's problem for many departure-arrival date combinations generates the entire porkchop plot. Fast, robust Lambert solvers (Izzo, Gooding, Battin) are essential tools in mission design software.</p>
+
+      <h3>Typical Transfer Times</h3>
+      <table>
+        <tr><th>Destination</th><th>Min. Transfer</th><th>Delta-V (from LEO)</th><th>Notes</th></tr>
+        <tr><td>Moon</td><td>3-4 days</td><td>~3.9 km/s</td><td>Direct transfer + LOI</td></tr>
+        <tr><td>Mars</td><td>6-9 months</td><td>~3.6-5.7 km/s</td><td>Hohmann-like transfer</td></tr>
+        <tr><td>Venus</td><td>4-5 months</td><td>~3.5 km/s</td><td>Closer than Mars, but hotter</td></tr>
+        <tr><td>Jupiter</td><td>2-3 years</td><td>~6.3 km/s (direct)</td><td>Often uses gravity assists</td></tr>
+        <tr><td>Saturn</td><td>3-6 years</td><td>~7.3 km/s (direct)</td><td>Cassini used Venus-Venus-Earth-Jupiter</td></tr>
+        <tr><td>Pluto</td><td>9-10 years</td><td>~12+ km/s</td><td>New Horizons: Jupiter assist</td></tr>
+      </table>
+    </section>
+
+    <section class="section" id="gravity-assists">
+      <h2>Gravity Assists</h2>
+      <p>A gravity assist (slingshot) uses a planet's gravity and orbital velocity to change a spacecraft's speed and direction without using propellant. The spacecraft enters the planet's SOI on a hyperbolic trajectory, swings around the planet, and exits with a different velocity vector relative to the Sun.</p>
+
+      <h3>How It Works</h3>
+      <ul>
+        <li>In the planet's reference frame, the spacecraft enters and exits at the same speed (energy is conserved in a two-body encounter). The direction changes (the trajectory bends).</li>
+        <li>In the Sun's reference frame, the planet is moving. The spacecraft "borrows" kinetic energy from the planet's orbital motion. The planet slows down imperceptibly (conservation of momentum — the planet is ~10^20 times more massive).</li>
+        <li>A prograde assist (passing behind the planet in its orbit) increases the spacecraft's heliocentric speed. A retrograde assist (passing in front) decreases it. The closer the flyby (lower periapsis), the greater the velocity change.</li>
+        <li>Maximum delta-v from a gravity assist: ~2 * v_planet * sin(delta/2), where delta is the turn angle. The turn angle depends on the closest approach distance and v_infinity.</li>
+      </ul>
+
+      <h3>Famous Gravity Assists</h3>
+      <ul>
+        <li><strong>Voyager 2 (1977-1989)</strong> — Jupiter-Saturn-Uranus-Neptune "Grand Tour." The once-in-175-years planetary alignment allowed visiting all four outer planets. Voyager 2 gained ~10 km/s from Jupiter's gravity assist. The most ambitious gravity assist chain ever executed.</li>
+        <li><strong>Cassini (1997-2004)</strong> — Venus-Venus-Earth-Jupiter-Saturn. Launched with 2 km/s v_infinity, arrived at Saturn with enough energy to enter orbit. The VVEJGA trajectory reduced launch delta-v from ~15 km/s (impossible) to ~4 km/s (achievable with Titan IVB).</li>
+        <li><strong>Parker Solar Probe (2018-present)</strong> — seven Venus gravity assists over 7 years to progressively lower perihelion from 0.16 AU to 0.046 AU (6.16 million km from the Sun's surface). Each Venus flyby removes orbital energy, dropping the probe closer to the Sun. Final perihelion velocity: ~200 km/s (fastest human-made object).</li>
+        <li><strong>JUICE (2023)</strong> — ESA mission to Jupiter's icy moons. Trajectory: Earth-Venus-Earth-Earth (EVEE) gravity assists before reaching Jupiter in 2031. Complex 8-year transfer to save propellant mass.</li>
+        <li><strong>BepiColombo (2018)</strong> — Mercury orbiter using Earth-Venus-Venus-Mercury-Mercury-Mercury-Mercury-Mercury-Mercury gravity assists (1+2+6 flybys over 7 years). Mercury's small mass and proximity to the Sun make orbit insertion extremely expensive without extensive gravity braking.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="delta-v">
+      <h2>Delta-V Budgets</h2>
+      <p>The delta-v budget is the total velocity change a mission requires. It determines how much propellant is needed (via the rocket equation) and whether a given launch vehicle + spacecraft can accomplish the mission. Every maneuver has a delta-v cost. The budget must include margin for trajectory corrections, orbit maintenance, and disposal.</p>
+
+      <h3>From Earth's Surface to Various Destinations</h3>
+      <table>
+        <tr><th>Destination</th><th>Delta-V (km/s)</th><th>Notes</th></tr>
+        <tr><td>LEO (200 km)</td><td>~9.4</td><td>Includes gravity and drag losses (~1.5 km/s)</td></tr>
+        <tr><td>GEO</td><td>~13.5</td><td>LEO + GTO + plane change + circularization</td></tr>
+        <tr><td>Earth escape</td><td>~11.2</td><td>From surface; ~3.2 km/s from LEO</td></tr>
+        <tr><td>Lunar orbit</td><td>~12.9</td><td>LEO + TLI + LOI</td></tr>
+        <tr><td>Lunar surface</td><td>~14.6</td><td>Add ~1.7 km/s descent from lunar orbit</td></tr>
+        <tr><td>Mars orbit</td><td>~13.4</td><td>LEO + TMI + MOI (Hohmann, varies by window)</td></tr>
+        <tr><td>Mars surface</td><td>~14.4</td><td>Aerobraking saves ~1-2 km/s vs propulsive</td></tr>
+      </table>
+
+      <h3>Key Maneuvers</h3>
+      <ul>
+        <li><strong>Trans-Lunar Injection (TLI)</strong> — ~3.1 km/s from LEO. Places the spacecraft on a trajectory to the Moon.</li>
+        <li><strong>Lunar Orbit Insertion (LOI)</strong> — ~0.8 km/s. Brakes into a 100 km circular lunar orbit.</li>
+        <li><strong>Trans-Mars Injection (TMI)</strong> — ~3.6 km/s from LEO (varies by launch window).</li>
+        <li><strong>Mars Orbit Insertion (MOI)</strong> — ~1.0-2.0 km/s depending on orbit altitude and eccentricity. Aerobraking can replace most of this.</li>
+        <li><strong>Station-keeping</strong> — GEO: ~50 m/s per year (N-S + E-W). ISS: ~1-2 m/s per year for drag compensation. L2 (JWST): ~2-4 m/s per year.</li>
+        <li><strong>Deorbit</strong> — LEO: ~100-200 m/s. GEO graveyard orbit raise: ~11 m/s. Increasingly required by space sustainability guidelines (25-year deorbit rule, FCC 5-year rule).</li>
+      </ul>
+
+      <h3>The Oberth Effect</h3>
+      <p>A propulsive maneuver is more effective when performed at high velocity (deep in a gravity well). The kinetic energy gained from a delta-v is proportional to the velocity at the time of the burn (dE = v * dv). This is why injection burns are performed at perigee (lowest point, highest velocity). The Oberth effect is also why gravity assists at close planetary flybys are more effective, and why powered flybys (burn at periapsis of the flyby hyperbola) can dramatically amplify the assist.</p>
+    </section>
+
+    <section class="section" id="aerobraking">
+      <h2>Aerobraking & Aerocapture</h2>
+
+      <h3>Aerobraking</h3>
+      <ul>
+        <li>Uses atmospheric drag to gradually reduce orbital energy over many passes. The spacecraft dips into the upper atmosphere at periapsis, losing velocity to drag, then rises back into space. Over weeks to months, the orbit circularizes at a lower altitude.</li>
+        <li>Saves enormous propellant mass. Mars Reconnaissance Orbiter used aerobraking to reduce its orbit from 426 x 44,500 km to 255 x 320 km over 6 months, saving ~600 kg of propellant (equivalent to ~40% of spacecraft mass).</li>
+        <li>Successfully used at Mars by: Mars Global Surveyor (1997), Mars Odyssey (2001), MRO (2006), TGO (2017). Each pass lowers apoapsis by 5-30 km. Requires careful atmospheric density monitoring and drag-area management.</li>
+        <li>Risks: atmospheric density varies (dust storms at Mars can increase density 10x). If drag is too high, the spacecraft goes too deep and overheats or decays. If too low, aerobraking takes much longer than planned.</li>
+      </ul>
+
+      <h3>Aerocapture</h3>
+      <ul>
+        <li>A single atmospheric pass at the target planet, using drag to decelerate from a hyperbolic arrival trajectory into a bound orbit. Much more aggressive than aerobraking — the entire orbit insertion is accomplished in one pass (minutes, not months).</li>
+        <li>Has never been performed in practice. The technological challenges are significant: precise guidance during the atmospheric pass, heat shield design for the high-speed entry, and real-time navigation in a poorly characterized atmosphere.</li>
+        <li>Would save ~1-2 km/s of delta-v compared to propulsive orbit insertion at Mars or Titan. Enables much larger payloads or smaller launch vehicles. NASA has studied aerocapture for Mars, Venus, Titan, and Neptune missions.</li>
+        <li>Key technologies: deployable heat shields (HIAD — Hypersonic Inflatable Aerodynamic Decelerator), autonomous guidance and navigation, thermal protection systems for the specific atmospheric composition.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="mission-types">
+      <h2>Mission Types</h2>
+
+      <h3>Flyby</h3>
+      <p>The simplest and cheapest interplanetary mission. The spacecraft passes the target without entering orbit. Limited observation time (hours to days near closest approach) but requires no orbit insertion propellant. Pioneering missions: Mariner (Venus, Mars, Mercury), Pioneer (Jupiter, Saturn), Voyager (Jupiter, Saturn, Uranus, Neptune), New Horizons (Pluto, Arrokoth).</p>
+
+      <h3>Orbiter</h3>
+      <p>The spacecraft enters orbit around the target for long-term study. Requires orbit insertion burn (propellant-expensive) or aerobraking. Enables comprehensive mapping, repeated observations, and long-term monitoring. Examples: Cassini (Saturn, 13 years), Juno (Jupiter), MRO (Mars), MESSENGER (Mercury), Lunar Reconnaissance Orbiter.</p>
+
+      <h3>Lander / Rover</h3>
+      <p>Requires surviving entry, descent, and landing (EDL) — the "7 minutes of terror" at Mars. Technologies: heat shield, parachutes, retrorockets, airbags (Spirit/Opportunity), sky crane (Curiosity/Perseverance). The most challenging missions. Success rate at Mars: ~50% historically (improving with experience). Moon, Venus (Venera), Titan (Huygens), asteroids (NEAR, Hayabusa, OSIRIS-REx), comets (Philae/Rosetta).</p>
+
+      <h3>Sample Return</h3>
+      <p>The holy grail: bring material from another body back to Earth for laboratory analysis. Requires both landing AND return propulsion. Examples: Apollo (Moon, 382 kg), Luna (Moon, robotic), Stardust (comet dust), Hayabusa 1&2 (asteroids Itokawa and Ryugu), OSIRIS-REx (asteroid Bennu, 121 g returned 2023). Mars Sample Return is the next frontier (Perseverance has cached ~30 sample tubes; retrieval mission architecture under review).</p>
+
+      <h3>Impactor</h3>
+      <p>Deliberately collide with the target to study the impact physics, excavate subsurface material, or alter the target's trajectory. Deep Impact (hit comet Tempel 1, 2005), LCROSS (hit lunar south pole, detected water, 2009), DART (deflected asteroid Dimorphos, 2022 — first planetary defense test, changed the orbital period by 33 minutes).</p>
+    </section>
+
+    <section class="section" id="resources">
+      <h2>Resources</h2>
+      <div class="cards">
+        <div class="card">
+          <h4><a href="https://www.gmat.wiki">GMAT (General Mission Analysis Tool)</a></h4>
+          <p>NASA's open-source mission design software. Orbit propagation, trajectory optimization, maneuver planning, event location. Used for real mission design. Free.</p>
+          <div class="meta">NASA | Free | Open-source</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://github.com/poliastro/poliastro">poliastro</a></h4>
+          <p>Python library for astrodynamics. Lambert problem solver, orbit plotting, porkchop plot generation. Built on Astropy. Great for learning and prototyping.</p>
+          <div class="meta">GitHub | Python | MIT</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://trajbrowser.arc.nasa.gov">NASA Trajectory Browser</a></h4>
+          <p>Search interplanetary trajectories to asteroids, comets, and planets. Porkchop plots, gravity assist options, delta-v requirements. Incredible free tool from NASA Ames.</p>
+          <div class="meta">NASA Ames | Free</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://eyes.nasa.gov">NASA Eyes on the Solar System</a></h4>
+          <p>3D visualization of real spacecraft trajectories and planetary positions. Fly along with any NASA mission past, present, or future. Stunning educational tool.</p>
+          <div class="meta">NASA JPL | Free</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.braeunig.us/space/interpl.htm">Braeunig: Interplanetary Flight</a></h4>
+          <p>Free online reference for interplanetary trajectory design. Patched conics, Lambert's problem, gravity assists, departure/arrival hyperbolas. Worked examples.</p>
+          <div class="meta">Free | Reference</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.amazon.com/Interplanetary-Astrodynamics-David-B-Spencer/dp/0367759810">Spencer & Akella: Interplanetary Astrodynamics</a></h4>
+          <p>Modern textbook on interplanetary mission design. Lambert problem, patched conics, gravity assists, low-thrust, three-body dynamics. MATLAB examples.</p>
+          <div class="meta">Textbook | 2024</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <div class="container">
+      <a href="/">FreeSpaceStore</a> · <a href="/institute/">Institute</a> · Built with <a href="https://zensical.org">Zensical</a>
+    </div>
+  </footer>
+</body>
+</html>

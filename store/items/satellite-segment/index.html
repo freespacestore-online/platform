@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Satellite Image Segmenter | FreeSpaceStore</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0a0f1a;
+    color: #d0dbe8;
+    min-height: 100vh;
+  }
+  header {
+    background: linear-gradient(135deg, #0c1525 0%, #0f2847 100%);
+    border-bottom: 1px solid #0ea5e933;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header .logo {
+    width: 36px; height: 36px;
+    background: #0ea5e9;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: #fff;
+  }
+  header h1 { font-size: 18px; font-weight: 600; color: #7dd3fc; }
+  header .subtitle { font-size: 12px; color: #4a6a8a; margin-left: auto; }
+  .toolbar {
+    background: #0c1525;
+    border-bottom: 1px solid #ffffff0d;
+    padding: 12px 24px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .btn {
+    background: #0ea5e9;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn:hover { background: #0284c7; }
+  .btn.secondary {
+    background: #1a2535;
+    border: 1px solid #2a3a4f;
+    color: #7dd3fc;
+  }
+  .btn.secondary:hover { background: #243347; }
+  .btn.active { background: #0284c7; box-shadow: 0 0 0 2px #0ea5e966; }
+  .sep { width: 1px; height: 24px; background: #2a3a4f; margin: 0 4px; }
+  .container {
+    display: flex;
+    gap: 20px;
+    padding: 20px 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .canvas-panel {
+    flex: 1;
+    min-width: 0;
+  }
+  .canvas-wrap {
+    background: #0c1525;
+    border: 1px solid #2a3a4f;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+  }
+  .canvas-wrap canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .canvas-label {
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    background: #0008;
+    color: #7dd3fc;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 6px;
+  }
+  .side-panel {
+    width: 280px;
+    flex-shrink: 0;
+  }
+  .card {
+    background: #0c1525;
+    border: 1px solid #2a3a4f;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .card h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #7dd3fc;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 13px;
+  }
+  .legend-swatch {
+    width: 16px; height: 16px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 13px;
+    border-bottom: 1px solid #ffffff08;
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-row .val { color: #7dd3fc; font-weight: 600; }
+  .bar-wrap {
+    width: 100%;
+    height: 8px;
+    background: #1a2535;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s;
+  }
+  .ndvi-scale {
+    display: flex;
+    height: 16px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 8px 0;
+  }
+  .upload-area {
+    border: 2px dashed #2a3a4f;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    font-size: 13px;
+    color: #4a6a8a;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .upload-area:hover { border-color: #0ea5e9; }
+  .upload-area input { display: none; }
+  @media (max-width: 800px) {
+    .container { flex-direction: column; }
+    .side-panel { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">S</div>
+  <h1>Satellite Image Segmenter</h1>
+  <span class="subtitle">FreeSpaceStore</span>
+</header>
+
+<div class="toolbar">
+  <button class="btn" onclick="generateScene()">Generate Scene</button>
+  <div class="sep"></div>
+  <button class="btn secondary" onclick="segmentClass('water')">Segment Water</button>
+  <button class="btn secondary" onclick="segmentClass('vegetation')">Segment Vegetation</button>
+  <button class="btn secondary" onclick="segmentClass('buildings')">Segment Buildings</button>
+  <button class="btn secondary" onclick="segmentClass('terrain')">Segment Terrain</button>
+  <div class="sep"></div>
+  <button class="btn" onclick="segmentAll()">Segment All</button>
+  <button class="btn secondary" onclick="showNDVI()">NDVI Map</button>
+  <button class="btn secondary" onclick="resetView()">Reset</button>
+</div>
+
+<div class="container">
+  <div class="canvas-panel">
+    <div class="canvas-wrap">
+      <canvas id="mainCanvas" width="800" height="600"></canvas>
+      <div class="canvas-label" id="canvasLabel">Original</div>
+    </div>
+    <div style="margin-top:12px">
+      <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+        Drop or click to upload your own satellite image
+        <input type="file" id="fileInput" accept="image/*" onchange="loadUserImage(event)">
+      </div>
+    </div>
+  </div>
+
+  <div class="side-panel">
+    <div class="card">
+      <h3>Legend</h3>
+      <div class="legend-item"><div class="legend-swatch" style="background:#2563eb"></div>Water</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#16a34a"></div>Vegetation</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#9ca3af"></div>Buildings / Roads</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#a3745a"></div>Terrain / Soil</div>
+    </div>
+
+    <div class="card">
+      <h3>Coverage</h3>
+      <div id="statsContainer">
+        <div class="stat-row"><span>Generate a scene to see stats</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>NDVI Index</h3>
+      <div class="ndvi-scale">
+        <div style="flex:1;background:#8b0000"></div>
+        <div style="flex:1;background:#d4541a"></div>
+        <div style="flex:1;background:#e8c83a"></div>
+        <div style="flex:1;background:#6fbf4a"></div>
+        <div style="flex:1;background:#1a7a1a"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#4a6a8a">
+        <span>Bare (-1)</span><span>Sparse</span><span>Dense (+1)</span>
+      </div>
+      <div id="ndviStats" style="margin-top:8px;font-size:12px;color:#4a6a8a">
+        Run NDVI Map to see vegetation health
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+let originalImageData = null;
+let sceneGenerated = false;
+
+function rand(a, b) { return Math.random() * (b - a) + a; }
+function randInt(a, b) { return Math.floor(rand(a, b)); }
+
+function hslToRgb(h, s, l) {
+  h /= 360; s /= 100; l /= 100;
+  let r, g, b;
+  if (s === 0) { r = g = b = l; }
+  else {
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1; if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1/3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1/3);
+  }
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+function rgbToHsv(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const d = max - min;
+  let h = 0, s = max === 0 ? 0 : d / max, v = max;
+  if (d !== 0) {
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+    else if (max === g) h = ((b - r) / d + 2) / 6;
+    else h = ((r - g) / d + 4) / 6;
+  }
+  return [h * 360, s * 100, v * 100];
+}
+
+function noise2d(x, y) {
+  const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+  return n - Math.floor(n);
+}
+
+function smoothNoise(x, y, scale) {
+  const sx = x / scale, sy = y / scale;
+  const ix = Math.floor(sx), iy = Math.floor(sy);
+  const fx = sx - ix, fy = sy - iy;
+  const a = noise2d(ix, iy), b = noise2d(ix + 1, iy);
+  const c = noise2d(ix, iy + 1), d = noise2d(ix + 1, iy + 1);
+  const top = a + (b - a) * fx;
+  const bot = c + (d - c) * fx;
+  return top + (bot - top) * fy;
+}
+
+function fbm(x, y, octaves, scale) {
+  let val = 0, amp = 1, freq = 1, total = 0;
+  for (let i = 0; i < octaves; i++) {
+    val += smoothNoise(x * freq, y * freq, scale) * amp;
+    total += amp;
+    amp *= 0.5;
+    freq *= 2;
+  }
+  return val / total;
+}
+
+function generateScene() {
+  const imgData = ctx.createImageData(W, H);
+  const d = imgData.data;
+
+  const waterLevel = rand(0.3, 0.45);
+  const vegLevel = rand(0.55, 0.7);
+  const buildLevel = rand(0.78, 0.88);
+  const offsetX = rand(0, 1000), offsetY = rand(0, 1000);
+  const scale = rand(60, 120);
+
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      const n = fbm(x + offsetX, y + offsetY, 5, scale);
+      const detail = smoothNoise(x + offsetX * 2, y + offsetY * 2, 8) * 0.1;
+      const val = n + detail;
+
+      let r, g, b;
+
+      if (val < waterLevel) {
+        const depth = (waterLevel - val) / waterLevel;
+        r = 15 + Math.floor(30 * (1 - depth));
+        g = 60 + Math.floor(60 * (1 - depth));
+        b = 160 + Math.floor(70 * (1 - depth));
+        r += randInt(-5, 5); g += randInt(-5, 5); b += randInt(-5, 5);
+      } else if (val < vegLevel) {
+        const t = (val - waterLevel) / (vegLevel - waterLevel);
+        const lush = smoothNoise(x * 3 + offsetX, y * 3 + offsetY, 20);
+        r = 20 + Math.floor(50 * lush);
+        g = 90 + Math.floor(100 * t * lush);
+        b = 20 + Math.floor(30 * (1 - t));
+        r += randInt(-8, 8); g += randInt(-8, 8); b += randInt(-4, 4);
+      } else if (val < buildLevel) {
+        const isRoad = smoothNoise(x + offsetX * 3, y + offsetY * 3, 15) > 0.6;
+        if (isRoad) {
+          const gray = 50 + randInt(-10, 10);
+          r = gray; g = gray; b = gray;
+        } else {
+          const t = (val - vegLevel) / (buildLevel - vegLevel);
+          const base = 100 + Math.floor(60 * t);
+          r = base + randInt(-15, 15);
+          g = base + randInt(-15, 10);
+          b = base + randInt(-10, 15);
+        }
+      } else {
+        const t = (val - buildLevel) / (1 - buildLevel);
+        r = 140 + Math.floor(50 * t) + randInt(-10, 10);
+        g = 100 + Math.floor(30 * t) + randInt(-8, 8);
+        b = 70 + Math.floor(20 * t) + randInt(-6, 6);
+      }
+
+      d[i] = Math.max(0, Math.min(255, r));
+      d[i + 1] = Math.max(0, Math.min(255, g));
+      d[i + 2] = Math.max(0, Math.min(255, b));
+      d[i + 3] = 255;
+    }
+  }
+
+  const numBuildings = randInt(5, 15);
+  for (let i = 0; i < numBuildings; i++) {
+    const bx = randInt(50, W - 100), by = randInt(50, H - 100);
+    const bw = randInt(10, 40), bh = randInt(10, 40);
+    const gray = randInt(110, 170);
+    for (let yy = by; yy < by + bh && yy < H; yy++) {
+      for (let xx = bx; xx < bx + bw && xx < W; xx++) {
+        const idx = (yy * W + xx) * 4;
+        d[idx] = gray + randInt(-10, 10);
+        d[idx + 1] = gray + randInt(-10, 10);
+        d[idx + 2] = gray + randInt(-5, 10);
+      }
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  originalImageData = ctx.getImageData(0, 0, W, H);
+  sceneGenerated = true;
+  document.getElementById('canvasLabel').textContent = 'Original';
+  updateStats();
+}
+
+function classifyPixel(r, g, b) {
+  const [h, s, v] = rgbToHsv(r, g, b);
+
+  if (s > 20 && h >= 180 && h <= 260 && b > r && b > g) return 'water';
+  if (s > 15 && h >= 70 && h <= 170 && g > r && g > b * 0.8) return 'vegetation';
+  if (s < 20 && v > 30 && v < 75) return 'buildings';
+  if (s < 15 && v >= 15 && v <= 35) return 'buildings';
+  if (h >= 10 && h <= 45 && s > 15 && r > b) return 'terrain';
+  if (s < 25 && v > 35) return 'buildings';
+  return 'terrain';
+}
+
+function getClassCounts() {
+  if (!originalImageData) return null;
+  const d = originalImageData.data;
+  const counts = { water: 0, vegetation: 0, buildings: 0, terrain: 0 };
+  const total = W * H;
+  for (let i = 0; i < d.length; i += 4) {
+    counts[classifyPixel(d[i], d[i+1], d[i+2])]++;
+  }
+  return { counts, total };
+}
+
+function updateStats() {
+  const result = getClassCounts();
+  if (!result) return;
+  const { counts, total } = result;
+
+  const colors = { water: '#2563eb', vegetation: '#16a34a', buildings: '#9ca3af', terrain: '#a3745a' };
+  const labels = { water: 'Water', vegetation: 'Vegetation', buildings: 'Buildings', terrain: 'Terrain' };
+
+  let html = '';
+  for (const cls of ['water', 'vegetation', 'buildings', 'terrain']) {
+    const pct = (counts[cls] / total * 100).toFixed(1);
+    const px = counts[cls].toLocaleString();
+    html += `<div class="stat-row"><span>${labels[cls]}</span><span class="val">${pct}% (${px}px)</span></div>`;
+    html += `<div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${colors[cls]}"></div></div>`;
+  }
+  document.getElementById('statsContainer').innerHTML = html;
+}
+
+function segmentClass(cls) {
+  if (!originalImageData) { generateScene(); }
+  const src = originalImageData.data;
+  const imgData = ctx.createImageData(W, H);
+  const d = imgData.data;
+
+  const overlayColors = {
+    water: [37, 99, 235],
+    vegetation: [22, 163, 74],
+    buildings: [156, 163, 175],
+    terrain: [163, 116, 90]
+  };
+  const oc = overlayColors[cls];
+
+  for (let i = 0; i < src.length; i += 4) {
+    const c = classifyPixel(src[i], src[i+1], src[i+2]);
+    if (c === cls) {
+      d[i] = oc[0]; d[i+1] = oc[1]; d[i+2] = oc[2]; d[i+3] = 220;
+    } else {
+      d[i] = Math.floor(src[i] * 0.2);
+      d[i+1] = Math.floor(src[i+1] * 0.2);
+      d[i+2] = Math.floor(src[i+2] * 0.2);
+      d[i+3] = 255;
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  const labels = { water: 'Water', vegetation: 'Vegetation', buildings: 'Buildings/Roads', terrain: 'Terrain/Soil' };
+  document.getElementById('canvasLabel').textContent = `Segmented: ${labels[cls]}`;
+}
+
+function segmentAll() {
+  if (!originalImageData) { generateScene(); }
+  const src = originalImageData.data;
+  const imgData = ctx.createImageData(W, H);
+  const d = imgData.data;
+
+  const colors = {
+    water: [37, 99, 235],
+    vegetation: [22, 163, 74],
+    buildings: [156, 163, 175],
+    terrain: [163, 116, 90]
+  };
+
+  for (let i = 0; i < src.length; i += 4) {
+    const c = classifyPixel(src[i], src[i+1], src[i+2]);
+    const col = colors[c];
+    d[i] = col[0]; d[i+1] = col[1]; d[i+2] = col[2]; d[i+3] = 210;
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  document.getElementById('canvasLabel').textContent = 'Full Segmentation';
+}
+
+function showNDVI() {
+  if (!originalImageData) { generateScene(); }
+  const src = originalImageData.data;
+  const imgData = ctx.createImageData(W, H);
+  const d = imgData.data;
+
+  let ndviSum = 0, ndviCount = 0;
+  let ndviMin = 1, ndviMax = -1;
+  const ndviValues = [];
+
+  for (let i = 0; i < src.length; i += 4) {
+    const r = src[i], g = src[i+1], b = src[i+2];
+    const nir = g * 0.8 + r * 0.2;
+    const red = r;
+    let ndvi = (nir + red) === 0 ? 0 : (nir - red) / (nir + red);
+    ndvi = Math.max(-1, Math.min(1, ndvi));
+    ndviValues.push(ndvi);
+    ndviSum += ndvi;
+    ndviCount++;
+    if (ndvi < ndviMin) ndviMin = ndvi;
+    if (ndvi > ndviMax) ndviMax = ndvi;
+
+    let cr, cg, cb;
+    if (ndvi < -0.2) {
+      cr = 139; cg = 0; cb = 0;
+    } else if (ndvi < 0) {
+      cr = 212; cg = 84; cb = 26;
+    } else if (ndvi < 0.15) {
+      cr = 232; cg = 200; cb = 58;
+    } else if (ndvi < 0.4) {
+      const t = (ndvi - 0.15) / 0.25;
+      cr = Math.floor(232 - 121 * t);
+      cg = Math.floor(200 - 9 * t);
+      cb = Math.floor(58 - 58 * t + 16 * t);
+    } else {
+      const t = Math.min(1, (ndvi - 0.4) / 0.4);
+      cr = Math.floor(111 - 85 * t);
+      cg = Math.floor(191 - 69 * t);
+      cb = Math.floor(74 - 48 * t);
+    }
+
+    d[i] = cr; d[i+1] = cg; d[i+2] = cb; d[i+3] = 255;
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  document.getElementById('canvasLabel').textContent = 'NDVI False-Color';
+
+  const avgNDVI = (ndviSum / ndviCount).toFixed(3);
+  let health = 'Bare/Water';
+  if (avgNDVI > 0.1) health = 'Sparse vegetation';
+  if (avgNDVI > 0.25) health = 'Moderate vegetation';
+  if (avgNDVI > 0.4) health = 'Dense vegetation';
+
+  document.getElementById('ndviStats').innerHTML =
+    `Mean NDVI: <strong style="color:#7dd3fc">${avgNDVI}</strong><br>` +
+    `Range: ${ndviMin.toFixed(3)} to ${ndviMax.toFixed(3)}<br>` +
+    `Assessment: <strong style="color:#7dd3fc">${health}</strong>`;
+}
+
+function resetView() {
+  if (!originalImageData) return;
+  ctx.putImageData(originalImageData, 0, 0);
+  document.getElementById('canvasLabel').textContent = 'Original';
+}
+
+function loadUserImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const img = new Image();
+  img.onload = function() {
+    canvas.width = Math.min(img.width, 1200);
+    canvas.height = Math.min(img.height, Math.floor(canvas.width * img.height / img.width));
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    sceneGenerated = true;
+    document.getElementById('canvasLabel').textContent = 'Uploaded Image';
+    updateStats();
+  };
+  img.src = URL.createObjectURL(file);
+}
+
+generateScene();
+</script>
+
+</body>
+</html>
