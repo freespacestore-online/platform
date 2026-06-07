@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Space Mission Planning Pipeline</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#060a10;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;padding:20px;min-height:100vh}
+h1{text-align:center;color:#0ea5e9;font-size:1.8rem;margin-bottom:8px}
+.subtitle{text-align:center;color:#94a3b8;margin-bottom:24px;font-size:0.9rem}
+.pipeline-flow{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:32px;flex-wrap:wrap}
+.pipeline-stage{background:#0c1520;border:2px solid #162030;border-radius:12px;padding:12px 20px;text-align:center;min-width:160px;transition:all .3s}
+.pipeline-stage.active{border-color:#0ea5e9;box-shadow:0 0 20px #0ea5e933}
+.pipeline-stage.done{border-color:#38bdf8;box-shadow:0 0 12px #38bdf833}
+.pipeline-stage .label{font-size:0.75rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
+.pipeline-stage .name{font-size:1rem;color:#e2e8f0;font-weight:600;margin-top:4px}
+.arrow{color:#0ea5e9;font-size:1.5rem;font-weight:bold}
+.steps{display:flex;flex-direction:column;gap:24px;max-width:920px;margin:0 auto}
+.step{background:#080e16;border:1px solid #162030;border-radius:16px;padding:24px;transition:all .3s}
+.step.active{border-color:#0ea5e9}
+.step.done{border-color:#38bdf844}
+.step-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.step-num{width:32px;height:32px;border-radius:50%;background:#0c1520;color:#0ea5e9;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.9rem;border:2px solid #0ea5e944}
+.step.done .step-num{background:#38bdf822;color:#38bdf8;border-color:#38bdf8}
+.step-title{font-size:1.1rem;font-weight:600}
+.step-desc{color:#94a3b8;font-size:0.85rem;margin-bottom:16px}
+button{background:#0ea5e9;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:500;transition:all .2s}
+button:hover{background:#0284c7}
+button:disabled{opacity:0.4;cursor:default}
+button.secondary{background:#0c1520;border:1px solid #162030;color:#94a3b8}
+button.secondary:hover{border-color:#0ea5e9;color:#7dd3fc}
+button.run-all{background:linear-gradient(135deg,#0ea5e9,#38bdf8);padding:14px 32px;font-size:1rem;font-weight:600;display:block;margin:24px auto 0;color:#042f42}
+.controls{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;align-items:center}
+.output-box{background:#050910;border:1px solid #162030;border-radius:8px;padding:12px 16px;margin-top:12px;font-family:'Courier New',monospace;font-size:0.82rem;line-height:1.6;max-height:260px;overflow-y:auto;white-space:pre-wrap}
+.feed-arrow{text-align:center;color:#0ea5e9;font-size:1.2rem;margin:4px 0;opacity:0;transition:opacity .3s}
+.feed-arrow.visible{opacity:1}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.form-grid label{font-size:0.85rem;color:#94a3b8;display:block;margin-bottom:4px}
+input[type=range]{width:100%;accent-color:#0ea5e9}
+input[type=number],select{background:#050910;border:1px solid #162030;border-radius:6px;padding:8px 12px;color:#e2e8f0;font-size:0.9rem;width:100%}
+.stat-row{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0}
+.stat{background:#0c1520;border:1px solid #162030;border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:120px}
+.stat-label{font-size:0.7rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
+.stat-val{font-size:1.3rem;color:#38bdf8;font-weight:700;margin-top:4px;font-family:monospace}
+.stat-unit{font-size:0.75rem;color:#64748b}
+canvas{display:block;margin:12px auto;border:1px solid #162030;border-radius:8px;background:#050910}
+.verdict{text-align:center;font-size:1.2rem;font-weight:700;padding:16px;border-radius:12px;margin-top:16px}
+.verdict.pass{background:#22c55e22;color:#22c55e;border:2px solid #22c55e44}
+.verdict.fail{background:#ef444422;color:#ef4444;border:2px solid #ef444444}
+.mission-report{background:#0c1520;border:1px solid #162030;border-radius:12px;padding:20px;margin-top:16px}
+.mission-report h3{color:#0ea5e9;margin-bottom:12px}
+</style>
+</head>
+<body>
+<h1>Space Mission Planning Pipeline</h1>
+<p class="subtitle">Rocket Equation &rarr; Hohmann Transfer &rarr; Orbit Insertion</p>
+
+<div class="pipeline-flow">
+  <div class="pipeline-stage" id="ps1"><div class="label">Step 1</div><div class="name">Rocket Design</div></div>
+  <div class="arrow">&rarr;</div>
+  <div class="pipeline-stage" id="ps2"><div class="label">Step 2</div><div class="name">Transfer Plan</div></div>
+  <div class="arrow">&rarr;</div>
+  <div class="pipeline-stage" id="ps3"><div class="label">Step 3</div><div class="name">Orbit Insertion</div></div>
+</div>
+
+<div class="steps">
+  <div class="step" id="step1">
+    <div class="step-header"><div class="step-num">1</div><div class="step-title">Rocket Design: Tsiolkovsky Equation</div></div>
+    <p class="step-desc">Set your rocket's exhaust velocity and mass ratio. The Tsiolkovsky rocket equation gives your total delta-v budget: dv = ve * ln(m0/mf).</p>
+    <div class="form-grid">
+      <div>
+        <label>Exhaust Velocity (ve) km/s</label>
+        <input type="range" id="ve-slider" min="1" max="10" step="0.1" value="4.5" oninput="updateVeLabel()">
+        <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:#64748b"><span>1</span><span id="ve-val">4.5</span><span>10</span></div>
+      </div>
+      <div>
+        <label>Mass Ratio (m0/mf)</label>
+        <input type="range" id="mr-slider" min="2" max="20" step="0.5" value="8" oninput="updateMrLabel()">
+        <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:#64748b"><span>2</span><span id="mr-val">8</span><span>20</span></div>
+      </div>
+    </div>
+    <div class="controls">
+      <button onclick="runStep1()">Calculate Delta-V</button>
+    </div>
+    <div id="step1-stats"></div>
+    <div class="output-box" id="step1-output" style="display:none"></div>
+  </div>
+
+  <div class="feed-arrow" id="feed1">&darr; Delta-v budget determines reachable destinations</div>
+
+  <div class="step" id="step2">
+    <div class="step-header"><div class="step-num">2</div><div class="step-title">Hohmann Transfer Planning</div></div>
+    <p class="step-desc">Pick a destination. The Hohmann transfer orbit is the most fuel-efficient two-burn maneuver between circular orbits. Does your rocket have enough delta-v?</p>
+    <div class="form-grid">
+      <div>
+        <label>Destination</label>
+        <select id="dest-select">
+          <option value="moon">Moon (384,400 km)</option>
+          <option value="mars">Mars (225M km)</option>
+          <option value="jupiter">Jupiter (778M km)</option>
+        </select>
+      </div>
+      <div>
+        <label>Parking Orbit (km)</label>
+        <input type="number" id="parking-orbit" value="200" min="100" max="2000" />
+      </div>
+    </div>
+    <div class="controls">
+      <button onclick="runStep2()" id="btn-step2" disabled>Plan Transfer</button>
+    </div>
+    <div id="step2-stats"></div>
+    <div class="output-box" id="step2-output" style="display:none"></div>
+  </div>
+
+  <div class="feed-arrow" id="feed2">&darr; Execute the planned trajectory</div>
+
+  <div class="step" id="step3">
+    <div class="step-header"><div class="step-num">3</div><div class="step-title">Transfer Execution &amp; Orbit Insertion</div></div>
+    <p class="step-desc">Watch your spacecraft follow the Hohmann ellipse. Two burns: departure burn to enter the transfer orbit, then arrival burn to circularize at the destination.</p>
+    <canvas id="orbit-canvas" width="600" height="400"></canvas>
+    <div class="controls">
+      <button onclick="runStep3()" id="btn-step3" disabled>Execute Transfer</button>
+    </div>
+    <div id="mission-verdict"></div>
+  </div>
+</div>
+
+<button class="run-all" onclick="runPipeline()">Run Full Pipeline</button>
+
+<script>
+const DESTINATIONS = {
+  moon: { name: 'Moon', dist: 384400, orbitAlt: 100, dv1: 3.13, dv2: 0.82, travelDays: 3 },
+  mars: { name: 'Mars', dist: 225000000, orbitAlt: 250, dv1: 3.6, dv2: 0.9, travelDays: 259 },
+  jupiter: { name: 'Jupiter', dist: 778000000, orbitAlt: 1000, dv1: 6.3, dv2: 1.7, travelDays: 998 }
+};
+
+let rocketDV = 0;
+let missionPlan = null;
+
+function updateVeLabel() { document.getElementById('ve-val').textContent = document.getElementById('ve-slider').value; }
+function updateMrLabel() { document.getElementById('mr-val').textContent = document.getElementById('mr-slider').value; }
+
+function runStep1() {
+  const ve = parseFloat(document.getElementById('ve-slider').value);
+  const mr = parseFloat(document.getElementById('mr-slider').value);
+  rocketDV = ve * Math.log(mr);
+  const fuelFraction = ((1 - 1/mr) * 100).toFixed(1);
+
+  document.getElementById('step1-stats').innerHTML = `
+    <div class="stat-row">
+      <div class="stat"><div class="stat-label">Exhaust Vel</div><div class="stat-val">${ve}</div><div class="stat-unit">km/s</div></div>
+      <div class="stat"><div class="stat-label">Mass Ratio</div><div class="stat-val">${mr}</div><div class="stat-unit">m0/mf</div></div>
+      <div class="stat"><div class="stat-label">Delta-V</div><div class="stat-val">${rocketDV.toFixed(2)}</div><div class="stat-unit">km/s</div></div>
+      <div class="stat"><div class="stat-label">Fuel Mass</div><div class="stat-val">${fuelFraction}%</div><div class="stat-unit">of total</div></div>
+    </div>`;
+
+  const out = document.getElementById('step1-output');
+  out.style.display = 'block';
+  out.innerHTML = `<span style="color:#0ea5e9">Tsiolkovsky Rocket Equation</span>\ndv = ve * ln(m0/mf)\ndv = ${ve} * ln(${mr})\ndv = ${ve} * ${Math.log(mr).toFixed(4)}\n<span style="color:#38bdf8">dv = ${rocketDV.toFixed(4)} km/s</span>\n\nReachability check:\n  Moon  (3.95 km/s): ${rocketDV >= 3.95 ? 'REACHABLE' : 'NOT ENOUGH DV'}\n  Mars  (4.50 km/s): ${rocketDV >= 4.50 ? 'REACHABLE' : 'NOT ENOUGH DV'}\n  Jupiter(8.00 km/s): ${rocketDV >= 8.00 ? 'REACHABLE' : 'NOT ENOUGH DV'}`;
+
+  document.getElementById('step1').classList.add('done');
+  document.getElementById('ps1').classList.add('done');
+  document.getElementById('feed1').classList.add('visible');
+  document.getElementById('btn-step2').disabled = false;
+}
+
+function runStep2() {
+  const destKey = document.getElementById('dest-select').value;
+  const dest = DESTINATIONS[destKey];
+  const parkingAlt = parseInt(document.getElementById('parking-orbit').value);
+  const totalRequired = dest.dv1 + dest.dv2;
+  const hasEnough = rocketDV >= totalRequired;
+  const dvRemaining = Math.max(0, rocketDV - totalRequired);
+  const fuelUsedPct = Math.min(100, (totalRequired / rocketDV * 100)).toFixed(1);
+
+  missionPlan = { dest, destKey, parkingAlt, totalRequired, hasEnough, dvRemaining, fuelUsedPct };
+
+  document.getElementById('step2-stats').innerHTML = `
+    <div class="stat-row">
+      <div class="stat"><div class="stat-label">Departure Burn</div><div class="stat-val">${dest.dv1.toFixed(2)}</div><div class="stat-unit">km/s</div></div>
+      <div class="stat"><div class="stat-label">Arrival Burn</div><div class="stat-val">${dest.dv2.toFixed(2)}</div><div class="stat-unit">km/s</div></div>
+      <div class="stat"><div class="stat-label">Total Required</div><div class="stat-val">${totalRequired.toFixed(2)}</div><div class="stat-unit">km/s</div></div>
+      <div class="stat"><div class="stat-label">Budget</div><div class="stat-val">${rocketDV.toFixed(2)}</div><div class="stat-unit">km/s</div></div>
+    </div>`;
+
+  const out = document.getElementById('step2-output');
+  out.style.display = 'block';
+  out.innerHTML = `<span style="color:#0ea5e9">Hohmann Transfer: Earth to ${dest.name}</span>\n\nParking orbit: ${parkingAlt} km LEO\nDestination: ${dest.name} (${(dest.dist).toLocaleString()} km)\n\nBurn 1 (departure):  ${dest.dv1.toFixed(2)} km/s  — enter transfer ellipse\nBurn 2 (arrival):    ${dest.dv2.toFixed(2)} km/s  — circularize at ${dest.name}\nTotal required:      ${totalRequired.toFixed(2)} km/s\nYour budget:         ${rocketDV.toFixed(2)} km/s\n\n${hasEnough ? `SUFFICIENT DV — ${dvRemaining.toFixed(2)} km/s remaining (${fuelUsedPct}% fuel used)` : `INSUFFICIENT DV — need ${(totalRequired - rocketDV).toFixed(2)} km/s more`}\n\nTravel time: ~${dest.travelDays} days`;
+
+  document.getElementById('step2').classList.add('done');
+  document.getElementById('ps2').classList.add('done');
+  document.getElementById('feed2').classList.add('visible');
+  document.getElementById('btn-step3').disabled = false;
+}
+
+function runStep3() {
+  if (!missionPlan) return;
+  const canvas = document.getElementById('orbit-canvas');
+  const ctx = canvas.getContext('2d');
+  const cx = 200, cy = 200;
+  const r1 = 50;
+  const r2 = missionPlan.destKey === 'moon' ? 120 : missionPlan.destKey === 'mars' ? 160 : 180;
+  const transferA = (r1 + r2) / 2;
+  const transferE = (r2 - r1) / (r2 + r1);
+  let t = 0;
+  let phase = 'parking';
+  let burnTimer = 0;
+  let animId;
+
+  function draw() {
+    ctx.fillStyle = '#050910';
+    ctx.fillRect(0, 0, 600, 400);
+
+    // Stars
+    for (let i = 0; i < 60; i++) {
+      const sx = (i * 97 + 13) % 600, sy = (i * 53 + 7) % 400;
+      ctx.fillStyle = `rgba(255,255,255,${0.2 + (i % 3) * 0.15})`;
+      ctx.fillRect(sx, sy, 1, 1);
+    }
+
+    // Earth
+    ctx.beginPath();
+    ctx.arc(cx, cy, 16, 0, Math.PI * 2);
+    ctx.fillStyle = '#1e40af';
+    ctx.fill();
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = '9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Earth', cx, cy + 4);
+
+    // Parking orbit
+    ctx.beginPath();
+    ctx.arc(cx, cy, r1, 0, Math.PI * 2);
+    ctx.strokeStyle = '#1e3a5f44';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Destination orbit
+    ctx.beginPath();
+    ctx.arc(cx, cy, r2, 0, Math.PI * 2);
+    ctx.strokeStyle = '#1e3a5f44';
+    ctx.stroke();
+
+    // Destination body
+    const destAngle = Math.PI * 0.3;
+    const dx = cx + r2 * Math.cos(destAngle);
+    const dy = cy + r2 * Math.sin(destAngle);
+    ctx.beginPath();
+    ctx.arc(dx, dy, missionPlan.destKey === 'jupiter' ? 14 : 8, 0, Math.PI * 2);
+    ctx.fillStyle = missionPlan.destKey === 'moon' ? '#94a3b8' : missionPlan.destKey === 'mars' ? '#b45309' : '#d97706';
+    ctx.fill();
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = '9px sans-serif';
+    ctx.fillText(missionPlan.dest.name, dx, dy + 4);
+
+    // Transfer ellipse (draw when in transfer/arrived)
+    if (phase === 'transfer' || phase === 'arrived') {
+      ctx.beginPath();
+      ctx.ellipse(cx - (r2 - r1) / 2, cy, transferA, transferA * Math.sqrt(1 - transferE * transferE), 0, 0, Math.PI * 2);
+      ctx.strokeStyle = '#0ea5e944';
+      ctx.setLineDash([4, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Spacecraft
+    let sx, sy;
+    if (phase === 'parking') {
+      const a = t * 0.03;
+      sx = cx + r1 * Math.cos(a);
+      sy = cy + r1 * Math.sin(a);
+    } else if (phase === 'burn1') {
+      const a = t * 0.03;
+      sx = cx + r1 * Math.cos(a);
+      sy = cy + r1 * Math.sin(a);
+      // Burn effect
+      ctx.beginPath();
+      ctx.arc(sx, sy, 6 + Math.random() * 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#f59e0b66';
+      ctx.fill();
+    } else if (phase === 'transfer') {
+      const progress = Math.min(1, burnTimer / 120);
+      const angle = Math.PI + progress * Math.PI;
+      const rr = transferA * (1 - transferE * transferE) / (1 + transferE * Math.cos(angle - Math.PI));
+      sx = cx - (r2 - r1) / 2 + rr * Math.cos(angle);
+      sy = cy + rr * Math.sin(angle);
+    } else if (phase === 'burn2') {
+      sx = cx + r2 * Math.cos(Math.PI * 0.3);
+      sy = cy + r2 * Math.sin(Math.PI * 0.3);
+      ctx.beginPath();
+      ctx.arc(sx, sy, 6 + Math.random() * 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#f59e0b66';
+      ctx.fill();
+    } else {
+      const a = Math.PI * 0.3 + burnTimer * 0.02;
+      sx = cx + r2 * Math.cos(a);
+      sy = cy + r2 * Math.sin(a);
+    }
+
+    ctx.beginPath();
+    ctx.arc(sx, sy, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#0ea5e9';
+    ctx.fill();
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Status panel
+    ctx.fillStyle = '#0c1520';
+    ctx.fillRect(400, 10, 190, 140);
+    ctx.strokeStyle = '#162030';
+    ctx.strokeRect(400, 10, 190, 140);
+    ctx.fillStyle = '#0ea5e9';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Mission Status', 410, 28);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '10px monospace';
+    ctx.fillText(`Phase: ${phase.toUpperCase()}`, 410, 48);
+    ctx.fillText(`Target: ${missionPlan.dest.name}`, 410, 63);
+    ctx.fillText(`DV Budget: ${rocketDV.toFixed(2)} km/s`, 410, 78);
+    ctx.fillText(`DV Used:   ${Math.min(rocketDV, missionPlan.totalRequired * Math.min(1, (phase==='arrived'||phase==='orbit'?1:phase==='burn2'?0.8:phase==='transfer'?0.5:phase==='burn1'?0.3:0))).toFixed(2)} km/s`, 410, 93);
+    ctx.fillStyle = missionPlan.hasEnough ? '#22c55e' : '#ef4444';
+    ctx.fillText(`Status: ${missionPlan.hasEnough ? 'NOMINAL' : 'LOW FUEL'}`, 410, 113);
+    ctx.fillStyle = '#64748b';
+    ctx.fillText(`Travel: ~${missionPlan.dest.travelDays} days`, 410, 133);
+
+    t++;
+    burnTimer++;
+
+    if (phase === 'parking' && burnTimer > 60) { phase = 'burn1'; burnTimer = 0; }
+    else if (phase === 'burn1' && burnTimer > 30) { phase = 'transfer'; burnTimer = 0; }
+    else if (phase === 'transfer' && burnTimer > 120) { phase = 'burn2'; burnTimer = 0; }
+    else if (phase === 'burn2' && burnTimer > 30) { phase = 'arrived'; burnTimer = 0; }
+    else if (phase === 'arrived' && burnTimer > 60) { phase = 'orbit'; burnTimer = 0; }
+
+    if (phase === 'orbit' && burnTimer > 80) {
+      cancelAnimationFrame(animId);
+      showMissionReport();
+      return;
+    }
+    animId = requestAnimationFrame(draw);
+  }
+
+  if (animId) cancelAnimationFrame(animId);
+  t = 0; burnTimer = 0; phase = 'parking';
+  draw();
+}
+
+function showMissionReport() {
+  const v = document.getElementById('mission-verdict');
+  const pass = missionPlan.hasEnough;
+  v.innerHTML = `
+    <div class="verdict ${pass ? 'pass' : 'fail'}">
+      Mission to ${missionPlan.dest.name}: ${pass ? 'SUCCESS' : 'FAILURE - INSUFFICIENT FUEL'}
+    </div>
+    <div class="mission-report">
+      <h3>Mission Report</h3>
+      <div class="stat-row">
+        <div class="stat"><div class="stat-label">Departure Burn</div><div class="stat-val">${missionPlan.dest.dv1.toFixed(2)}</div><div class="stat-unit">km/s</div></div>
+        <div class="stat"><div class="stat-label">Arrival Burn</div><div class="stat-val">${missionPlan.dest.dv2.toFixed(2)}</div><div class="stat-unit">km/s</div></div>
+        <div class="stat"><div class="stat-label">Total Spent</div><div class="stat-val">${missionPlan.totalRequired.toFixed(2)}</div><div class="stat-unit">km/s</div></div>
+        <div class="stat"><div class="stat-label">Remaining</div><div class="stat-val">${missionPlan.dvRemaining.toFixed(2)}</div><div class="stat-unit">km/s</div></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat"><div class="stat-label">Travel Time</div><div class="stat-val">${missionPlan.dest.travelDays}</div><div class="stat-unit">days</div></div>
+        <div class="stat"><div class="stat-label">Fuel Used</div><div class="stat-val">${missionPlan.fuelUsedPct}</div><div class="stat-unit">%</div></div>
+        <div class="stat"><div class="stat-label">Distance</div><div class="stat-val">${(missionPlan.dest.dist / 1e6).toFixed(1)}</div><div class="stat-unit">M km</div></div>
+      </div>
+    </div>`;
+
+  document.getElementById('step3').classList.add('done');
+  document.getElementById('ps3').classList.add('done');
+}
+
+async function runPipeline() {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('done', 'active'));
+  document.querySelectorAll('.pipeline-stage').forEach(s => s.classList.remove('done', 'active'));
+  document.querySelectorAll('.feed-arrow').forEach(a => a.classList.remove('visible'));
+  ['step1-output','step2-output'].forEach(id => document.getElementById(id).style.display = 'none');
+  document.getElementById('step1-stats').innerHTML = '';
+  document.getElementById('step2-stats').innerHTML = '';
+  document.getElementById('mission-verdict').innerHTML = '';
+
+  document.getElementById('ps1').classList.add('active');
+  document.getElementById('step1').classList.add('active');
+  await sleep(400);
+  runStep1();
+  document.getElementById('step1').classList.remove('active');
+  await sleep(600);
+  document.getElementById('ps2').classList.add('active');
+  document.getElementById('step2').classList.add('active');
+  await sleep(400);
+  runStep2();
+  document.getElementById('step2').classList.remove('active');
+  await sleep(600);
+  document.getElementById('ps3').classList.add('active');
+  document.getElementById('step3').classList.add('active');
+  await sleep(400);
+  runStep3();
+  document.getElementById('step3').classList.remove('active');
+  document.getElementById('ps3').classList.remove('active');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
