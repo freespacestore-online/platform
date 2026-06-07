@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lagrange Points - FreeSpaceStore</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#e0e0e0;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh}
+h1{color:#0ea5e9;margin:18px 0 6px;font-size:1.4rem}
+.desc{color:#999;font-size:.85rem;margin-bottom:12px;max-width:700px;text-align:center}
+canvas{background:#080810;border:1px solid #333;border-radius:6px;cursor:crosshair}
+.controls{display:flex;gap:10px;margin:12px 0;flex-wrap:wrap;justify-content:center}
+.controls select,.controls button{background:#222;color:#e0e0e0;border:1px solid #444;padding:4px 10px;border-radius:4px;font-size:.8rem;cursor:pointer}
+.controls button{background:#0ea5e9;color:#000;border:none;font-weight:600}
+.info{font-size:.75rem;color:#888;margin:4px}
+footer{margin-top:auto;padding:12px;font-size:.7rem;color:#555}
+footer a{color:#0ea5e9;text-decoration:none}
+</style>
+</head>
+<body>
+<h1>Lagrange Points</h1>
+<p class="desc">L1-L5 equilibrium points. Click to place a satellite and test stability. L4/L5 are stable, L1-L3 unstable.</p>
+<canvas id="c" width="740" height="440"></canvas>
+<div class="controls">
+<label style="font-size:.8rem;color:#aaa">System: <select id="sys"><option value="es">Earth-Sun</option><option value="em">Earth-Moon</option></select></label>
+<button id="showPot">Toggle Potential</button>
+<button id="placeJWST">Place JWST at L2</button>
+<button id="clear">Clear Satellites</button>
+</div>
+<p class="info">L1: between bodies | L2: beyond smaller body | L3: opposite side | L4/L5: 60 deg ahead/behind (Trojan points)</p>
+<footer><a href="/items/">FreeSpaceStore</a></footer>
+<script>
+const C=document.getElementById('c'),ctx=C.getContext('2d');
+const W=740,H=440;
+const cx=W/2,cy=H/2;
+let system='es',showPot=false,t=0;
+let satellites=[];
+
+const systems={
+  es:{m1:'Sun',m2:'Earth',mu:3e-6,scale:160,r:1,m2size:4,m1size:14,color1:'#fbbf24',color2:'#3b82f6'},
+  em:{m1:'Earth',m2:'Moon',mu:0.012,scale:140,r:1,m2size:4,m1size:8,color1:'#3b82f6',color2:'#888'}
+};
+
+document.getElementById('sys').addEventListener('change',e=>{system=e.value;satellites=[];});
+document.getElementById('showPot').addEventListener('click',()=>showPot=!showPot);
+document.getElementById('clear').addEventListener('click',()=>satellites=[]);
+document.getElementById('placeJWST').addEventListener('click',()=>{
+  const s=systems[system],mu=s.mu;
+  const l2x=1+Math.pow(mu/3,1/3);
+  satellites.push({x:l2x,y:0,vx:0,vy:0,name:'JWST',trail:[]});
+});
+
+C.addEventListener('click',e=>{
+  const rect=C.getBoundingClientRect();
+  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  const s=systems[system];
+  const x=(mx-cx)/s.scale,y=(my-cy)/s.scale;
+  satellites.push({x,y,vx:0,vy:y*0.3,name:'Sat'+(satellites.length+1),trail:[]});
+});
+
+function getLagrangePoints(mu){
+  // Approximate L-point positions
+  const r_hill=Math.pow(mu/3,1/3);
+  return{
+    L1:{x:1-r_hill,y:0,stable:false},
+    L2:{x:1+r_hill,y:0,stable:false},
+    L3:{x:-(1+5*mu/12),y:0,stable:false},
+    L4:{x:0.5-mu,y:Math.sqrt(3)/2,stable:true},
+    L5:{x:0.5-mu,y:-Math.sqrt(3)/2,stable:true}
+  };
+}
+
+function drawPotentialField(){
+  const s=systems[system],mu=s.mu;
+  const imgData=ctx.createImageData(W,H);
+  for(let py=0;py<H;py+=3){
+    for(let px=0;px<W;px+=3){
+      const x=(px-cx)/s.scale,y=(py-cy)/s.scale;
+      const r1=Math.sqrt(x*x+y*y);
+      const r2=Math.sqrt((x-1)*(x-1)+y*y);
+      if(r1<0.05||r2<0.05) continue;
+      const U=-0.5*(x*x+y*y)-(1-mu)/r1-mu/r2;
+      const v=Math.max(0,Math.min(255,(-U-1)*100));
+      for(let dy=0;dy<3;dy++) for(let dx=0;dx<3;dx++){
+        const i=((py+dy)*W+(px+dx))*4;
+        imgData.data[i]=v*0.05;imgData.data[i+1]=v*0.2;imgData.data[i+2]=v*0.5;imgData.data[i+3]=40;
+      }
+    }
+  }
+  ctx.putImageData(imgData,0,0);
+}
+
+function draw(){
+  ctx.fillStyle='#080810';ctx.fillRect(0,0,W,H);
+  const s=systems[system],mu=s.mu;
+  const lp=getLagrangePoints(mu);
+  t+=0.005;
+  if(showPot) drawPotentialField();
+  // orbit circle
+  ctx.strokeStyle='#ffffff11';ctx.lineWidth=1;
+  ctx.beginPath();ctx.arc(cx,cy,s.scale,0,Math.PI*2);ctx.stroke();
+  // M1 (at origin in rotating frame, but we offset by -mu)
+  const m1x=cx-mu*s.scale,m1y=cy;
+  ctx.fillStyle=s.color1;
+  ctx.beginPath();ctx.arc(m1x,m1y,s.m1size,0,Math.PI*2);ctx.fill();
+  if(s.color1==='#fbbf24'){
+    const grd=ctx.createRadialGradient(m1x,m1y,s.m1size/2,m1x,m1y,s.m1size*2);
+    grd.addColorStop(0,'rgba(251,191,36,0.2)');grd.addColorStop(1,'transparent');
+    ctx.fillStyle=grd;ctx.beginPath();ctx.arc(m1x,m1y,s.m1size*2,0,Math.PI*2);ctx.fill();
+  }
+  ctx.fillStyle='#fff';ctx.font='10px system-ui';ctx.fillText(s.m1,m1x-10,m1y+s.m1size+14);
+  // M2
+  const m2x=cx+(1-mu)*s.scale,m2y=cy;
+  ctx.fillStyle=s.color2;
+  ctx.beginPath();ctx.arc(m2x,m2y,s.m2size,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='10px system-ui';ctx.fillText(s.m2,m2x-10,m2y+s.m2size+14);
+  // Lagrange points
+  for(const[name,lpt] of Object.entries(lp)){
+    const lx=cx+lpt.x*s.scale,ly=cy-lpt.y*s.scale;
+    ctx.strokeStyle=lpt.stable?'#22c55e':'#ef4444';ctx.lineWidth=2;
+    // cross marker
+    ctx.beginPath();ctx.moveTo(lx-6,ly);ctx.lineTo(lx+6,ly);ctx.moveTo(lx,ly-6);ctx.lineTo(lx,ly+6);ctx.stroke();
+    ctx.fillStyle=lpt.stable?'#22c55e':'#ef4444';ctx.font='bold 11px system-ui';
+    ctx.fillText(name,lx+8,ly-4);
+    ctx.fillStyle='#666';ctx.font='9px system-ui';
+    ctx.fillText(lpt.stable?'stable':'unstable',lx+8,ly+10);
+  }
+  // Trojan regions (shaded)
+  for(const lname of['L4','L5']){
+    const lpt=lp[lname];
+    const lx=cx+lpt.x*s.scale,ly=cy-lpt.y*s.scale;
+    ctx.fillStyle='rgba(34,197,94,0.05)';
+    ctx.beginPath();ctx.arc(lx,ly,30,0,Math.PI*2);ctx.fill();
+  }
+  // satellites
+  for(const sat of satellites){
+    const sx=cx+sat.x*s.scale,sy=cy-sat.y*s.scale;
+    sat.trail.push({x:sx,y:sy});
+    if(sat.trail.length>200) sat.trail.shift();
+    // trail
+    ctx.strokeStyle='#0ea5e944';ctx.lineWidth=1;ctx.beginPath();
+    for(let i=0;i<sat.trail.length;i++){
+      i===0?ctx.moveTo(sat.trail[i].x,sat.trail[i].y):ctx.lineTo(sat.trail[i].x,sat.trail[i].y);
+    }
+    ctx.stroke();
+    // satellite
+    ctx.fillStyle='#0ea5e9';ctx.beginPath();ctx.arc(sx,sy,3,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#0ea5e9';ctx.font='9px system-ui';ctx.fillText(sat.name,sx+6,sy-4);
+    // simple CR3BP motion (very simplified)
+    const r1=Math.sqrt(sat.x*sat.x+sat.y*sat.y);
+    const r2=Math.sqrt((sat.x-1)*(sat.x-1)+sat.y*sat.y);
+    if(r1>0.02&&r2>0.02){
+      const ax=2*sat.vy+sat.x-(1-mu)*sat.x/Math.pow(r1,3)-mu*(sat.x-1)/Math.pow(r2,3);
+      const ay=-2*sat.vx+sat.y-(1-mu)*sat.y/Math.pow(r1,3)-mu*sat.y/Math.pow(r2,3);
+      sat.vx+=ax*0.01;sat.vy+=ay*0.01;
+      sat.x+=sat.vx*0.01;sat.y+=sat.vy*0.01;
+    }
+  }
+  // info
+  ctx.fillStyle='#0ea5e9';ctx.font='bold 12px system-ui';ctx.fillText('Lagrange Points (Rotating Frame)',10,20);
+  ctx.fillStyle='#888';ctx.font='10px system-ui';
+  ctx.fillText(`Mass ratio mu = ${mu.toExponential(2)}`,10,38);
+  ctx.fillText('Click anywhere to place a satellite',10,H-10);
+  requestAnimationFrame(draw);
+}
+draw();
+</script>
+</body>
+</html>

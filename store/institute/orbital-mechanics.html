@@ -101,6 +101,25 @@
         <li><strong>Specific angular momentum</strong> — h = r x v. Constant in the two-body problem. Its magnitude determines the orbit's shape and size. For a circular orbit: h = r * v_circ.</li>
       </ul>
 
+      <!-- Diagram: Orbital elements -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;margin:1.5rem 0;text-align:center">
+        <div style="background:#141414;border:1px solid #262626;border-radius:8px;padding:.6rem .3rem">
+          <div style="font-size:.78rem;font-weight:700;color:#fafafa">a, e</div>
+          <div style="font-size:.62rem;color:#0ea5e9;margin-top:.2rem">Size & Shape</div>
+          <div style="font-size:.62rem;color:#737373">Semi-major axis,<br>eccentricity</div>
+        </div>
+        <div style="background:#141414;border:1px solid #262626;border-radius:8px;padding:.6rem .3rem">
+          <div style="font-size:.78rem;font-weight:700;color:#fafafa">i, &Omega;</div>
+          <div style="font-size:.62rem;color:#0ea5e9;margin-top:.2rem">Orbital Plane</div>
+          <div style="font-size:.62rem;color:#737373">Inclination,<br>RAAN</div>
+        </div>
+        <div style="background:#141414;border:1px solid #262626;border-radius:8px;padding:.6rem .3rem">
+          <div style="font-size:.78rem;font-weight:700;color:#fafafa">&omega;, &nu;</div>
+          <div style="font-size:.62rem;color:#0ea5e9;margin-top:.2rem">Orientation & Position</div>
+          <div style="font-size:.62rem;color:#737373">Arg. of periapsis,<br>true anomaly</div>
+        </div>
+      </div>
+
       <h3>Conic Sections</h3>
       <ul>
         <li><strong>Circle</strong> — e = 0. All points equidistant from center. Special case of ellipse.</li>
@@ -132,6 +151,33 @@
 
     <section class="section" id="orbits">
       <h2>Common Orbits</h2>
+
+      <!-- Diagram: Common orbit altitude comparison -->
+      <div style="max-width:400px;margin:1.5rem auto">
+        <div style="display:flex;gap:.3rem;align-items:flex-end;justify-content:center;margin-bottom:.5rem">
+          <div style="text-align:center">
+            <div style="width:45px;background:#0ea5e9;border-radius:4px 4px 0 0;height:15px"></div>
+            <div style="font-size:.55rem;color:#0ea5e9;margin-top:.2rem;font-weight:700">LEO</div>
+            <div style="font-size:.5rem;color:#525252">200-2k km</div>
+          </div>
+          <div style="text-align:center">
+            <div style="width:45px;background:#0284c7;border-radius:4px 4px 0 0;height:50px"></div>
+            <div style="font-size:.55rem;color:#0ea5e9;margin-top:.2rem;font-weight:700">MEO</div>
+            <div style="font-size:.5rem;color:#525252">~20k km</div>
+          </div>
+          <div style="text-align:center">
+            <div style="width:45px;background:#0369a1;border-radius:4px 4px 0 0;height:100px"></div>
+            <div style="font-size:.55rem;color:#0ea5e9;margin-top:.2rem;font-weight:700">GEO</div>
+            <div style="font-size:.5rem;color:#525252">35,786 km</div>
+          </div>
+          <div style="text-align:center">
+            <div style="width:45px;background:#075985;border-radius:4px 4px 0 0;height:140px"></div>
+            <div style="font-size:.55rem;color:#0ea5e9;margin-top:.2rem;font-weight:700">Moon</div>
+            <div style="font-size:.5rem;color:#525252">384k km</div>
+          </div>
+        </div>
+      </div>
+
       <ul>
         <li><strong>LEO (Low Earth Orbit)</strong> — 200-2,000 km altitude. Period 88-127 minutes. ISS (408 km), Hubble (540 km), Starlink (~550 km). Most of humanity's satellites. Atmospheric drag significant below ~600 km, causing orbit decay.</li>
         <li><strong>MEO (Medium Earth Orbit)</strong> — 2,000-35,786 km. GPS constellation (20,200 km, period 12 hours, 55 deg inclination), Galileo (23,222 km), GLONASS (19,130 km). Van Allen radiation belts are a concern (inner belt ~1,000-5,000 km, outer belt ~15,000-25,000 km).</li>

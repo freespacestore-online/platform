@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gravity Assist - FreeSpaceStore</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#e0e0e0;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh}
+h1{color:#0ea5e9;margin:18px 0 6px;font-size:1.4rem}
+.desc{color:#999;font-size:.85rem;margin-bottom:12px;max-width:700px;text-align:center}
+canvas{background:#080810;border:1px solid #333;border-radius:6px;cursor:crosshair}
+.controls{display:flex;gap:10px;margin:12px 0;flex-wrap:wrap;justify-content:center}
+.controls label{font-size:.8rem;color:#aaa}
+.controls input[type=range]{width:80px;accent-color:#0ea5e9}
+.controls button{background:#0ea5e9;color:#000;border:none;padding:5px 12px;border-radius:4px;font-size:.8rem;cursor:pointer;font-weight:600}
+.stats{font-size:.8rem;color:#aaa;margin:4px}
+footer{margin-top:auto;padding:12px;font-size:.7rem;color:#555}
+footer a{color:#0ea5e9;text-decoration:none}
+</style>
+</head>
+<body>
+<h1>Gravity Assist (Slingshot)</h1>
+<p class="desc">Launch a probe past a planet to gain velocity. Adjust approach angle and speed.</p>
+<canvas id="c" width="740" height="440"></canvas>
+<div class="controls">
+<label>Approach speed <input type="range" id="vel" min="1" max="8" step="0.1" value="3"><span id="velV">3</span></label>
+<label>Aim offset <input type="range" id="offset" min="-100" max="100" value="-30"><span id="offV">-30</span></label>
+<label>Planet mass <input type="range" id="mass" min="500" max="5000" value="2000"><span id="massV">2000</span></label>
+<button id="launch">Launch Probe</button>
+<button id="voyager">Voyager Path</button>
+<button id="reset">Reset</button>
+</div>
+<div class="stats" id="stats">Launch a probe to see velocity change</div>
+<footer><a href="/items/">FreeSpaceStore</a></footer>
+<script>
+const C=document.getElementById('c'),ctx=C.getContext('2d');
+const W=740,H=440;
+let probes=[],planets=[],planetT=0;
+let launchVel=3,aimOffset=-30,planetMass=2000;
+
+function bind(id,sp,cb){document.getElementById(id).addEventListener('input',e=>{cb(+e.value);document.getElementById(sp).textContent=e.value});}
+bind('vel','velV',v=>launchVel=v);
+bind('offset','offV',v=>aimOffset=v);
+bind('mass','massV',v=>{planetMass=v;planets[0].mass=v;});
+
+// single planet for basic demo
+planets=[{x:W/2,y:H/2,vx:0,vy:-1,mass:2000,r:18,color:'#f59e0b',name:'Jupiter',orbR:0}];
+
+document.getElementById('launch').addEventListener('click',()=>{
+  const probe={
+    x:40,y:H/2+aimOffset,
+    vx:launchVel,vy:0,
+    trail:[],entrySpeed:launchVel,maxSpeed:launchVel,
+    active:true
+  };
+  probes.push(probe);
+});
+
+document.getElementById('voyager').addEventListener('click',()=>{
+  // simulate multi-planet flyby
+  planets=[
+    {x:W*0.35,y:H*0.4,vx:0,vy:-0.5,mass:1500,r:12,color:'#f59e0b',name:'Jupiter',orbR:0},
+    {x:W*0.55,y:H*0.6,vx:0,vy:-0.3,mass:1200,r:10,color:'#a78bfa',name:'Saturn',orbR:0},
+    {x:W*0.72,y:H*0.35,vx:0,vy:-0.2,mass:800,r:8,color:'#0ea5e9',name:'Uranus',orbR:0}
+  ];
+  probes=[{x:30,y:H*0.45,vx:2.5,vy:-0.3,trail:[],entrySpeed:2.5,maxSpeed:2.5,active:true}];
+});
+
+document.getElementById('reset').addEventListener('click',()=>{
+  probes=[];
+  planets=[{x:W/2,y:H/2,vx:0,vy:-1,mass:planetMass,r:18,color:'#f59e0b',name:'Jupiter',orbR:0}];
+});
+
+function step(dt){
+  for(const probe of probes){
+    if(!probe.active) continue;
+    let ax=0,ay=0;
+    for(const p of planets){
+      const dx=p.x-probe.x,dy=p.y-probe.y;
+      const r2=dx*dx+dy*dy;
+      const r=Math.sqrt(r2);
+      if(r<p.r){probe.active=false;continue;}
+      const F=p.mass/(r2+100);
+      ax+=F*dx/r;ay+=F*dy/r;
+    }
+    probe.vx+=ax*dt;probe.vy+=ay*dt;
+    probe.x+=probe.vx*dt;probe.y+=probe.vy*dt;
+    const spd=Math.sqrt(probe.vx*probe.vx+probe.vy*probe.vy);
+    probe.maxSpeed=Math.max(probe.maxSpeed,spd);
+    probe.trail.push({x:probe.x,y:probe.y,spd});
+    if(probe.trail.length>2000) probe.trail.shift();
+    if(probe.x<-20||probe.x>W+20||probe.y<-20||probe.y>H+20) probe.active=false;
+  }
+}
+
+function draw(){
+  ctx.fillStyle='#080810';ctx.fillRect(0,0,W,H);
+  // stars
+  if(!draw.stars){draw.stars=[];for(let i=0;i<60;i++) draw.stars.push({x:Math.random()*W,y:Math.random()*H,b:Math.random()});}
+  for(const s of draw.stars){ctx.fillStyle=`rgba(255,255,255,${s.b*0.3})`;ctx.fillRect(s.x,s.y,1,1);}
+  // planets
+  for(const p of planets){
+    // gravitational field
+    const grd=ctx.createRadialGradient(p.x,p.y,p.r,p.x,p.y,p.r+80);
+    grd.addColorStop(0,p.color+'22');grd.addColorStop(1,'transparent');
+    ctx.fillStyle=grd;ctx.beginPath();ctx.arc(p.x,p.y,p.r+80,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='10px system-ui';ctx.fillText(p.name,p.x-12,p.y+p.r+14);
+    // velocity arrow
+    ctx.strokeStyle=p.color+'88';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+p.vx*20,p.y+p.vy*20);ctx.stroke();
+  }
+  // probes
+  for(const probe of probes){
+    // trail colored by speed
+    for(let i=1;i<probe.trail.length;i++){
+      const t=probe.trail[i];
+      const speedRatio=t.spd/Math.max(probe.maxSpeed,1);
+      const r=Math.floor(speedRatio*255),g=Math.floor((1-speedRatio)*200),b=100;
+      ctx.strokeStyle=`rgba(${r},${g},${b},0.6)`;ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(probe.trail[i-1].x,probe.trail[i-1].y);
+      ctx.lineTo(t.x,t.y);ctx.stroke();
+    }
+    if(probe.active){
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(probe.x,probe.y,3,0,Math.PI*2);ctx.fill();
+      // velocity vector
+      const spd=Math.sqrt(probe.vx*probe.vx+probe.vy*probe.vy);
+      ctx.strokeStyle='#22c55e';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(probe.x,probe.y);
+      ctx.lineTo(probe.x+probe.vx*8,probe.y+probe.vy*8);ctx.stroke();
+      ctx.fillStyle='#aaa';ctx.font='9px system-ui';
+      ctx.fillText(`v=${spd.toFixed(1)}`,probe.x+8,probe.y-6);
+    }
+  }
+  // stats
+  if(probes.length>0){
+    const p=probes[probes.length-1];
+    const spd=Math.sqrt(p.vx*p.vx+p.vy*p.vy);
+    const gain=((spd/p.entrySpeed-1)*100).toFixed(1);
+    document.getElementById('stats').innerHTML=
+      `Entry: <b>${p.entrySpeed.toFixed(1)}</b> | Current: <b style="color:#0ea5e9">${spd.toFixed(1)}</b> | `+
+      `Peak: <b>${p.maxSpeed.toFixed(1)}</b> | Gain: <b style="color:${gain>0?'#22c55e':'#ef4444'}">${gain>0?'+':''}${gain}%</b>`;
+  }
+  // launch guide
+  ctx.strokeStyle='#0ea5e933';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(40,H/2+aimOffset);ctx.lineTo(120,H/2+aimOffset);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#0ea5e9';ctx.beginPath();ctx.moveTo(40,H/2+aimOffset);ctx.lineTo(30,H/2+aimOffset-4);ctx.lineTo(30,H/2+aimOffset+4);ctx.fill();
+  // legend
+  ctx.fillStyle='#0ea5e9';ctx.font='bold 11px system-ui';ctx.fillText('Gravity Assist Maneuver',10,18);
+  ctx.fillStyle='#666';ctx.font='9px system-ui';
+  ctx.fillText('Red trail = fast, blue trail = slow',10,H-10);
+  requestAnimationFrame(draw);
+}
+
+function loop(){
+  for(let i=0;i<6;i++) step(0.3);
+  draw();requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

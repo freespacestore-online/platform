@@ -131,6 +131,78 @@
       "creator": "serge-ivo",
       "creatorName": "Serge",
       "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
+      "id": "kepler",
+      "name": "Kepler Laws",
+      "description": "All 3 laws interactive. Elliptical orbits, equal areas in equal times, T\u00b2/a\u00b3 relation.",
+      "storeType": "behavior",
+      "category": "fundamentals",
+      "icon": "\ud83d\udcd0",
+      "iconBg": "#0ea5e9",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
+      "id": "lagrange",
+      "name": "Lagrange Points",
+      "description": "L1-L5 for Earth-Sun/Moon. Test stability. Place JWST at L2. CR3BP dynamics.",
+      "storeType": "behavior",
+      "category": "orbits",
+      "icon": "\u2696\ufe0f",
+      "iconBg": "#0ea5e9",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
+      "id": "reentry",
+      "name": "Re-entry Heating",
+      "description": "Atmospheric re-entry thermal sim. Heat shield ablation, plasma trail. Compare capsule shapes.",
+      "storeType": "behavior",
+      "category": "physics",
+      "icon": "\ud83d\udd25",
+      "iconBg": "#ef4444",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
+      "id": "gravity-assist",
+      "name": "Gravity Assist",
+      "description": "Planetary slingshot maneuver. Speed gain visualization. Voyager grand tour path.",
+      "storeType": "behavior",
+      "category": "maneuvers",
+      "icon": "\ud83e\ude83",
+      "iconBg": "#0ea5e9",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
+      "id": "rendezvous",
+      "name": "Orbital Rendezvous",
+      "description": "Two spacecraft docking. Phase-based burn sequence. Clohessy-Wiltshire relative motion.",
+      "storeType": "behavior",
+      "category": "maneuvers",
+      "icon": "\ud83d\udd17",
+      "iconBg": "#0ea5e9",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
+      "id": "delta-v-map",
+      "name": "Delta-V Map",
+      "description": "Interactive solar system delta-v graph. Click destination, see total cost from Earth. BFS routing.",
+      "storeType": "behavior",
+      "category": "mission",
+      "icon": "\ud83d\uddfa\ufe0f",
+      "iconBg": "#0ea5e9",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
     }
   ]
 }

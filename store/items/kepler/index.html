@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kepler's Laws - FreeSpaceStore</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#e0e0e0;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh}
+h1{color:#0ea5e9;margin:18px 0 6px;font-size:1.4rem}
+.desc{color:#999;font-size:.85rem;margin-bottom:12px}
+canvas{background:#080810;border:1px solid #333;border-radius:6px}
+.controls{display:flex;gap:10px;margin:12px 0;flex-wrap:wrap;justify-content:center}
+.controls label{font-size:.8rem;color:#aaa}
+.controls input[type=range]{width:90px;accent-color:#0ea5e9}
+.controls button{background:#0ea5e9;color:#000;border:none;padding:5px 12px;border-radius:4px;font-size:.8rem;cursor:pointer;font-weight:600}
+.info{font-size:.75rem;color:#888;margin:4px;max-width:700px;text-align:center}
+footer{margin-top:auto;padding:12px;font-size:.7rem;color:#555}
+footer a{color:#0ea5e9;text-decoration:none}
+</style>
+</head>
+<body>
+<h1>Kepler's Laws of Planetary Motion</h1>
+<p class="desc">Interactive demonstration of all three laws of orbital mechanics</p>
+<canvas id="c" width="740" height="400"></canvas>
+<div class="controls">
+<label>Eccentricity <input type="range" id="ecc" min="0" max="0.9" step="0.01" value="0.5"><span id="eccV">0.50</span></label>
+<label>Semi-major <input type="range" id="sma" min="60" max="180" value="130"><span id="smaV">130</span></label>
+<label>Speed <input type="range" id="speed" min="1" max="10" value="3"><span id="speedV">3</span></label>
+<button id="area">Show Equal Areas</button>
+<button id="reset">Reset</button>
+</div>
+<p class="info">Law 1: Elliptical orbits | Law 2: Equal areas in equal times | Law 3: T^2 proportional to a^3</p>
+<footer><a href="/items/">FreeSpaceStore</a></footer>
+<script>
+const C=document.getElementById('c'),ctx=C.getContext('2d');
+const W=740,H=400;
+const cx=W/2,cy=H/2;
+let e=0.5,a=130,speed=3;
+let theta=0,trail=[],showAreas=false;
+let areaStart1=0,areaStart2=Math.PI;
+let sweepAngle=Math.PI/3;
+
+function bind(id,sp,cb){document.getElementById(id).addEventListener('input',ev=>{cb(+ev.value);document.getElementById(sp).textContent=(+ev.value).toFixed(id==='ecc'?2:0);trail=[]});}
+bind('ecc','eccV',v=>e=v);bind('sma','smaV',v=>a=v);bind('speed','speedV',v=>speed=v);
+document.getElementById('area').addEventListener('click',()=>{showAreas=!showAreas;areaStart1=theta;areaStart2=theta+Math.PI;});
+document.getElementById('reset').addEventListener('click',()=>{theta=0;trail=[];showAreas=false;});
+
+function orbitalRadius(th){return a*(1-e*e)/(1+e*Math.cos(th));}
+
+function toXY(th){
+  const r=orbitalRadius(th);
+  return{x:cx+r*Math.cos(th)+a*e,y:cy+r*Math.sin(th)};
+}
+
+function step(){
+  const r=orbitalRadius(theta);
+  // Kepler's 2nd law: dtheta/dt proportional to 1/r^2
+  const dtheta=speed*0.005*a*a/(r*r);
+  theta+=dtheta;
+  if(theta>Math.PI*2) theta-=Math.PI*2;
+  const pos=toXY(theta);
+  trail.push({x:pos.x,y:pos.y,theta});
+  if(trail.length>600) trail.shift();
+}
+
+function drawEllipse(){
+  ctx.strokeStyle='#0ea5e933';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+  ctx.beginPath();
+  for(let th=0;th<=Math.PI*2;th+=0.02){
+    const p=toXY(th);
+    th===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);
+  }
+  ctx.closePath();ctx.stroke();ctx.setLineDash([]);
+}
+
+function drawArea(startTh,color){
+  const endTh=startTh+sweepAngle;
+  ctx.fillStyle=color;
+  ctx.beginPath();
+  ctx.moveTo(cx+a*e,cy); // focus
+  for(let th=startTh;th<=endTh;th+=0.02){
+    const p=toXY(th);
+    ctx.lineTo(p.x,p.y);
+  }
+  ctx.closePath();ctx.fill();
+}
+
+function draw(){
+  ctx.fillStyle='#080810';ctx.fillRect(0,0,W,H);
+  // stars
+  if(!draw.stars){
+    draw.stars=[];for(let i=0;i<80;i++) draw.stars.push({x:Math.random()*W,y:Math.random()*H,b:Math.random()});
+  }
+  for(const s of draw.stars){ctx.fillStyle=`rgba(255,255,255,${s.b*0.3})`;ctx.fillRect(s.x,s.y,1,1);}
+  // orbit
+  drawEllipse();
+  // equal areas
+  if(showAreas){
+    drawArea(areaStart1,'rgba(14,165,233,0.15)');
+    drawArea(areaStart2,'rgba(239,68,68,0.15)');
+    ctx.fillStyle='#888';ctx.font='10px system-ui';
+    ctx.fillText('Equal areas swept in equal time intervals (Law 2)',20,H-40);
+  }
+  // trail
+  for(let i=0;i<trail.length;i++){
+    const alpha=i/trail.length*0.5;
+    ctx.fillStyle=`rgba(14,165,233,${alpha})`;
+    ctx.fillRect(trail[i].x,trail[i].y,2,2);
+  }
+  // sun at focus
+  ctx.fillStyle='#fbbf24';
+  ctx.beginPath();ctx.arc(cx+a*e,cy,10,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fef3c7';
+  ctx.beginPath();ctx.arc(cx+a*e,cy,5,0,Math.PI*2);ctx.fill();
+  // glow
+  const grd=ctx.createRadialGradient(cx+a*e,cy,5,cx+a*e,cy,30);
+  grd.addColorStop(0,'rgba(251,191,36,0.3)');grd.addColorStop(1,'transparent');
+  ctx.fillStyle=grd;ctx.fillRect(cx+a*e-30,cy-30,60,60);
+  // planet
+  const pos=toXY(theta);
+  ctx.fillStyle='#0ea5e9';
+  ctx.beginPath();ctx.arc(pos.x,pos.y,6,0,Math.PI*2);ctx.fill();
+  // velocity vector (shows Law 2 - faster near perihelion)
+  const r=orbitalRadius(theta);
+  const v=a/r*4; // velocity proportional to 1/r
+  const vx=-Math.sin(theta)*v,vy=Math.cos(theta)*v;
+  ctx.strokeStyle='#22c55e';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(pos.x,pos.y);ctx.lineTo(pos.x+vx*3,pos.y+vy*3);ctx.stroke();
+  // distance line
+  ctx.strokeStyle='#0ea5e944';ctx.lineWidth=1;ctx.setLineDash([2,4]);
+  ctx.beginPath();ctx.moveTo(cx+a*e,cy);ctx.lineTo(pos.x,pos.y);ctx.stroke();ctx.setLineDash([]);
+  // foci
+  const c2=a*e;
+  ctx.fillStyle='#555';ctx.beginPath();ctx.arc(cx-c2+a*e*2,cy,3,0,Math.PI*2);ctx.fill(); // empty focus
+  // labels
+  ctx.fillStyle='#0ea5e9';ctx.font='bold 12px system-ui';
+  ctx.fillText("Kepler's Laws",10,20);
+  ctx.fillStyle='#aaa';ctx.font='11px system-ui';
+  ctx.fillText(`Law 1: Orbit is an ellipse (e=${e.toFixed(2)})`,10,40);
+  ctx.fillText(`Law 2: Equal areas in equal times`,10,58);
+  const b=a*Math.sqrt(1-e*e);
+  const T=Math.pow(a,1.5);
+  ctx.fillText(`Law 3: T^2/a^3 = const (T=${T.toFixed(0)}, a=${a})`,10,76);
+  // perihelion/aphelion
+  ctx.fillStyle='#666';ctx.font='9px system-ui';
+  const peri=a*(1-e),aph=a*(1+e);
+  ctx.fillText(`Perihelion: ${peri.toFixed(0)}`,10,96);
+  ctx.fillText(`Aphelion: ${aph.toFixed(0)}`,10,110);
+  ctx.fillText(`r = ${r.toFixed(1)}`,pos.x+10,pos.y-10);
+  ctx.fillText(`v = ${v.toFixed(1)}`,pos.x+10,pos.y+20);
+  // semi-major axis
+  ctx.strokeStyle='#0ea5e933';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(cx+a*e-a,cy);ctx.lineTo(cx+a*e+a,cy);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#555';ctx.font='9px system-ui';ctx.fillText('a',cx+a*e,cy-8);
+  requestAnimationFrame(draw);
+}
+
+function loop(){
+  for(let i=0;i<3;i++) step();
+  draw();requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

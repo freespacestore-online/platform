@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orbital Rendezvous - FreeSpaceStore</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#e0e0e0;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh}
+h1{color:#0ea5e9;margin:18px 0 6px;font-size:1.4rem}
+.desc{color:#999;font-size:.85rem;margin-bottom:12px;max-width:700px;text-align:center}
+canvas{background:#080810;border:1px solid #333;border-radius:6px}
+.controls{display:flex;gap:10px;margin:12px 0;flex-wrap:wrap;justify-content:center}
+.controls label{font-size:.8rem;color:#aaa}
+.controls input[type=range]{width:80px;accent-color:#0ea5e9}
+.controls button{background:#0ea5e9;color:#000;border:none;padding:5px 12px;border-radius:4px;font-size:.8rem;cursor:pointer;font-weight:600}
+.stats{display:flex;gap:14px;font-size:.8rem;color:#aaa;margin:4px;flex-wrap:wrap}
+footer{margin-top:auto;padding:12px;font-size:.7rem;color:#555}
+footer a{color:#0ea5e9;text-decoration:none}
+</style>
+</head>
+<body>
+<h1>Orbital Rendezvous</h1>
+<p class="desc">Match orbits to dock. Plan Hohmann transfer burns. CW relative motion equations.</p>
+<canvas id="c" width="740" height="440"></canvas>
+<div class="controls">
+<label>Chaser orbit <input type="range" id="chaserR" min="100" max="180" value="120"><span id="chaserRV">120</span></label>
+<label>Target orbit <input type="range" id="targetR" min="120" max="200" value="160"><span id="targetRV">160</span></label>
+<label>Speed <input type="range" id="speed" min="1" max="10" value="3"><span id="speedV">3</span></label>
+<button id="burn">Hohmann Burn 1</button>
+<button id="burn2">Circularize</button>
+<button id="reset">Reset</button>
+</div>
+<div class="stats">
+<span>Chaser r: <b id="cr">120</b></span>
+<span>Target r: <b id="tr">160</b></span>
+<span>Distance: <b id="dist">-</b></span>
+<span>dV used: <b id="dv">0</b></span>
+<span>Phase: <b id="phase">Waiting</b></span>
+</div>
+<footer><a href="/items/">FreeSpaceStore</a></footer>
+<script>
+const C=document.getElementById('c'),ctx=C.getContext('2d');
+const W=740,H=440;
+const cx=W/2,cy=H/2;
+let chaserR0=120,targetR0=160,speed=3;
+let chaser={r:120,theta:0,vr:0,vt:0},target={r:160,theta:Math.PI/3};
+let totalDV=0,phase='waiting',transferR=0;
+let chaserTrail=[],t=0;
+const GM=50000;
+
+function bind(id,sp,cb){document.getElementById(id).addEventListener('input',e=>{cb(+e.value);document.getElementById(sp).textContent=e.value});}
+bind('chaserR','chaserRV',v=>{chaserR0=v;resetSim();});
+bind('targetR','targetRV',v=>{targetR0=v;resetSim();});
+bind('speed','speedV',v=>speed=v);
+
+function resetSim(){
+  chaser={r:chaserR0,theta:0,vr:0,vt:Math.sqrt(GM/chaserR0)};
+  target={r:targetR0,theta:Math.PI/3};
+  totalDV=0;phase='waiting';chaserTrail=[];t=0;
+}
+
+document.getElementById('burn').addEventListener('click',()=>{
+  if(phase!=='waiting') return;
+  // Hohmann transfer: boost to transfer orbit
+  const v1=Math.sqrt(GM/chaser.r);
+  const vTransfer=Math.sqrt(GM*(2/chaser.r-2/(chaser.r+targetR0)));
+  const dv=vTransfer-v1;
+  chaser.vt+=dv;
+  totalDV+=Math.abs(dv);
+  phase='transfer';
+  transferR=(chaser.r+targetR0)/2;
+});
+
+document.getElementById('burn2').addEventListener('click',()=>{
+  if(phase!=='transfer') return;
+  // circularize at target orbit
+  const v2=Math.sqrt(GM/chaser.r);
+  const dv=v2-chaser.vt;
+  chaser.vt+=dv;
+  chaser.vr=0;
+  totalDV+=Math.abs(dv);
+  phase='rendezvous';
+});
+
+document.getElementById('reset').addEventListener('click',resetSim);
+
+function step(dt){
+  // target (circular orbit)
+  const omegaTarget=Math.sqrt(GM/(targetR0*targetR0*targetR0));
+  target.theta+=omegaTarget*dt*speed;
+  // chaser (general orbit)
+  const a_r=-GM/(chaser.r*chaser.r)+chaser.vt*chaser.vt/chaser.r;
+  const a_t=-chaser.vr*chaser.vt/chaser.r;
+  chaser.vr+=a_r*dt*speed;
+  chaser.vt+=a_t*dt*speed;
+  chaser.r+=chaser.vr*dt*speed;
+  chaser.theta+=chaser.vt/chaser.r*dt*speed;
+  if(chaser.r<30) chaser.r=30;
+  chaserTrail.push({x:cx+chaser.r*Math.cos(chaser.theta),y:cy+chaser.r*Math.sin(chaser.theta)});
+  if(chaserTrail.length>800) chaserTrail.shift();
+  t+=dt;
+  // check rendezvous
+  const tx=targetR0*Math.cos(target.theta),ty=targetR0*Math.sin(target.theta);
+  const ccx=chaser.r*Math.cos(chaser.theta),ccy=chaser.r*Math.sin(chaser.theta);
+  const dist=Math.sqrt((tx-ccx)**2+(ty-ccy)**2);
+  if(dist<5&&phase==='rendezvous') phase='docked';
+}
+
+function draw(){
+  ctx.fillStyle='#080810';ctx.fillRect(0,0,W,H);
+  // Earth
+  ctx.fillStyle='#3b82f6';ctx.beginPath();ctx.arc(cx,cy,20,0,Math.PI*2);ctx.fill();
+  const grd=ctx.createRadialGradient(cx,cy,15,cx,cy,35);
+  grd.addColorStop(0,'rgba(59,130,246,0.15)');grd.addColorStop(1,'transparent');
+  ctx.fillStyle=grd;ctx.beginPath();ctx.arc(cx,cy,35,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='9px system-ui';ctx.fillText('Earth',cx-12,cy+30);
+  // orbits
+  ctx.strokeStyle='#ffffff11';ctx.lineWidth=1;
+  ctx.beginPath();ctx.arc(cx,cy,chaserR0,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,targetR0,0,Math.PI*2);ctx.stroke();
+  // transfer orbit (if active)
+  if(phase==='transfer'){
+    ctx.strokeStyle='#f5730644';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.ellipse(cx+(targetR0-chaserR0)/4,cy,transferR,transferR*0.9,0,0,Math.PI*2);ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  // chaser trail
+  for(let i=1;i<chaserTrail.length;i++){
+    const a=i/chaserTrail.length;
+    ctx.strokeStyle=`rgba(14,165,233,${a*0.4})`;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(chaserTrail[i-1].x,chaserTrail[i-1].y);
+    ctx.lineTo(chaserTrail[i].x,chaserTrail[i].y);ctx.stroke();
+  }
+  // target
+  const tx=cx+targetR0*Math.cos(target.theta),ty=cy+targetR0*Math.sin(target.theta);
+  ctx.fillStyle='#22c55e';ctx.beginPath();ctx.arc(tx,ty,5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#22c55e';ctx.font='9px system-ui';ctx.fillText('Target (ISS)',tx+8,ty-4);
+  // chaser
+  const ccx=cx+chaser.r*Math.cos(chaser.theta),ccy=cy+chaser.r*Math.sin(chaser.theta);
+  ctx.fillStyle='#0ea5e9';ctx.beginPath();ctx.arc(ccx,ccy,4,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#0ea5e9';ctx.font='9px system-ui';ctx.fillText('Chaser',ccx+8,ccy+12);
+  // velocity vector
+  const vScale=3;
+  ctx.strokeStyle='#f97316';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(ccx,ccy);
+  const vdx=-chaser.vr*Math.sin(chaser.theta)+chaser.vt*Math.cos(chaser.theta);
+  const vdy=chaser.vr*Math.cos(chaser.theta)+chaser.vt*Math.sin(chaser.theta);
+  ctx.lineTo(ccx+vdx*vScale,ccy+vdy*vScale);ctx.stroke();
+  // distance line
+  const dist=Math.sqrt((tx-ccx)**2+(ty-ccy)**2);
+  ctx.strokeStyle='#ffffff22';ctx.setLineDash([2,4]);ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(ccx,ccy);ctx.lineTo(tx,ty);ctx.stroke();ctx.setLineDash([]);
+  // docked indicator
+  if(phase==='docked'){
+    ctx.fillStyle='#22c55e';ctx.font='bold 18px system-ui';
+    ctx.fillText('DOCKED!',W/2-40,60);
+  }
+  // info
+  ctx.fillStyle='#0ea5e9';ctx.font='bold 12px system-ui';ctx.fillText('Orbital Rendezvous',10,20);
+  ctx.fillStyle='#888';ctx.font='10px system-ui';
+  ctx.fillText('1. Wait for alignment',10,40);
+  ctx.fillText('2. Hohmann Burn 1 (prograde)',10,56);
+  ctx.fillText('3. Coast to target orbit',10,72);
+  ctx.fillText('4. Circularize (retrograde)',10,88);
+  // Hohmann dV info
+  if(phase!=='waiting'){
+    const v1=Math.sqrt(GM/chaserR0).toFixed(1);
+    const v2=Math.sqrt(GM/targetR0).toFixed(1);
+    ctx.fillText(`v_chaser=${v1}, v_target=${v2}`,10,108);
+  }
+  // update stats
+  document.getElementById('cr').textContent=chaser.r.toFixed(0);
+  document.getElementById('tr').textContent=targetR0;
+  document.getElementById('dist').textContent=dist.toFixed(1);
+  document.getElementById('dv').textContent=totalDV.toFixed(2);
+  document.getElementById('phase').textContent=phase;
+  requestAnimationFrame(draw);
+}
+
+function loop(){
+  for(let i=0;i<4;i++) step(0.05);
+  draw();requestAnimationFrame(loop);
+}
+resetSim();loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Re-entry Heating - FreeSpaceStore</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#e0e0e0;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh}
+h1{color:#0ea5e9;margin:18px 0 6px;font-size:1.4rem}
+.desc{color:#999;font-size:.85rem;margin-bottom:12px}
+.layout{display:flex;gap:12px;margin:8px;flex-wrap:wrap;justify-content:center}
+canvas{background:#080810;border:1px solid #333;border-radius:6px}
+.controls{display:flex;gap:10px;margin:10px 0;flex-wrap:wrap;justify-content:center}
+.controls label{font-size:.8rem;color:#aaa}
+.controls input[type=range]{width:80px;accent-color:#0ea5e9}
+.controls select,.controls button{background:#222;color:#e0e0e0;border:1px solid #444;padding:4px 10px;border-radius:4px;font-size:.8rem;cursor:pointer}
+.controls button{background:#0ea5e9;color:#000;border:none;font-weight:600}
+.stats{display:flex;gap:12px;font-size:.8rem;color:#aaa;margin:4px;flex-wrap:wrap}
+footer{margin-top:auto;padding:12px;font-size:.7rem;color:#555}
+footer a{color:#0ea5e9;text-decoration:none}
+</style>
+</head>
+<body>
+<h1>Atmospheric Re-entry Simulation</h1>
+<p class="desc">Entry angle, velocity, heat shield ablation, and thermal profiles</p>
+<div class="layout">
+<canvas id="scene" width="300" height="300"></canvas>
+<canvas id="plot" width="420" height="300"></canvas>
+</div>
+<div class="controls">
+<label>Entry angle <input type="range" id="angle" min="1" max="15" step="0.5" value="5"><span id="angleV">5</span> deg</label>
+<label>Entry velocity <input type="range" id="vel" min="5" max="12" step="0.5" value="7.8"><span id="velV">7.8</span> km/s</label>
+<label>Shape: <select id="shape"><option value="capsule">Capsule</option><option value="shuttle">Shuttle</option><option value="sphere">Sphere</option></select></label>
+<button id="launch">Re-enter</button>
+<button id="reset">Reset</button>
+</div>
+<div class="stats">
+<span>Alt: <b id="alt">120</b> km</span>
+<span>Vel: <b id="vDisp">7800</b> m/s</span>
+<span>Temp: <b id="temp">300</b> K</span>
+<span>G-force: <b id="gforce">0</b> G</span>
+<span>Shield: <b id="shield">100</b>%</span>
+</div>
+<footer><a href="/items/">FreeSpaceStore</a></footer>
+<script>
+const sc=document.getElementById('scene'),sctx=sc.getContext('2d');
+const pc=document.getElementById('plot'),pctx=pc.getContext('2d');
+let entryAngle=5,entryVel=7.8,shape='capsule';
+let alt=120,vel=7800,temp=300,gforce=0,shieldHealth=100;
+let running=false,t=0;
+let altHist=[],tempHist=[],velHist=[];
+const Cd={capsule:1.2,shuttle:0.8,sphere:0.47};
+const heatFactor={capsule:0.6,shuttle:0.9,sphere:1.0};
+
+document.getElementById('angle').addEventListener('input',e=>{entryAngle=+e.value;document.getElementById('angleV').textContent=e.value});
+document.getElementById('vel').addEventListener('input',e=>{entryVel=+e.value;document.getElementById('velV').textContent=e.value});
+document.getElementById('shape').addEventListener('change',e=>shape=e.value);
+document.getElementById('launch').addEventListener('click',()=>{reset();running=true;});
+document.getElementById('reset').addEventListener('click',reset);
+
+function reset(){
+  alt=120;vel=entryVel*1000;temp=300;gforce=0;shieldHealth=100;t=0;running=false;
+  altHist=[];tempHist=[];velHist=[];
+}
+
+function atmosphericDensity(h){
+  // exponential atmosphere model
+  if(h>100) return 5.5e-7*Math.exp(-(h-100)/8);
+  if(h>50) return 1e-3*Math.exp(-(h-50)/8);
+  return 1.225*Math.exp(-h/8.5);
+}
+
+function step(dt){
+  if(!running||alt<=0) return;
+  const rho=atmosphericDensity(alt);
+  const cd=Cd[shape];
+  const A=shape==='shuttle'?30:shape==='capsule'?10:5; // cross section m^2
+  const mass=shape==='shuttle'?75000:shape==='capsule'?5000:1000;
+  // drag
+  const drag=0.5*rho*vel*vel*cd*A;
+  const decel=drag/mass;
+  gforce=decel/9.81;
+  // heating
+  const heatRate=heatFactor[shape]*rho*Math.pow(vel,3)*1e-8;
+  temp=300+heatRate*1e4;
+  // ablation
+  if(temp>2000) shieldHealth=Math.max(0,shieldHealth-heatRate*0.01);
+  // descent
+  const angle=entryAngle*Math.PI/180;
+  vel=Math.max(0,vel-decel*dt);
+  alt=Math.max(0,alt-vel*Math.sin(angle)*dt/1000);
+  // gravity
+  vel=Math.max(0,vel-0.5*dt); // simplified deceleration near ground
+  altHist.push(alt);tempHist.push(temp);velHist.push(vel);
+  t+=dt;
+  if(alt<=0){running=false;alt=0;}
+}
+
+function drawScene(){
+  sctx.fillStyle='#080810';sctx.fillRect(0,0,300,300);
+  // atmosphere layers
+  const layers=[
+    {h:100,color:'#00000000',name:'Space'},
+    {h:80,color:'#0c0c2011',name:'Thermosphere'},
+    {h:50,color:'#1a1a4022',name:'Mesosphere'},
+    {h:20,color:'#2a2a5533',name:'Stratosphere'},
+    {h:0,color:'#3a3a6644',name:'Troposphere'}
+  ];
+  for(let i=0;i<layers.length;i++){
+    const y=300-layers[i].h/120*280;
+    const yNext=i<layers.length-1?300-layers[i+1].h/120*280:300;
+    sctx.fillStyle=layers[i].color;
+    sctx.fillRect(0,y,300,yNext-y);
+    sctx.fillStyle='#444';sctx.font='8px system-ui';
+    sctx.fillText(layers[i].name,5,y+10);
+    sctx.fillText(layers[i].h+'km',5,y+20);
+  }
+  // ground
+  sctx.fillStyle='#1a3a1a';sctx.fillRect(0,280,300,20);
+  // capsule
+  const capY=300-alt/120*280;
+  const capX=150;
+  // heat glow
+  if(temp>1000){
+    const intensity=Math.min(1,(temp-1000)/5000);
+    const grd=sctx.createRadialGradient(capX,capY,5,capX,capY,30+intensity*20);
+    grd.addColorStop(0,`rgba(255,${Math.floor(200-intensity*200)},0,${intensity*0.5})`);
+    grd.addColorStop(1,'transparent');
+    sctx.fillStyle=grd;sctx.beginPath();sctx.arc(capX,capY,30+intensity*20,0,Math.PI*2);sctx.fill();
+  }
+  // plasma trail
+  if(vel>2000&&alt<100){
+    sctx.strokeStyle=`rgba(255,${Math.max(0,200-temp/50)},0,0.5)`;sctx.lineWidth=3;
+    sctx.beginPath();sctx.moveTo(capX+10,capY);
+    for(let i=1;i<8;i++){
+      sctx.lineTo(capX+10+i*12,capY-i*3+(Math.random()-0.5)*8);
+    }
+    sctx.stroke();
+  }
+  // capsule shape
+  sctx.fillStyle=temp>3000?'#ef4444':temp>1500?'#f97316':'#0ea5e9';
+  if(shape==='capsule'){
+    sctx.beginPath();sctx.moveTo(capX-8,capY+5);sctx.lineTo(capX,capY-10);sctx.lineTo(capX+8,capY+5);
+    sctx.quadraticCurveTo(capX,capY+10,capX-8,capY+5);sctx.fill();
+  } else if(shape==='shuttle'){
+    sctx.beginPath();sctx.moveTo(capX-5,capY+8);sctx.lineTo(capX+15,capY);sctx.lineTo(capX-5,capY-8);
+    sctx.lineTo(capX-12,capY-5);sctx.lineTo(capX-12,capY+5);sctx.fill();
+  } else {
+    sctx.beginPath();sctx.arc(capX,capY,7,0,Math.PI*2);sctx.fill();
+  }
+  // altitude marker
+  sctx.fillStyle='#0ea5e9';sctx.font='10px system-ui';
+  sctx.fillText(`${alt.toFixed(1)} km`,capX+15,capY);
+  // shield health bar
+  sctx.fillStyle='#222';sctx.fillRect(260,20,20,260);
+  const shieldH=shieldHealth/100*260;
+  sctx.fillStyle=shieldHealth>50?'#22c55e':shieldHealth>20?'#f59e0b':'#ef4444';
+  sctx.fillRect(260,280-shieldH,20,shieldH);
+  sctx.fillStyle='#888';sctx.font='8px system-ui';sctx.fillText('Shield',255,14);
+}
+
+function drawPlot(){
+  pctx.fillStyle='#080810';pctx.fillRect(0,0,420,300);
+  const px=40,py=20,pw=360,ph=120;
+  // temp plot
+  pctx.fillStyle='#ef4444';pctx.font='bold 10px system-ui';pctx.fillText('Temperature (K)',px,py-5);
+  if(tempHist.length>1){
+    const maxT=Math.max(...tempHist,3000);
+    pctx.strokeStyle='#ef4444';pctx.lineWidth=1.5;pctx.beginPath();
+    for(let i=0;i<tempHist.length;i++){
+      const x=px+i/tempHist.length*pw;
+      const y=py+ph-tempHist[i]/maxT*ph;
+      i===0?pctx.moveTo(x,y):pctx.lineTo(x,y);
+    }
+    pctx.stroke();
+  }
+  // vel plot
+  const py2=py+ph+30;
+  pctx.fillStyle='#0ea5e9';pctx.font='bold 10px system-ui';pctx.fillText('Velocity (m/s)',px,py2-5);
+  if(velHist.length>1){
+    const maxV=Math.max(...velHist,1000);
+    pctx.strokeStyle='#0ea5e9';pctx.lineWidth=1.5;pctx.beginPath();
+    for(let i=0;i<velHist.length;i++){
+      const x=px+i/velHist.length*pw;
+      const y=py2+ph-velHist[i]/maxV*ph;
+      i===0?pctx.moveTo(x,y):pctx.lineTo(x,y);
+    }
+    pctx.stroke();
+  }
+  // axes
+  pctx.strokeStyle='#333';pctx.lineWidth=1;
+  pctx.beginPath();pctx.moveTo(px,py);pctx.lineTo(px,py+ph);pctx.lineTo(px+pw,py+ph);pctx.stroke();
+  pctx.beginPath();pctx.moveTo(px,py2);pctx.lineTo(px,py2+ph);pctx.lineTo(px+pw,py2+ph);pctx.stroke();
+}
+
+function loop(){
+  if(running) for(let i=0;i<5;i++) step(0.1);
+  drawScene();drawPlot();
+  document.getElementById('alt').textContent=alt.toFixed(1);
+  document.getElementById('vDisp').textContent=vel.toFixed(0);
+  document.getElementById('temp').textContent=temp.toFixed(0);
+  document.getElementById('gforce').textContent=gforce.toFixed(1);
+  document.getElementById('shield').textContent=shieldHealth.toFixed(1);
+  requestAnimationFrame(loop);
+}
+reset();loop();
+</script>
+</body>
+</html>

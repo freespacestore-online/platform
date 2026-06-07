@@ -95,6 +95,28 @@
       <h3>The Tsiolkovsky Rocket Equation</h3>
       <p>Delta-v = v_e * ln(m_0 / m_f) = Isp * g_0 * ln(m_0 / m_f), where m_0 is initial mass (with propellant), m_f is final mass (dry, without propellant). The logarithm means exponentially more propellant is needed for each additional unit of delta-v. To get 9.4 km/s delta-v (LEO) with Isp=350s: mass ratio m_0/m_f = 15. 93% of the rocket must be propellant. This fundamental constraint shapes all rocket design.</p>
 
+      <!-- Diagram: Rocket staging concept -->
+      <div style="display:flex;align-items:flex-end;justify-content:center;gap:.5rem;margin:1.5rem 0;flex-wrap:wrap">
+        <div style="text-align:center">
+          <div style="background:#075985;color:white;padding:.3rem .6rem;border-radius:6px 6px 0 0;font-size:.65rem;font-weight:600">2nd Stage</div>
+          <div style="background:#0369a1;color:white;padding:.3rem .6rem;font-size:.65rem;font-weight:600">Interstage</div>
+          <div style="background:#0284c7;color:white;padding:.5rem .6rem;border-radius:0 0 6px 6px;font-size:.65rem;font-weight:600">1st Stage<br><span style="font-size:.55rem;font-weight:400">~3.5 km/s</span></div>
+          <div style="font-size:.6rem;color:#525252;margin-top:.3rem">Launch</div>
+        </div>
+        <span style="color:#404040;font-size:1rem;margin-bottom:2rem">&rarr;</span>
+        <div style="text-align:center">
+          <div style="background:#075985;color:white;padding:.3rem .6rem;border-radius:6px 6px 0 0;font-size:.65rem;font-weight:600">2nd Stage</div>
+          <div style="background:#0369a1;color:white;padding:.3rem .6rem;border-radius:0 0 6px 6px;font-size:.65rem;font-weight:600">Interstage</div>
+          <div style="font-size:.55rem;color:#f87171;margin-top:.2rem">1st stage separated</div>
+          <div style="font-size:.6rem;color:#525252;margin-top:.1rem">MECO</div>
+        </div>
+        <span style="color:#404040;font-size:1rem;margin-bottom:2rem">&rarr;</span>
+        <div style="text-align:center">
+          <div style="background:#075985;color:white;padding:.3rem .6rem;border-radius:6px;font-size:.65rem;font-weight:600">2nd Stage<br><span style="font-size:.55rem;font-weight:400">~6 km/s</span></div>
+          <div style="font-size:.6rem;color:#4ade80;margin-top:.3rem">Orbit!</div>
+        </div>
+      </div>
+
       <h3>Staging</h3>
       <p>Because the rocket equation penalizes carrying empty structure, multi-stage rockets discard spent stages as they fly. Each stage has its own engines and propellant. When a stage is exhausted, it separates, and the next stage ignites. The delta-v of each stage adds. A two-stage-to-orbit (TSTO) rocket is much more efficient than single-stage-to-orbit (SSTO), which requires a mass fraction so aggressive that it's barely achievable. The Falcon 9's first stage provides ~3.5 km/s before separating; the second stage provides the remaining ~6 km/s to orbit.</p>
     </section>
@@ -136,6 +158,28 @@
         <li><strong>LOX/CH4 (liquid methane)</strong> — emerging propellant for reusable rockets. Isp ~350-380s. Denser than LH2 (smaller tanks). Doesn't coke engines (RP-1 leaves soot deposits, problematic for reuse). Can be manufactured on Mars (Sabatier reaction: CO2 + 4H2 &rarr; CH4 + 2H2O). Used in: Raptor (SpaceX Starship), BE-4 (Blue Origin New Glenn, ULA Vulcan).</li>
         <li><strong>Hypergolic</strong> — fuel and oxidizer ignite on contact (no igniter needed). MMH or UDMH (fuel) + N2O4 or NTO (oxidizer). Toxic and corrosive but storable at room temperature and highly reliable. Isp ~280-320s. Used in: spacecraft thrusters (Dragon, Orion RCS), Proton rocket, many satellite apogee engines. Being phased out due to toxicity — AF-M315E (green monopropellant) is a replacement candidate.</li>
       </ul>
+
+      <!-- Diagram: Engine cycle comparison -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;margin:1.5rem 0;text-align:center">
+        <div style="background:#141414;border:1px solid #262626;border-radius:8px;padding:.6rem .3rem">
+          <div style="font-size:.75rem;font-weight:700;color:#fafafa">Gas Generator</div>
+          <div style="font-size:.62rem;color:#0ea5e9;margin-top:.2rem">Open cycle</div>
+          <div style="font-size:.62rem;color:#737373">Simple, reliable</div>
+          <div style="font-size:.62rem;color:#737373">Merlin, F-1</div>
+        </div>
+        <div style="background:#141414;border:1px solid #262626;border-radius:8px;padding:.6rem .3rem">
+          <div style="font-size:.75rem;font-weight:700;color:#fafafa">Staged Combust.</div>
+          <div style="font-size:.62rem;color:#0ea5e9;margin-top:.2rem">Closed cycle</div>
+          <div style="font-size:.62rem;color:#737373">Higher efficiency</div>
+          <div style="font-size:.62rem;color:#737373">RS-25, RD-180</div>
+        </div>
+        <div style="background:#141414;border:1px solid #0ea5e9;border-radius:8px;padding:.6rem .3rem">
+          <div style="font-size:.75rem;font-weight:700;color:#fafafa">Full-Flow</div>
+          <div style="font-size:.62rem;color:#0ea5e9;margin-top:.2rem">Dual preburner</div>
+          <div style="font-size:.62rem;color:#737373">Maximum Isp</div>
+          <div style="font-size:.62rem;color:#4ade80">Raptor (only)</div>
+        </div>
+      </div>
 
       <h3>Engine Cycles</h3>
       <ul>

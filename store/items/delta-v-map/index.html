@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Delta-V Map - FreeSpaceStore</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#e0e0e0;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh}
+h1{color:#0ea5e9;margin:18px 0 6px;font-size:1.4rem}
+.desc{color:#999;font-size:.85rem;margin-bottom:12px}
+canvas{background:#080810;border:1px solid #333;border-radius:6px;cursor:pointer}
+.info{font-size:.8rem;color:#aaa;margin:8px;min-height:20px;text-align:center;max-width:700px}
+.controls{display:flex;gap:10px;margin:8px;flex-wrap:wrap;justify-content:center}
+.controls button{background:#0ea5e9;color:#000;border:none;padding:5px 12px;border-radius:4px;font-size:.8rem;cursor:pointer;font-weight:600}
+footer{margin-top:auto;padding:12px;font-size:.7rem;color:#555}
+footer a{color:#0ea5e9;text-decoration:none}
+</style>
+</head>
+<body>
+<h1>Solar System Delta-V Map</h1>
+<p class="desc">Click any destination to see total delta-v needed from Earth surface. Edges show cost in km/s.</p>
+<canvas id="c" width="740" height="480"></canvas>
+<div class="info" id="info">Click a destination to calculate route</div>
+<div class="controls">
+<button id="reset">Clear Route</button>
+</div>
+<footer><a href="/items/">FreeSpaceStore</a></footer>
+<script>
+const C=document.getElementById('c'),ctx=C.getContext('2d');
+const W=740,H=480;
+
+// Delta-v map as a graph (values in km/s, approximate)
+const nodes=[
+  {id:'surface',name:'Earth Surface',x:60,y:H/2,color:'#3b82f6',size:14},
+  {id:'leo',name:'LEO (200km)',x:170,y:H/2,color:'#0ea5e9',size:12},
+  {id:'geo',name:'GEO',x:170,y:H/2-100,color:'#06b6d4',size:10},
+  {id:'moon',name:'Moon Orbit',x:300,y:H/2-60,color:'#888',size:10},
+  {id:'moonSurf',name:'Moon Surface',x:300,y:H/2-140,color:'#aaa',size:8},
+  {id:'iss',name:'ISS',x:170,y:H/2+80,color:'#22c55e',size:8},
+  {id:'mars',name:'Mars Transfer',x:420,y:H/2+40,color:'#ef4444',size:11},
+  {id:'marsSurf',name:'Mars Surface',x:520,y:H/2+40,color:'#dc2626',size:9},
+  {id:'venus',name:'Venus Transfer',x:420,y:H/2-80,color:'#f59e0b',size:10},
+  {id:'venusSurf',name:'Venus Surface',x:520,y:H/2-80,color:'#d97706',size:8},
+  {id:'jupiter',name:'Jupiter Transfer',x:560,y:H/2+120,color:'#f97316',size:12},
+  {id:'saturn',name:'Saturn Transfer',x:660,y:H/2+80,color:'#a78bfa',size:10},
+  {id:'asteroids',name:'Asteroid Belt',x:420,y:H/2+140,color:'#78716c',size:9},
+  {id:'escape',name:'Solar Escape',x:660,y:H/2-40,color:'#fff',size:8},
+  {id:'mercury',name:'Mercury Transfer',x:420,y:H/2-160,color:'#94a3b8',size:9},
+  {id:'lagrange',name:'L2 (JWST)',x:300,y:H/2+60,color:'#7c3aed',size:8},
+];
+
+const edges=[
+  {from:'surface',to:'leo',dv:9.4,label:'9.4'},
+  {from:'leo',to:'geo',dv:3.9,label:'3.9'},
+  {from:'leo',to:'moon',dv:3.1,label:'3.1'},
+  {from:'moon',to:'moonSurf',dv:1.6,label:'1.6'},
+  {from:'leo',to:'iss',dv:0.1,label:'0.1'},
+  {from:'leo',to:'mars',dv:3.6,label:'3.6'},
+  {from:'mars',to:'marsSurf',dv:3.8,label:'3.8'},
+  {from:'leo',to:'venus',dv:3.5,label:'3.5'},
+  {from:'venus',to:'venusSurf',dv:29,label:'29.0'},
+  {from:'leo',to:'jupiter',dv:6.3,label:'6.3'},
+  {from:'jupiter',to:'saturn',dv:3.0,label:'3.0'},
+  {from:'leo',to:'asteroids',dv:5.0,label:'5.0'},
+  {from:'leo',to:'escape',dv:8.8,label:'8.8'},
+  {from:'leo',to:'mercury',dv:7.5,label:'7.5'},
+  {from:'leo',to:'lagrange',dv:3.4,label:'3.4'},
+];
+
+let selectedNode=null,route=[],totalDV=0;
+
+function findPath(from,to){
+  // BFS shortest path
+  const visited=new Set();
+  const queue=[{node:from,path:[from],cost:0}];
+  visited.add(from);
+  while(queue.length){
+    queue.sort((a,b)=>a.cost-b.cost);
+    const{node,path,cost}=queue.shift();
+    if(node===to) return{path,cost};
+    for(const e of edges){
+      let next=null;
+      if(e.from===node&&!visited.has(e.to)) next=e.to;
+      if(e.to===node&&!visited.has(e.from)) next=e.from;
+      if(next){
+        visited.add(next);
+        queue.push({node:next,path:[...path,next],cost:cost+e.dv});
+      }
+    }
+  }
+  return null;
+}
+
+C.addEventListener('click',e=>{
+  const rect=C.getBoundingClientRect();
+  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  for(const n of nodes){
+    if(Math.sqrt((n.x-mx)**2+(n.y-my)**2)<n.size+8){
+      if(n.id==='surface'){selectedNode=null;route=[];totalDV=0;break;}
+      const result=findPath('surface',n.id);
+      if(result){
+        route=result.path;totalDV=result.cost;selectedNode=n.id;
+        document.getElementById('info').innerHTML=
+          `Route: ${route.map(id=>nodes.find(n=>n.id===id).name).join(' -> ')} | `+
+          `Total delta-v: <b style="color:#0ea5e9">${totalDV.toFixed(1)} km/s</b>`;
+      }
+      break;
+    }
+  }
+});
+
+document.getElementById('reset').addEventListener('click',()=>{selectedNode=null;route=[];totalDV=0;
+  document.getElementById('info').textContent='Click a destination to calculate route';
+});
+
+function draw(){
+  ctx.fillStyle='#080810';ctx.fillRect(0,0,W,H);
+  // edges
+  for(const e of edges){
+    const from=nodes.find(n=>n.id===e.from),to=nodes.find(n=>n.id===e.to);
+    const inRoute=route.length>0&&route.includes(e.from)&&route.includes(e.to)&&
+      Math.abs(route.indexOf(e.from)-route.indexOf(e.to))===1;
+    ctx.strokeStyle=inRoute?'#0ea5e9':'#333';
+    ctx.lineWidth=inRoute?3:1;
+    ctx.beginPath();ctx.moveTo(from.x,from.y);ctx.lineTo(to.x,to.y);ctx.stroke();
+    // dv label on edge
+    const mx2=(from.x+to.x)/2,my2=(from.y+to.y)/2;
+    const angle=Math.atan2(to.y-from.y,to.x-from.x);
+    ctx.fillStyle=inRoute?'#0ea5e9':'#555';
+    ctx.font=inRoute?'bold 10px system-ui':'9px system-ui';
+    ctx.fillText(e.label+' km/s',mx2+Math.sin(angle)*12-20,my2-Math.cos(angle)*12);
+  }
+  // nodes
+  for(const n of nodes){
+    const inRoute=route.includes(n.id);
+    const isSelected=n.id===selectedNode;
+    // glow for route nodes
+    if(inRoute){
+      const grd=ctx.createRadialGradient(n.x,n.y,n.size/2,n.x,n.y,n.size*2);
+      grd.addColorStop(0,n.color+'44');grd.addColorStop(1,'transparent');
+      ctx.fillStyle=grd;ctx.beginPath();ctx.arc(n.x,n.y,n.size*2,0,Math.PI*2);ctx.fill();
+    }
+    ctx.fillStyle=isSelected?'#fff':n.color;
+    ctx.beginPath();ctx.arc(n.x,n.y,n.size,0,Math.PI*2);ctx.fill();
+    if(isSelected){
+      ctx.strokeStyle='#fff';ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(n.x,n.y,n.size+4,0,Math.PI*2);ctx.stroke();
+    }
+    ctx.fillStyle=inRoute?'#fff':'#ccc';
+    ctx.font=inRoute?'bold 10px system-ui':'10px system-ui';
+    const textW=ctx.measureText(n.name).width;
+    ctx.fillText(n.name,n.x-textW/2,n.y+n.size+14);
+    // cumulative dv for route nodes
+    if(inRoute&&n.id!=='surface'){
+      const idx=route.indexOf(n.id);
+      let cumDV=0;
+      for(let i=0;i<idx;i++){
+        const e=edges.find(e=>
+          (e.from===route[i]&&e.to===route[i+1])||
+          (e.to===route[i]&&e.from===route[i+1])
+        );
+        if(e) cumDV+=e.dv;
+      }
+      ctx.fillStyle='#22c55e';ctx.font='bold 9px system-ui';
+      ctx.fillText(`[${cumDV.toFixed(1)}]`,n.x-10,n.y-n.size-6);
+    }
+  }
+  // title
+  ctx.fillStyle='#0ea5e9';ctx.font='bold 14px system-ui';
+  ctx.fillText('Solar System Delta-V Map',10,24);
+  ctx.fillStyle='#666';ctx.font='10px system-ui';
+  ctx.fillText('Values in km/s. Click any node to route from Earth surface.',10,42);
+  // scale reference
+  ctx.fillStyle='#444';ctx.font='9px system-ui';
+  ctx.fillText('Falcon 9: ~9.4 km/s | SLS: ~13+ km/s capability',10,H-10);
+  requestAnimationFrame(draw);
+}
+draw();
+</script>
+</body>
+</html>

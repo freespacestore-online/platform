@@ -96,6 +96,40 @@
       <h2>ADCS (Attitude Determination and Control System)</h2>
       <p>ADCS keeps the spacecraft pointed in the right direction. Telescopes must point at targets, solar panels at the Sun, antennas at Earth, and thrusters along the desired thrust vector.</p>
 
+      <!-- Diagram: Spacecraft subsystems -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;margin:1.5rem 0;text-align:center">
+        <div style="background:#141414;border:1px solid #262626;border-radius:8px;padding:.6rem .3rem">
+          <div style="font-size:.78rem;font-weight:700;color:#fafafa">ADCS</div>
+          <div style="font-size:.62rem;color:#0ea5e9">Attitude control</div>
+          <div style="font-size:.62rem;color:#737373">Star trackers, wheels</div>
+        </div>
+        <div style="background:#141414;border:1px solid #262626;border-radius:8px;padding:.6rem .3rem">
+          <div style="font-size:.78rem;font-weight:700;color:#fafafa">EPS</div>
+          <div style="font-size:.62rem;color:#0ea5e9">Power</div>
+          <div style="font-size:.62rem;color:#737373">Solar + batteries</div>
+        </div>
+        <div style="background:#141414;border:1px solid #262626;border-radius:8px;padding:.6rem .3rem">
+          <div style="font-size:.78rem;font-weight:700;color:#fafafa">TCS</div>
+          <div style="font-size:.62rem;color:#0ea5e9">Thermal</div>
+          <div style="font-size:.62rem;color:#737373">MLI, radiators, heaters</div>
+        </div>
+        <div style="background:#141414;border:1px solid #262626;border-radius:8px;padding:.6rem .3rem">
+          <div style="font-size:.78rem;font-weight:700;color:#fafafa">C&DH</div>
+          <div style="font-size:.62rem;color:#0ea5e9">Data handling</div>
+          <div style="font-size:.62rem;color:#737373">OBC, storage, SW</div>
+        </div>
+        <div style="background:#141414;border:1px solid #262626;border-radius:8px;padding:.6rem .3rem">
+          <div style="font-size:.78rem;font-weight:700;color:#fafafa">Propulsion</div>
+          <div style="font-size:.62rem;color:#0ea5e9">Orbit maneuvers</div>
+          <div style="font-size:.62rem;color:#737373">Thrusters, tanks</div>
+        </div>
+        <div style="background:#141414;border:1px solid #262626;border-radius:8px;padding:.6rem .3rem">
+          <div style="font-size:.78rem;font-weight:700;color:#fafafa">Comms</div>
+          <div style="font-size:.62rem;color:#0ea5e9">TT&C</div>
+          <div style="font-size:.62rem;color:#737373">Antenna, transponder</div>
+        </div>
+      </div>
+
       <h3>Attitude Sensors</h3>
       <ul>
         <li><strong>Star trackers</strong> — cameras that image star fields and match patterns against a catalog to determine pointing to arcsecond accuracy. The primary attitude sensor for most spacecraft. Typical accuracy: 1-10 arcseconds. Blinded by Sun, Moon, Earth in the field of view.</li>
@@ -131,6 +165,21 @@
     <section class="section" id="thermal">
       <h2>Thermal Control</h2>
       <p>In space, there is no convection or conduction through air. Heat transfer is only by radiation and conduction through structural elements. Spacecraft temperatures can range from -150C (shadow) to +150C (sunlit surfaces) without thermal control. Electronics typically operate in the -20C to +50C range.</p>
+
+      <!-- Diagram: Spacecraft lifecycle -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:.4rem;margin:1.5rem 0;flex-wrap:wrap">
+        <div style="background:#0c2d48;border:1px solid #0ea5e9;border-radius:8px;padding:.4rem .6rem;color:#38bdf8;font-size:.72rem;font-weight:600">Design</div>
+        <span style="color:#404040;font-size:1rem">&rarr;</span>
+        <div style="background:#0c2d48;border:1px solid #0ea5e9;border-radius:8px;padding:.4rem .6rem;color:#38bdf8;font-size:.72rem;font-weight:600">Build</div>
+        <span style="color:#404040;font-size:1rem">&rarr;</span>
+        <div style="background:#0c2d48;border:1px solid #0ea5e9;border-radius:8px;padding:.4rem .6rem;color:#38bdf8;font-size:.72rem;font-weight:600">Test (TVAC, vibe)</div>
+        <span style="color:#404040;font-size:1rem">&rarr;</span>
+        <div style="background:#0c2d48;border:1px solid #0ea5e9;border-radius:8px;padding:.4rem .6rem;color:#38bdf8;font-size:.72rem;font-weight:600">Launch</div>
+        <span style="color:#404040;font-size:1rem">&rarr;</span>
+        <div style="background:#0c2d48;border:1px solid #0ea5e9;border-radius:8px;padding:.4rem .6rem;color:#38bdf8;font-size:.72rem;font-weight:600">Commission</div>
+        <span style="color:#404040;font-size:1rem">&rarr;</span>
+        <div style="background:#0f3d0f;border:1px solid #4ade80;border-radius:8px;padding:.4rem .6rem;color:#4ade80;font-size:.72rem;font-weight:600">Ops</div>
+      </div>
 
       <h3>Passive Methods</h3>
       <ul>
