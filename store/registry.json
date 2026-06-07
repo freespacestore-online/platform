@@ -1,6 +1,18 @@
 {
   "robots": [
     {
+      "id": "hohmann",
+      "name": "Hohmann Transfer",
+      "description": "Calculate interplanetary transfers. Delta-v, travel time, launch windows. Animated spacecraft along transfer ellipse.",
+      "storeType": "behavior",
+      "category": "maneuvers",
+      "icon": "\ud83d\udd04",
+      "iconBg": "#0ea5e9",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
       "id": "orbit-sim",
       "name": "Orbit Simulator",
       "description": "Launch satellites \u2014 altitude, inclination, eccentricity. ISS/GEO/Molniya presets. Kepler orbits with time control.",

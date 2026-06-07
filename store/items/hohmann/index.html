@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hohmann Transfer Calculator | FreeSpaceStore</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0a0f;color:#e2e2e8;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+  header{padding:18px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #1e1e2e}
+  header .logo{font-size:24px}
+  header h1{font-size:18px;font-weight:600;color:#7dd3fc}
+  header span{font-size:13px;color:#0ea5e9;margin-left:auto;font-weight:500}
+  .main{display:flex;flex:1;overflow:hidden}
+  .sidebar{width:360px;min-width:360px;border-right:1px solid #1e1e2e;padding:20px;overflow-y:auto}
+  .canvas-wrap{flex:1;position:relative}
+  canvas{display:block;width:100%;height:100%}
+  h2{font-size:14px;font-weight:600;color:#7dd3fc;margin:16px 0 8px;text-transform:uppercase;letter-spacing:0.5px}
+  h2:first-child{margin-top:0}
+  h3{font-size:12px;color:#888;margin:8px 0 4px}
+  select{background:#1e1e2e;color:#e2e2e8;border:1px solid #2e2e3e;padding:8px 12px;border-radius:6px;font-size:13px;width:100%;cursor:pointer}
+  button{background:#0ea5e9;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;width:100%}
+  button:hover{background:#0284c7}
+  button.secondary{background:#1e1e2e;color:#7dd3fc;border:1px solid #2e2e3e}
+  button:disabled{opacity:0.4;cursor:not-allowed}
+  .stat-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #111118;font-size:13px}
+  .stat-row .label{color:#888}
+  .stat-row .value{color:#7dd3fc;font-weight:600;font-family:'Courier New',monospace;text-align:right}
+  .btn-row{display:flex;gap:8px;margin:12px 0}
+  .btn-row button{flex:1}
+  .math-box{background:#0d0d14;border:1px solid #1e1e2e;border-radius:8px;padding:12px;font-size:12px;line-height:1.8;color:#999;margin-top:8px}
+  .math-box .formula{color:#7dd3fc;font-family:'Courier New',monospace;font-size:13px}
+  .orbit-select{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+  .departure-alt{margin-top:8px}
+  .departure-alt label{font-size:12px;color:#888;display:block;margin-bottom:4px}
+  .departure-alt select{width:100%}
+  .compare-box{background:#0d0d14;border:1px solid #1e1e2e;border-radius:8px;padding:12px;margin-top:8px}
+  .compare-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
+  .compare-row .l{color:#888}
+  .compare-row .v{color:#7dd3fc;font-family:'Courier New',monospace}
+  .legend{position:absolute;top:12px;left:12px;background:#12121cdd;border:1px solid #1e1e2e;border-radius:8px;padding:10px;font-size:11px;pointer-events:none}
+  .legend div{display:flex;align-items:center;gap:6px;margin:3px 0}
+  .legend .dot{width:10px;height:10px;border-radius:50%}
+  .anim-info{position:absolute;bottom:12px;left:12px;background:#12121cdd;border:1px solid #1e1e2e;border-radius:8px;padding:10px;font-size:12px;display:none}
+  @media(max-width:900px){.main{flex-direction:column}.sidebar{width:100%;min-width:auto;max-height:50vh}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">&#128640;</div>
+  <h1>Hohmann Transfer Calculator</h1>
+  <span>FreeSpaceStore</span>
+</header>
+<div class="main">
+  <div class="sidebar">
+    <h2>Mission Parameters</h2>
+    <div class="orbit-select">
+      <div>
+        <h3>Departure</h3>
+        <select id="departure" onchange="recalculate()">
+          <option value="mercury">Mercury</option>
+          <option value="venus">Venus</option>
+          <option value="earth" selected>Earth</option>
+          <option value="mars">Mars</option>
+          <option value="jupiter">Jupiter</option>
+          <option value="saturn">Saturn</option>
+          <option value="uranus">Uranus</option>
+          <option value="neptune">Neptune</option>
+        </select>
+      </div>
+      <div>
+        <h3>Arrival</h3>
+        <select id="arrival" onchange="recalculate()">
+          <option value="mercury">Mercury</option>
+          <option value="venus">Venus</option>
+          <option value="earth">Earth</option>
+          <option value="mars" selected>Mars</option>
+          <option value="jupiter">Jupiter</option>
+          <option value="saturn">Saturn</option>
+          <option value="uranus">Uranus</option>
+          <option value="neptune">Neptune</option>
+        </select>
+      </div>
+    </div>
+    <div class="departure-alt">
+      <label>Departure Parking Orbit</label>
+      <select id="parkingOrbit" onchange="recalculate()">
+        <option value="200">LEO (200 km)</option>
+        <option value="2000">MEO (2,000 km)</option>
+        <option value="35786">GEO (35,786 km)</option>
+      </select>
+    </div>
+
+    <div class="btn-row">
+      <button onclick="launch()" id="btnLaunch">Launch Transfer</button>
+      <button class="secondary" onclick="resetAnim()">Reset</button>
+    </div>
+
+    <h2>Transfer Parameters</h2>
+    <div class="stat-row"><span class="label">Transfer Type</span><span class="value">Hohmann</span></div>
+    <div class="stat-row"><span class="label">Departure dv</span><span class="value" id="dv1">-</span></div>
+    <div class="stat-row"><span class="label">Arrival dv</span><span class="value" id="dv2">-</span></div>
+    <div class="stat-row"><span class="label">Total dv</span><span class="value" id="dvTotal">-</span></div>
+    <div class="stat-row"><span class="label">Transfer Time</span><span class="value" id="transferTime">-</span></div>
+    <div class="stat-row"><span class="label">Synodic Period</span><span class="value" id="synodic">-</span></div>
+    <div class="stat-row"><span class="label">Phase Angle</span><span class="value" id="phaseAngle">-</span></div>
+    <div class="stat-row"><span class="label">Semi-major Axis</span><span class="value" id="sma">-</span></div>
+
+    <h2>Bi-elliptic Comparison</h2>
+    <div class="compare-box" id="biellipticBox">
+      <div class="compare-row"><span class="l">Hohmann total dv</span><span class="v" id="cmpHoh">-</span></div>
+      <div class="compare-row"><span class="l">Bi-elliptic total dv</span><span class="v" id="cmpBi">-</span></div>
+      <div class="compare-row"><span class="l">Savings</span><span class="v" id="cmpSave">-</span></div>
+      <div class="compare-row"><span class="l">Verdict</span><span class="v" id="cmpVerdict">-</span></div>
+    </div>
+
+    <h2>The Math</h2>
+    <div class="math-box">
+      <div class="formula">Vis-viva: v = sqrt(mu * (2/r - 1/a))</div>
+      <div style="margin-top:6px">where mu = GM_sun, r = orbital radius, a = semi-major axis</div>
+      <div style="margin-top:8px" class="formula">Period: T = 2pi * sqrt(a^3 / mu)</div>
+      <div style="margin-top:6px">Transfer time = T_transfer / 2</div>
+      <div style="margin-top:8px" class="formula">Synodic: 1/T_syn = |1/T1 - 1/T2|</div>
+    </div>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="orbit"></canvas>
+    <div class="legend" id="legend">
+      <div><div class="dot" id="legDep" style="background:#22d3ee"></div><span id="legDepName">Earth</span></div>
+      <div><div class="dot" id="legArr" style="background:#ef4444"></div><span id="legArrName">Mars</span></div>
+      <div><div class="dot" style="background:#fbbf24"></div>Sun</div>
+      <div><div class="dot" style="background:#0ea5e9;border:2px dashed #0ea5e9;background:transparent"></div>Transfer orbit</div>
+    </div>
+    <div class="anim-info" id="animInfo">
+      <div>Phase: <strong id="animPhase">-</strong></div>
+      <div>Progress: <strong id="animProgress">0%</strong></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Planet data: semi-major axis (AU), color, radius for display
+const PLANETS = {
+  mercury: { name: 'Mercury', a: 0.387, color: '#a3a3a3', r: 3 },
+  venus:   { name: 'Venus',   a: 0.723, color: '#fbbf24', r: 5 },
+  earth:   { name: 'Earth',   a: 1.000, color: '#22d3ee', r: 5 },
+  mars:    { name: 'Mars',    a: 1.524, color: '#ef4444', r: 4 },
+  jupiter: { name: 'Jupiter', a: 5.203, color: '#f97316', r: 10 },
+  saturn:  { name: 'Saturn',  a: 9.537, color: '#eab308', r: 9 },
+  uranus:  { name: 'Uranus',  a: 19.19, color: '#67e8f9', r: 7 },
+  neptune: { name: 'Neptune', a: 30.07, color: '#3b82f6', r: 7 }
+};
+
+const MU_SUN = 1.327e20; // m^3/s^2
+const AU = 1.496e11; // meters
+
+let depKey = 'earth', arrKey = 'mars';
+let transferData = {};
+let animating = false;
+let animT = 0, animDuration = 0;
+let animStartAngle = 0;
+let animId = null;
+
+function recalculate() {
+  depKey = document.getElementById('departure').value;
+  arrKey = document.getElementById('arrival').value;
+  const dep = PLANETS[depKey];
+  const arr = PLANETS[arrKey];
+
+  document.getElementById('legDepName').textContent = dep.name;
+  document.getElementById('legArrName').textContent = arr.name;
+  document.getElementById('legDep').style.background = dep.color;
+  document.getElementById('legArr').style.background = arr.color;
+
+  if (depKey === arrKey) {
+    clearStats();
+    draw();
+    return;
+  }
+
+  const r1 = dep.a * AU; // departure orbit radius (heliocentric)
+  const r2 = arr.a * AU;
+
+  // Hohmann transfer
+  const aTransfer = (r1 + r2) / 2;
+
+  // Vis-viva: v = sqrt(mu * (2/r - 1/a))
+  const vCirc1 = Math.sqrt(MU_SUN / r1); // circular velocity at r1
+  const vCirc2 = Math.sqrt(MU_SUN / r2);
+
+  const vDep = Math.sqrt(MU_SUN * (2 / r1 - 1 / aTransfer)); // transfer orbit at r1
+  const vArr = Math.sqrt(MU_SUN * (2 / r2 - 1 / aTransfer)); // transfer orbit at r2
+
+  // Heliocentric delta-v
+  const dvDepHelio = Math.abs(vDep - vCirc1);
+  const dvArrHelio = Math.abs(vCirc2 - vArr);
+
+  // For parking orbit consideration (hyperbolic excess)
+  const parkingAlt = parseInt(document.getElementById('parkingOrbit').value) * 1000; // meters
+  // Use Earth-like parameters for departure planet (simplified)
+  const MU_EARTH = 3.986e14;
+  const R_EARTH = 6.371e6;
+  const rParking = R_EARTH + parkingAlt;
+  const vParking = Math.sqrt(MU_EARTH / rParking);
+  const vInfDep = dvDepHelio;
+  const vHyp = Math.sqrt(vInfDep * vInfDep + 2 * MU_EARTH / rParking);
+  const dvDep = Math.abs(vHyp - vParking);
+
+  // Arrival (simplified - use same body mass)
+  const vInfArr = dvArrHelio;
+  const vHypArr = Math.sqrt(vInfArr * vInfArr + 2 * MU_EARTH / rParking);
+  const vParkArr = Math.sqrt(MU_EARTH / rParking);
+  const dvArr = Math.abs(vHypArr - vParkArr);
+
+  const dvTotal = dvDep + dvArr;
+
+  // Transfer time
+  const tTransfer = Math.PI * Math.sqrt(Math.pow(aTransfer, 3) / MU_SUN);
+
+  // Synodic period
+  const T1 = 2 * Math.PI * Math.sqrt(Math.pow(r1, 3) / MU_SUN);
+  const T2 = 2 * Math.PI * Math.sqrt(Math.pow(r2, 3) / MU_SUN);
+  const tSynodic = 1 / Math.abs(1 / T1 - 1 / T2);
+
+  // Phase angle
+  const angVel2 = 2 * Math.PI / T2;
+  const phaseAngle = Math.PI - angVel2 * tTransfer;
+
+  transferData = { r1, r2, aTransfer, dvDep, dvArr, dvTotal, tTransfer, tSynodic, phaseAngle, T1, T2, dvDepHelio, dvArrHelio };
+
+  // Update UI
+  document.getElementById('dv1').textContent = (dvDep / 1000).toFixed(2) + ' km/s';
+  document.getElementById('dv2').textContent = (dvArr / 1000).toFixed(2) + ' km/s';
+  document.getElementById('dvTotal').textContent = (dvTotal / 1000).toFixed(2) + ' km/s';
+  document.getElementById('transferTime').textContent = formatDays(tTransfer);
+  document.getElementById('synodic').textContent = formatDays(tSynodic);
+  document.getElementById('phaseAngle').textContent = (phaseAngle * 180 / Math.PI).toFixed(1) + '\u00b0';
+  document.getElementById('sma').textContent = (aTransfer / AU).toFixed(3) + ' AU';
+
+  // Bi-elliptic comparison
+  // Bi-elliptic uses intermediate orbit at 2x the larger orbit
+  const rIntermediate = Math.max(r1, r2) * 2;
+  const a1bi = (r1 + rIntermediate) / 2;
+  const a2bi = (r2 + rIntermediate) / 2;
+  const vDep1bi = Math.sqrt(MU_SUN * (2 / r1 - 1 / a1bi));
+  const vInt1bi = Math.sqrt(MU_SUN * (2 / rIntermediate - 1 / a1bi));
+  const vInt2bi = Math.sqrt(MU_SUN * (2 / rIntermediate - 1 / a2bi));
+  const vArr2bi = Math.sqrt(MU_SUN * (2 / r2 - 1 / a2bi));
+  const dvBi = Math.abs(vDep1bi - vCirc1) + Math.abs(vInt2bi - vInt1bi) + Math.abs(vCirc2 - vArr2bi);
+
+  document.getElementById('cmpHoh').textContent = (dvTotal / 1000).toFixed(2) + ' km/s';
+  document.getElementById('cmpBi').textContent = (dvBi / 1000).toFixed(2) + ' km/s';
+  const savings = ((dvTotal - dvBi) / dvTotal * 100);
+  document.getElementById('cmpSave').textContent = savings.toFixed(1) + '%';
+  document.getElementById('cmpSave').style.color = savings > 0 ? '#6ee7b7' : '#fca5a5';
+
+  const ratio = Math.max(r1, r2) / Math.min(r1, r2);
+  let verdict;
+  if (ratio > 11.94) {
+    verdict = 'Bi-elliptic is more efficient';
+    document.getElementById('cmpVerdict').style.color = '#6ee7b7';
+  } else {
+    verdict = 'Hohmann is more efficient';
+    document.getElementById('cmpVerdict').style.color = '#7dd3fc';
+  }
+  document.getElementById('cmpVerdict').textContent = verdict;
+
+  draw();
+}
+
+function clearStats() {
+  ['dv1', 'dv2', 'dvTotal', 'transferTime', 'synodic', 'phaseAngle', 'sma'].forEach(id => {
+    document.getElementById(id).textContent = '-';
+  });
+}
+
+function formatDays(seconds) {
+  const days = seconds / 86400;
+  if (days > 365) return (days / 365.25).toFixed(1) + ' years';
+  return days.toFixed(0) + ' days';
+}
+
+// Drawing
+const canvas = document.getElementById('orbit');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+}
+window.addEventListener('resize', () => { resize(); draw(); });
+resize();
+
+function draw() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const cx = W / 2, cy = H / 2;
+
+  // Determine scale: fit both orbits
+  const dep = PLANETS[depKey];
+  const arr = PLANETS[arrKey];
+  const maxA = Math.max(dep.a, arr.a);
+  const scale = Math.min(W, H) * 0.4 / maxA;
+
+  // Stars background
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i < 100; i++) {
+    const sx = (Math.sin(i * 127.1 + i * i * 43.758) * 0.5 + 0.5) * W;
+    const sy = (Math.sin(i * 269.5 + i * i * 17.159) * 0.5 + 0.5) * H;
+    const br = Math.random() * 0.3 + 0.1;
+    ctx.globalAlpha = br;
+    ctx.fillRect(sx, sy, 1, 1);
+  }
+  ctx.globalAlpha = 1;
+
+  // Sun
+  const sunGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 14);
+  sunGrad.addColorStop(0, '#fbbf24');
+  sunGrad.addColorStop(0.7, '#f59e0b');
+  sunGrad.addColorStop(1, '#f59e0b00');
+  ctx.fillStyle = sunGrad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Planet orbits
+  const time = Date.now() / 1000;
+  Object.entries(PLANETS).forEach(([key, planet]) => {
+    const r = planet.a * scale;
+    // Orbit path
+    ctx.strokeStyle = key === depKey || key === arrKey ? '#ffffff11' : '#ffffff06';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Planet position
+    const T = 2 * Math.PI * Math.sqrt(Math.pow(planet.a * AU, 3) / MU_SUN);
+    const angVel = 2 * Math.PI / T;
+    const angle = angVel * time * 1e6; // speed up for visibility
+
+    const px = cx + r * Math.cos(angle);
+    const py = cy - r * Math.sin(angle);
+
+    if (key === depKey || key === arrKey) {
+      ctx.fillStyle = planet.color;
+      ctx.beginPath();
+      ctx.arc(px, py, planet.r, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Label
+      ctx.fillStyle = planet.color;
+      ctx.font = '11px sans-serif';
+      ctx.fillText(planet.name, px + planet.r + 4, py + 4);
+
+      // Store position for animation
+      if (key === depKey) { transferData.depAngle = angle; transferData.depPx = px; transferData.depPy = py; }
+      if (key === arrKey) { transferData.arrAngle = angle; transferData.arrPx = px; transferData.arrPy = py; }
+    }
+  });
+
+  // Transfer orbit (if calculated and same dep/arr)
+  if (depKey !== arrKey && transferData.aTransfer) {
+    const r1 = dep.a * scale;
+    const r2 = arr.a * scale;
+    const aT = (dep.a + arr.a) / 2 * scale;
+    const c = aT - Math.min(r1, r2); // distance from center to focus
+    const b = Math.sqrt(aT * aT - c * c);
+
+    // Draw transfer ellipse
+    const going_out = arr.a > dep.a;
+    const startA = going_out ? transferData.depAngle || 0 : transferData.arrAngle || 0;
+
+    ctx.strokeStyle = '#0ea5e9';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 4]);
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(-startA);
+
+    ctx.beginPath();
+    // Ellipse centered at focus (sun)
+    const eCx = going_out ? -c : c;
+    for (let t = 0; t <= Math.PI; t += 0.02) {
+      const ex = eCx + aT * Math.cos(going_out ? Math.PI + t : -t);
+      const ey = b * Math.sin(going_out ? Math.PI + t : -t);
+      t === 0 ? ctx.moveTo(ex, -ey) : ctx.lineTo(ex, -ey);
+    }
+    ctx.stroke();
+    ctx.restore();
+    ctx.setLineDash([]);
+
+    // Animated spacecraft
+    if (animating) {
+      const progress = Math.min(animT / animDuration, 1);
+      const angle = animStartAngle + (going_out ? 1 : -1) * Math.PI * progress;
+      const tParam = going_out ? Math.PI + Math.PI * progress : -Math.PI * progress;
+      const eCxW = going_out ? -c : c;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(-animStartAngle);
+
+      const sx = eCxW + aT * Math.cos(tParam);
+      const sy = -(b * Math.sin(tParam));
+
+      // Spacecraft
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(sx, sy, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Trail
+      ctx.strokeStyle = '#0ea5e944';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let p = 0; p <= progress; p += 0.01) {
+        const tp = going_out ? Math.PI + Math.PI * p : -Math.PI * p;
+        const tx = eCxW + aT * Math.cos(tp);
+        const ty = -(b * Math.sin(tp));
+        p === 0 ? ctx.moveTo(tx, ty) : ctx.lineTo(tx, ty);
+      }
+      ctx.stroke();
+
+      ctx.restore();
+
+      document.getElementById('animProgress').textContent = (progress * 100).toFixed(0) + '%';
+      document.getElementById('animPhase').textContent = progress < 0.05 ? 'Departure burn' : progress > 0.95 ? 'Arrival burn' : 'Coasting';
+
+      if (progress >= 1) {
+        animating = false;
+        document.getElementById('animInfo').style.display = 'none';
+        document.getElementById('btnLaunch').disabled = false;
+        document.getElementById('btnLaunch').textContent = 'Launch Transfer';
+      }
+    }
+  }
+}
+
+function launch() {
+  if (depKey === arrKey || animating) return;
+  animating = true;
+  animT = 0;
+  animDuration = 5; // 5 seconds animation
+  animStartAngle = transferData.depAngle || 0;
+  document.getElementById('animInfo').style.display = 'block';
+  document.getElementById('btnLaunch').disabled = true;
+  document.getElementById('btnLaunch').textContent = 'In transit...';
+  lastFrameTime = performance.now();
+  animLoop();
+}
+
+let lastFrameTime = 0;
+function animLoop() {
+  const now = performance.now();
+  const dt = (now - lastFrameTime) / 1000;
+  lastFrameTime = now;
+  animT += dt;
+  draw();
+  if (animating) requestAnimationFrame(animLoop);
+}
+
+function resetAnim() {
+  animating = false;
+  animT = 0;
+  document.getElementById('animInfo').style.display = 'none';
+  document.getElementById('btnLaunch').disabled = false;
+  document.getElementById('btnLaunch').textContent = 'Launch Transfer';
+  draw();
+}
+
+// Continuous draw for planet motion
+function mainLoop() {
+  if (!animating) draw();
+  requestAnimationFrame(mainLoop);
+}
+
+recalculate();
+mainLoop();
+</script>
+</body>
+</html>
