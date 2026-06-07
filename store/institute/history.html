@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Space History — Space Institute</title>
+  <meta name="description" content="The history of spaceflight. From Sputnik to Artemis, Apollo, the Space Shuttle, ISS, the SpaceX revolution, and the future of space exploration.">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--accent:#0ea5e9;--paper:#0a0a0a;--ink:#fafafa;--muted:#737373;--panel:#141414;--line:#262626}
+    body{font-family:'Manrope',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.7;-webkit-font-smoothing:antialiased}
+    .container{max-width:900px;margin:0 auto;padding:0 1.5rem}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+    header{border-bottom:1px solid var(--line);padding:.75rem 0}
+    header .container{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:.5rem;text-decoration:none;color:var(--ink)}
+    .brand-emoji{font-size:1.5rem}
+    .brand-text{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700}
+    .brand-tag{font-size:.68rem;color:var(--muted)}
+    nav{display:flex;gap:1rem;font-size:.82rem;font-weight:600;margin-left:auto}
+    nav a{color:var(--muted)}nav a:hover{color:var(--ink)}
+    .hero{text-align:center;padding:2.5rem 0 1.5rem;border-bottom:1px solid var(--line)}
+    .hero h1{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:700;margin-bottom:.5rem}
+    .hero h1 em{color:var(--accent);font-style:normal}
+    .hero p{color:var(--muted);max-width:600px;margin:0 auto;font-size:.95rem}
+    .toc{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem 1.25rem;margin:1.5rem 0}
+    .toc h3{font-size:.85rem;font-weight:700;margin-bottom:.5rem;color:var(--accent)}
+    .toc ul{list-style:none;padding:0;columns:2}
+    .toc li{margin:.2rem 0}.toc a{color:#a3a3a3;font-size:.82rem}.toc a:hover{color:var(--ink)}
+    .section{margin-bottom:2rem;padding-top:1rem}
+    .section h2{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;margin-bottom:.5rem;padding-bottom:.35rem;border-bottom:1px solid var(--line)}
+    .section h3{font-size:.95rem;font-weight:700;margin:1rem 0 .35rem;color:#e5e5e5}
+    .section p,.section li{color:#a3a3a3;font-size:.88rem}
+    ul{padding-left:1.25rem;margin:.35rem 0}
+    li{margin-bottom:.3rem}
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.6rem;margin:.5rem 0}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.85rem;transition:border-color .15s}
+    .card:hover{border-color:var(--accent)}
+    .card h4{font-size:.85rem;font-weight:700;margin-bottom:.2rem}
+    .card h4 a{color:var(--ink)}.card p{font-size:.75rem;color:var(--muted);margin:0;line-height:1.5}
+    .card .meta{font-size:.65rem;color:#525252;margin-top:.25rem}
+    footer{border-top:1px solid var(--line);padding:1.5rem 0;text-align:center;font-size:.75rem;color:#525252}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/institute/" class="brand">
+        <span class="brand-emoji">🚀</span>
+        <span><span class="brand-text">Space Institute</span><br><span class="brand-tag">Powered by <a href="https://zensical.org" style="color:#525252">Zensical</a></span></span>
+      </a>
+      <nav><a href="/institute/">Overview</a><a href="/institute/orbital-mechanics.html">Orbits</a><a href="/institute/propulsion.html">Propulsion</a><a href="/institute/spacecraft.html">Spacecraft</a><a href="/institute/mission-design.html">Missions</a><a href="/institute/history.html">History</a><a href="/">Simulations</a></nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="hero">
+      <h1>Space <em>History</em></h1>
+      <p>From the first artificial satellite to reusable rockets and lunar return. Seven decades of humanity reaching beyond Earth, one mission at a time.</p>
+    </section>
+
+    <nav class="toc">
+      <h3>Contents</h3>
+      <ul>
+        <li><a href="#dawn">The Dawn of Space</a></li>
+        <li><a href="#apollo">Apollo</a></li>
+        <li><a href="#shuttle">Space Shuttle</a></li>
+        <li><a href="#stations">Space Stations</a></li>
+        <li><a href="#robotic">Robotic Exploration</a></li>
+        <li><a href="#commercial">Commercial Space</a></li>
+        <li><a href="#artemis">Artemis & Beyond</a></li>
+        <li><a href="#resources">Resources</a></li>
+      </ul>
+    </nav>
+
+    <section class="section" id="dawn">
+      <h2>The Dawn of the Space Age (1957-1965)</h2>
+
+      <h3>Sputnik and the Space Race</h3>
+      <p>On October 4, 1957, the Soviet Union launched Sputnik 1 — the first artificial satellite. An 83.6 kg polished metal sphere with four antennas, it orbited Earth every 96 minutes, transmitting a simple radio beep that could be heard by anyone with a shortwave receiver. The shock in the United States was profound — it triggered the creation of NASA (1958), massive increases in science education funding (National Defense Education Act), and the Space Race.</p>
+
+      <h3>Key Milestones</h3>
+      <ul>
+        <li><strong>1957 Nov</strong> — Sputnik 2 carries Laika, the first living creature in orbit (a stray dog from Moscow). She died within hours from overheating — the mission was not designed for survival. The ethics were controversial even at the time.</li>
+        <li><strong>1958 Jan</strong> — Explorer 1 (USA) discovers the Van Allen radiation belts. First US satellite, launched by a Juno I rocket. James Van Allen's Geiger counter detected unexpectedly high radiation levels.</li>
+        <li><strong>1961 Apr 12</strong> — Yuri Gagarin (Vostok 1) becomes the first human in space. Single orbit, 108 minutes. Ejected from the capsule at 7 km altitude and parachuted separately. The Soviet Union kept this detail secret for years (FAI rules required the pilot to land in the vehicle).</li>
+        <li><strong>1961 May 5</strong> — Alan Shepard (Freedom 7) becomes the first American in space. 15-minute suborbital flight on a Mercury-Redstone rocket. On May 25, President Kennedy declares the goal of "landing a man on the Moon and returning him safely to the Earth" before the decade is out.</li>
+        <li><strong>1962 Feb</strong> — John Glenn (Friendship 7) becomes the first American to orbit Earth. Three orbits. A loose heat shield indicator caused a dramatic (ultimately unnecessary) decision to keep the retrorocket pack attached during re-entry.</li>
+        <li><strong>1963 Jun</strong> — Valentina Tereshkova (Vostok 6) becomes the first woman in space. 48 orbits over 3 days. It would be 19 years before the next woman reached space (Svetlana Savitskaya, 1982).</li>
+        <li><strong>1965 Mar</strong> — Alexei Leonov performs the first spacewalk (EVA) from Voskhod 2. 12 minutes. His suit over-inflated in vacuum; he had to bleed air pressure to fit back through the airlock — nearly dying in the process.</li>
+        <li><strong>1965 Jun</strong> — Ed White performs the first American spacewalk (Gemini 4). 23 minutes. Described it as the saddest moment of his life when ordered back inside.</li>
+      </ul>
+
+      <h3>The Pioneers of Rocketry</h3>
+      <ul>
+        <li><strong>Konstantin Tsiolkovsky (1857-1935)</strong> — Russian schoolteacher who derived the rocket equation (1903), proposed liquid-fueled rockets, multi-stage vehicles, and space stations. Never built a rocket, but provided the theoretical foundation.</li>
+        <li><strong>Robert Goddard (1882-1945)</strong> — American physicist who built and flew the first liquid-fueled rocket (March 16, 1926, Auburn, Massachusetts). Flew for 2.5 seconds, reached 12 meters. Worked mostly in isolation, funded partly by the Smithsonian and Charles Lindbergh.</li>
+        <li><strong>Wernher von Braun (1912-1977)</strong> — German-American engineer who led development of the V-2 rocket (Nazi Germany), then the Saturn V for NASA. Controversial figure: used slave labor at Mittelwerk V-2 factory. Brilliant engineer; morally complicated legacy.</li>
+        <li><strong>Sergei Korolev (1907-1966)</strong> — chief designer of the Soviet space program. Led Sputnik, Vostok (Gagarin), and early lunar programs. His identity was a state secret during his lifetime. Died during surgery in 1966; the Soviet program never fully recovered from his loss.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="apollo">
+      <h2>Apollo (1961-1972)</h2>
+      <p>The Apollo program was the largest peacetime engineering project in human history. At its peak, it employed 400,000 people and consumed 4% of the federal budget. It achieved its goal: six successful lunar landings between 1969 and 1972, with 12 people walking on the Moon.</p>
+
+      <h3>The Missions</h3>
+      <ul>
+        <li><strong>Apollo 1 (1967 Jan 27)</strong> — fire during a launch pad test killed astronauts Gus Grissom, Ed White, and Roger Chaffee. Caused by a spark in the pure oxygen atmosphere of the Command Module. Led to massive redesign: nitrogen/oxygen atmosphere, outward-opening hatch, fireproof materials.</li>
+        <li><strong>Apollo 7 (1968 Oct)</strong> — first crewed Apollo flight. 11 days in Earth orbit. Tested the Command and Service Module. Crew (Schirra, Eisele, Cunningham) had conflicts with Mission Control.</li>
+        <li><strong>Apollo 8 (1968 Dec)</strong> — first humans to leave Earth orbit and orbit the Moon. Frank Borman, Jim Lovell, William Anders. Christmas Eve reading of Genesis while orbiting the Moon. "Earthrise" photograph — one of the most influential images ever taken.</li>
+        <li><strong>Apollo 11 (1969 Jul 20)</strong> — first Moon landing. Neil Armstrong and Buzz Aldrin on the surface for 2 hours 31 minutes. Michael Collins in lunar orbit. "That's one small step for [a] man, one giant leap for mankind." 21.5 kg of samples returned. An estimated 600 million people watched on television.</li>
+        <li><strong>Apollo 13 (1970 Apr)</strong> — oxygen tank explosion en route to the Moon. "Houston, we've had a problem." Crew (Lovell, Swigert, Haise) used the Lunar Module as a lifeboat. Mission Control improvised CO2 scrubber solutions and trajectory corrections. Safe return after 4 days. Often called NASA's finest hour.</li>
+        <li><strong>Apollo 15-17 (1971-72)</strong> — "J-missions" with extended surface stays (3 days), the Lunar Roving Vehicle (LRV), and extensive science. Apollo 17 (Dec 1972) was the last crewed Moon mission. Gene Cernan was the last person to walk on the Moon. Harrison Schmitt was the only scientist (geologist) to visit.</li>
+      </ul>
+
+      <h3>The Saturn V</h3>
+      <p>The most powerful rocket ever flown (until Starship). Three stages: S-IC (5 F-1 engines, LOX/RP-1, 7.5 million lbf), S-II (5 J-2 engines, LOX/LH2), S-IVB (1 J-2, LOX/LH2, performed TLI). 110.6 meters tall, 2,970 tonnes at liftoff. 13 flights, zero failures. All flight-ready vehicles were used; none remain that could fly. Wernher von Braun's masterwork.</p>
+
+      <h3>Legacy</h3>
+      <p>Apollo returned 382 kg of lunar samples, deployed scientific instruments (seismometers, retroreflectors, solar wind collectors), and proved that humans could travel to another world. The retroreflectors are still used today for laser ranging experiments (measuring Earth-Moon distance to millimeter precision). The program's technology and management innovations influenced engineering, computing, and project management for decades. Its cancellation after Apollo 17 — driven by budget cuts and shifting political priorities — remains controversial.</p>
+    </section>
+
+    <section class="section" id="shuttle">
+      <h2>Space Shuttle (1981-2011)</h2>
+      <p>The Space Transportation System (STS) was NASA's partially reusable launch vehicle. The Orbiter (winged spacecraft with three RS-25 engines), two Solid Rocket Boosters (SRBs, recovered and reused), and an External Tank (ET, expendable). 135 missions over 30 years. Five Orbiters built: Columbia, Challenger, Discovery, Atlantis, Endeavour.</p>
+
+      <h3>Achievements</h3>
+      <ul>
+        <li>Deployed and serviced the Hubble Space Telescope (5 servicing missions, 1993-2009). The final servicing mission (STS-125) installed new instruments that keep Hubble operational into the 2030s.</li>
+        <li>Carried major components of the International Space Station (ISS) — 37 Shuttle missions contributed to ISS assembly. The Shuttle's 18.3 x 4.6 m payload bay was essential for carrying large ISS modules.</li>
+        <li>Deployed interplanetary probes: Magellan (Venus), Galileo (Jupiter), Ulysses (solar polar orbit), Chandra X-ray Observatory.</li>
+        <li>Carried the Spacelab pressurized laboratory (24 missions), enabling hundreds of microgravity experiments in biology, materials science, fluid physics, and astronomy.</li>
+      </ul>
+
+      <h3>Tragedies</h3>
+      <ul>
+        <li><strong>Challenger (1986 Jan 28)</strong> — broke apart 73 seconds after launch. O-ring seal in the right SRB failed in cold weather (36 degrees F at launch). Engineers at Morton Thiokol had warned against launching in cold temperatures. Seven crew killed, including teacher Christa McAuliffe. Rogers Commission investigation led by Richard Feynman revealed systemic problems in NASA's safety culture.</li>
+        <li><strong>Columbia (2003 Feb 1)</strong> — disintegrated during re-entry. A piece of foam insulation from the External Tank struck the Orbiter's left wing leading edge during launch, damaging the thermal protection system. Superheated plasma penetrated the wing during re-entry. Seven crew killed. The Columbia Accident Investigation Board (CAIB) again found organizational and cultural failures. The Shuttle program was grounded for 2.5 years and ultimately scheduled for retirement.</li>
+      </ul>
+
+      <h3>Assessment</h3>
+      <p>The Shuttle was an engineering marvel but fell short of its original promise. Designed for 50 launches per year at low cost, it averaged 4.5 per year at ~$1.5 billion per mission ($450M marginal cost). The reusability concept saved on hardware but required extensive refurbishment between flights. The lack of a crew escape system (except during first-stage ascent after Challenger) was a known risk accepted for operational reasons. Its retirement in 2011 left the US without independent crew access to orbit until SpaceX Crew Dragon in 2020.</p>
+    </section>
+
+    <section class="section" id="stations">
+      <h2>Space Stations</h2>
+
+      <h3>Salyut and Mir (1971-2001)</h3>
+      <ul>
+        <li><strong>Salyut 1 (1971)</strong> — first space station. Three cosmonauts (Soyuz 11) lived aboard for 23 days. All three died during re-entry when a valve opened prematurely, depressurizing their Soyuz capsule. They were not wearing spacesuits.</li>
+        <li><strong>Mir (1986-2001)</strong> — modular Soviet/Russian station. Seven modules, 100+ tonnes. Continuously occupied for nearly 10 years. Set records for long-duration spaceflight (Valeri Polyakov: 437 days continuous, 1994-95). Suffered a fire (1997), collision with a Progress cargo ship (1997), and multiple system failures. Deorbited in 2001, breaking up over the Pacific.</li>
+      </ul>
+
+      <h3>International Space Station (1998-present)</h3>
+      <ul>
+        <li>The largest structure ever built in space: 109 m x 73 m (larger than a football field), ~420,000 kg. Orbits at ~408 km, 51.6 degrees inclination. Continuous human presence since November 2, 2000 (25+ years). Partnership: NASA, Roscosmos, ESA, JAXA, CSA.</li>
+        <li>Cost: ~$150 billion total (including Shuttle assembly flights). Supports 6-7 crew, 100+ kW solar power, 6 sleeping quarters, 2 bathrooms, a gym, and a 360-degree cupola window.</li>
+        <li>Over 3,000 scientific experiments conducted: microgravity biology, fluid physics, materials science, human physiology, Earth observation, astrophysics (AMS-02 cosmic ray detector). Demonstrated long-duration human spaceflight for future Mars missions.</li>
+        <li>Planned deorbit: approximately 2030-2031. SpaceX was awarded the contract to build a US Deorbit Vehicle. Commercial successors: Axiom Station (commercial module attached to ISS, later detached), Orbital Reef (Blue Origin/Sierra Space), Starlab (Voyager/Airbus).</li>
+      </ul>
+
+      <h3>Tiangong (2021-present)</h3>
+      <p>China's space station. Three modules: Tianhe (core), Wentian, Mengtian. ~100 tonnes, 3-person crew. Fully independent of ISS partnership. Conducted extravehicular activities, science experiments, and crew rotations using Shenzhou capsules and Tianzhou cargo ships. China plans to expand Tiangong to 180 tonnes with additional modules.</p>
+    </section>
+
+    <section class="section" id="robotic">
+      <h2>Robotic Exploration Highlights</h2>
+      <ul>
+        <li><strong>Mariner 4 (1965)</strong> — first successful Mars flyby. 22 grainy photographs revealed a cratered, apparently lifeless world — ending popular imagination of Martian canals and civilizations.</li>
+        <li><strong>Venera 7-13 (1970-1982)</strong> — Soviet landers on Venus. Venera 7 was the first to transmit data from another planet's surface (1970). Surface temperature: 462C, pressure: 92 atmospheres. Venera 13 sent color photographs (survived 127 minutes). The only successful Venus surface missions.</li>
+        <li><strong>Viking 1 & 2 (1976)</strong> — first successful Mars landers (US). Conducted biology experiments to search for life. Results were ambiguous (the Labeled Release experiment showed activity, but consensus was non-biological). Operated for years. Set the template for Mars exploration.</li>
+        <li><strong>Voyager 1 & 2 (1977-present)</strong> — the greatest robotic mission ever flown. Jupiter (1979), Saturn (1980-81), Uranus (1986, Voyager 2 only), Neptune (1989, Voyager 2 only). Discovered volcanic eruptions on Io, subsurface ocean on Europa, rings of Jupiter and Neptune, geysers on Triton. Voyager 1 entered interstellar space in 2012 (first human-made object). Both still transmitting (RTG power ~240W, declining). The Golden Records carry sounds and images of Earth.</li>
+        <li><strong>Galileo (1989-2003)</strong> — Jupiter orbiter. Discovered evidence for subsurface oceans on Europa, Ganymede, and Callisto. Deployed an atmospheric probe into Jupiter. Hampered by stuck high-gain antenna (used low-gain, reducing data rate 10,000x).</li>
+        <li><strong>Cassini-Huygens (1997-2017)</strong> — Saturn orbiter (Cassini) and Titan lander (Huygens). 13 years in Saturn system. Discovered ocean geysers on Enceladus (potential habitability), liquid methane seas on Titan. Huygens landed on Titan (2005) — the most distant landing in history. Deliberate destructive entry into Saturn's atmosphere (2017) to protect potentially habitable moons from contamination.</li>
+        <li><strong>Mars rovers</strong> — Spirit and Opportunity (2004, planned 90 days, Opportunity lasted 15 years), Curiosity (2012, MSL, still operating), Perseverance (2021, caching samples for return, Ingenuity helicopter demonstrated powered flight on Mars — 72 flights).</li>
+        <li><strong>New Horizons (2006-2019)</strong> — Pluto flyby (2015) revealed a geologically active world with mountains, glaciers, and a thin atmosphere. Extended mission: flew by Kuiper Belt object Arrokoth (2019), the most distant object ever visited.</li>
+        <li><strong>JWST (2021-present)</strong> — James Webb Space Telescope. 6.5m primary mirror (gold-coated beryllium), L2 orbit, infrared. Deepest images of the universe ever taken. Studying galaxy formation, exoplanet atmospheres (detected CO2, H2O, DMSO in WASP-39b), and the first stars. Successor to Hubble. $10 billion, 25+ year development.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="commercial">
+      <h2>The Commercial Space Revolution</h2>
+
+      <h3>SpaceX</h3>
+      <ul>
+        <li>Founded by Elon Musk in 2002. First privately developed liquid-fueled rocket to reach orbit (Falcon 1, 2008, fourth attempt). Developed Falcon 9 (first flight 2010, first landing 2015, first re-flight 2017). By 2025, SpaceX has landed and reflown Falcon 9 boosters over 300 times, reducing launch costs from $10,000/kg to ~$2,700/kg to LEO.</li>
+        <li>Crew Dragon: first private spacecraft to carry NASA astronauts to ISS (Demo-2, May 2020). Ended US dependence on Russian Soyuz for crew access. Has since flown 15+ crewed missions.</li>
+        <li>Starlink: constellation of ~6,000+ broadband satellites in LEO. Largest satellite constellation in history. Revenue funds Starship development. Controversial due to light pollution effects on astronomy.</li>
+        <li>Starship/Super Heavy: fully reusable, 150-tonne-to-LEO class vehicle. Super Heavy booster caught by launch tower "chopstick" arms on fifth flight test (October 2024). When fully operational, aims to reduce LEO launch costs to $10-100/kg. Contracted for Artemis lunar lander (HLS).</li>
+      </ul>
+
+      <h3>Other Companies</h3>
+      <ul>
+        <li><strong>Blue Origin</strong> — founded by Jeff Bezos (2000). New Shepard (suborbital tourism, flew 37 people by 2024). New Glenn (heavy-lift orbital rocket, first flight 2025, LOX/LNG BE-4 engine). Developing Blue Moon lunar lander for Artemis (Sustaining Lunar Development contract).</li>
+        <li><strong>Rocket Lab</strong> — Electron rocket (300 kg to LEO, carbon fiber, electric pump-fed Rutherford engines). 50+ launches. Developing Neutron (medium-lift, reusable, composite structure). Peter Beck's company pioneered small-satellite dedicated launch.</li>
+        <li><strong>Virgin Galactic</strong> — suborbital space tourism using air-launched SpaceShipTwo. Reached space (80/100 km boundary, depending on definition) in 2018-2023. Paused flights to develop Delta-class vehicle.</li>
+        <li><strong>Relativity Space</strong> — Terran 1 (first 3D-printed rocket, reached space but not orbit, 2023). Developing Terran R (reusable, medium-lift). Automated manufacturing using massive Stargate 3D printers.</li>
+        <li><strong>Axiom Space</strong> — commercial space station company. Flew private astronaut missions to ISS (Axiom-1 through Axiom-4). Building commercial modules to attach to ISS, then detach as independent station post-ISS.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="artemis">
+      <h2>Artemis & The Future</h2>
+
+      <h3>Artemis Program</h3>
+      <ul>
+        <li><strong>Artemis I (2022 Nov)</strong> — uncrewed test flight. SLS (Space Launch System) launched Orion capsule on a 25-day mission around the Moon and back. Successful. Demonstrated SLS and Orion performance.</li>
+        <li><strong>Artemis II (planned 2025)</strong> — first crewed flight. Four astronauts (Reid Wiseman, Victor Glover, Christina Koch, Jeremy Hansen) will fly around the Moon without landing. First humans beyond LEO since Apollo 17 (1972). First woman and first person of color on a lunar trajectory.</li>
+        <li><strong>Artemis III (planned 2026-2027)</strong> — first crewed landing since 1972. SpaceX Starship HLS will serve as the lunar lander. Two astronauts will spend ~6.5 days on the surface near the lunar south pole. Blue Origin Sustaining Lander for subsequent missions.</li>
+        <li><strong>Lunar Gateway</strong> — small space station in a near-rectilinear halo orbit (NRHO) around the Moon. Staging point for lunar surface missions. Joint NASA/ESA/JAXA/CSA. PPE (Power and Propulsion Element) and HALO (Habitation and Logistics Outpost) modules launching ~2027.</li>
+      </ul>
+
+      <h3>Mars</h3>
+      <ul>
+        <li>No crewed Mars mission is currently funded, but it remains the long-term goal. SpaceX's Starship architecture is designed for Mars (LOX/CH4 propellant can be manufactured on Mars via Sabatier reaction, enabling return trips). NASA's Moon-to-Mars plan uses Artemis as a stepping stone.</li>
+        <li>Key challenges: 6-9 month transit (radiation exposure, muscle/bone loss), Mars EDL for large payloads (>20 tonnes), surface power (nuclear fission or very large solar arrays), ISRU (In-Situ Resource Utilization for propellant and oxygen), and crew psychology for a 2-3 year mission.</li>
+        <li>MOXIE (Mars Oxygen ISRU Experiment) on Perseverance demonstrated CO2-to-O2 conversion on Mars (2021-2023). Produced ~122 grams of oxygen. Proof-of-concept for full-scale ISRU.</li>
+      </ul>
+
+      <h3>Other Future Missions</h3>
+      <ul>
+        <li><strong>Europa Clipper (launched 2024)</strong> — NASA mission to study Jupiter's moon Europa, which has a subsurface ocean beneath its ice shell. ~50 flybys, ice-penetrating radar, mass spectrometer. Arrives 2030. Could detect signs of habitability.</li>
+        <li><strong>Dragonfly (launch ~2028)</strong> — NASA rotorcraft lander for Saturn's moon Titan. Will fly to multiple locations, sampling Titan's organic-rich surface and atmosphere. Looking for prebiotic chemistry. Arrives ~2034.</li>
+        <li><strong>LISA (2030s)</strong> — ESA/NASA gravitational wave observatory. Three spacecraft in a triangular formation, 2.5 million km apart. Will detect gravitational waves from merging supermassive black holes, compact binaries, and potentially primordial waves from the Big Bang.</li>
+        <li><strong>Habitable Worlds Observatory (2040s)</strong> — NASA flagship concept. 6m+ space telescope optimized for directly imaging Earth-like exoplanets and analyzing their atmospheres for biosignatures (oxygen, ozone, water, methane). The telescope that could find evidence of life on other worlds.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="resources">
+      <h2>Resources</h2>
+      <div class="cards">
+        <div class="card">
+          <h4><a href="https://history.nasa.gov">NASA History Division</a></h4>
+          <p>Official NASA history. Publications, oral histories, document archives. Apollo-era documents, Shuttle history, and mission reports. All free online.</p>
+          <div class="meta">NASA | Free</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.planetary.org">The Planetary Society</a></h4>
+          <p>World's largest space advocacy organization (founded by Carl Sagan). Planetary Radio podcast, mission updates, advocacy for space exploration funding.</p>
+          <div class="meta">Non-profit | Free content</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://everydayastronaut.com">Everyday Astronaut</a></h4>
+          <p>Tim Dodd's excellent YouTube channel and website. In-depth rocket engine comparisons, launch coverage, Starship updates. Accessible to beginners, detailed enough for engineers.</p>
+          <div class="meta">YouTube | Free</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://eyes.nasa.gov">NASA Eyes</a></h4>
+          <p>Interactive 3D visualization of the solar system and spacecraft. Track real missions in real time. Explore orbits, distances, and planetary positions. Stunning educational tool.</p>
+          <div class="meta">NASA JPL | Free</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.spacex.com">SpaceX</a></h4>
+          <p>Launch webcasts, vehicle specifications, mission updates. The most transparent rocket company. Watch launches live, read technical details of Falcon 9, Dragon, and Starship.</p>
+          <div class="meta">SpaceX | Free</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.amazon.com/Carrying-Fire-Astronauts-Journeys-Michael/dp/0374531943">Collins: Carrying the Fire</a></h4>
+          <p>Michael Collins' memoir of Apollo 11. Widely regarded as the best astronaut autobiography ever written. Insightful, literary, and deeply human.</p>
+          <div class="meta">Book | Classic</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <div class="container">
+      <a href="/">FreeSpaceStore</a> · <a href="/institute/">Institute</a> · Built with <a href="https://zensical.org">Zensical</a>
+    </div>
+  </footer>
+</body>
+</html>
