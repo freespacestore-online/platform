@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Space Institute — Powered by Zensical</title>
+  <meta name="description" content="Free educational resources for space science and engineering. Tutorials, research papers, courses, tools, and community.">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--accent:#0ea5e9;--paper:#0a0a0a;--ink:#fafafa;--muted:#737373;--panel:#141414;--line:#262626}
+    body{font-family:'Manrope',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.7;-webkit-font-smoothing:antialiased}
+    .container{max-width:900px;margin:0 auto;padding:0 1.5rem}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+    header{border-bottom:1px solid var(--line);padding:.75rem 0}
+    header .container{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:.5rem;text-decoration:none;color:var(--ink)}
+    .brand-emoji{font-size:1.5rem}
+    .brand-text{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700}
+    .brand-tag{font-size:.68rem;color:var(--muted)}
+    nav{display:flex;gap:1rem;font-size:.82rem;font-weight:600;margin-left:auto}
+    nav a{color:var(--muted)}nav a:hover{color:var(--ink)}
+    .hero{text-align:center;padding:2.5rem 0 1.5rem;border-bottom:1px solid var(--line)}
+    .hero h1{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:700;margin-bottom:.5rem}
+    .hero h1 em{color:var(--accent);font-style:normal}
+    .hero p{color:var(--muted);max-width:600px;margin:0 auto;font-size:.95rem}
+    .powered{font-size:.72rem;color:#525252;margin-top:.75rem}
+    .powered a{color:#525252}
+    .toc{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem 1.25rem;margin:1.5rem 0}
+    .toc h3{font-size:.85rem;font-weight:700;margin-bottom:.5rem;color:var(--accent)}
+    .toc ul{list-style:none;padding:0;columns:2}
+    .toc li{margin:.2rem 0}.toc a{color:#a3a3a3;font-size:.82rem}.toc a:hover{color:var(--ink)}
+    .section{margin-bottom:2rem;padding-top:1rem}
+    .section h2{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;margin-bottom:.5rem;padding-bottom:.35rem;border-bottom:1px solid var(--line)}
+    .section h3{font-size:.95rem;font-weight:700;margin:1rem 0 .35rem;color:#e5e5e5}
+    .section p,.section li{color:#a3a3a3;font-size:.88rem}
+    ul{padding-left:1.25rem;margin:.35rem 0}
+    li{margin-bottom:.3rem}
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.6rem;margin:.5rem 0}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.85rem;transition:border-color .15s}
+    .card:hover{border-color:var(--accent)}
+    .card h4{font-size:.85rem;font-weight:700;margin-bottom:.2rem}
+    .card h4 a{color:var(--ink)}.card p{font-size:.75rem;color:var(--muted);margin:0;line-height:1.5}
+    .card .meta{font-size:.65rem;color:#525252;margin-top:.25rem}
+    footer{border-top:1px solid var(--line);padding:1.5rem 0;text-align:center;font-size:.75rem;color:#525252}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/institute/" class="brand">
+        <span class="brand-emoji">🚀</span>
+        <span><span class="brand-text">Space Institute</span><br><span class="brand-tag">Powered by <a href="https://zensical.org" style="color:#525252">Zensical</a></span></span>
+      </a>
+      <nav><a href="/">Simulations</a><a href="#fundamentals">Learn</a><a href="#courses">Courses</a><a href="#research">Research</a><a href="#tools">Tools</a><a href="#community">Community</a></nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="hero">
+      <h1>Space <em>Institute</em></h1>
+      <p>Everything you need to learn space science and engineering. Free courses, research papers, open-source tools, and community resources — curated for practitioners.</p>
+      
+    </section>
+
+    <nav class="toc">
+      <h3>Contents</h3>
+      <ul>
+        <li><a href="#fundamentals">Fundamentals</a></li>
+        <li><a href="#courses">Free Courses</a></li>
+        <li><a href="#textbooks">Textbooks</a></li>
+        <li><a href="#research">Key Research Papers</a></li>
+        <li><a href="#tools">Open-Source Tools</a></li>
+        <li><a href="#hardware">Organizations & Hardware</a></li>
+        <li><a href="#reference">Reference</a></li>
+        <li><a href="#community">Community</a></li>
+      </ul>
+    </nav>
+
+    <section class="section" id="fundamentals">
+      <h2>Fundamentals</h2>
+      <h3>What is Space Engineering?</h3>
+      <p>Space engineering encompasses the design, analysis, and operation of spacecraft and launch vehicles. It integrates orbital mechanics, propulsion, structures, thermal control, communications, and guidance — all under the extreme constraints of the space environment: vacuum, radiation, microgravity, and vast distances.</p>
+
+      <h3>Key Concepts</h3>
+      <ul>
+        <li><strong>Kepler's Laws</strong> — (1) orbits are ellipses with the central body at one focus, (2) equal areas in equal times, (3) T^2 is proportional to a^3. Foundation of all orbital mechanics.</li>
+        <li><strong>Orbital Mechanics</strong> — the two-body problem, orbital elements (a, e, i, RAAN, omega, nu), Hohmann transfers, bi-elliptic transfers, gravity assists.</li>
+        <li><strong>Rocket Propulsion</strong> — Tsiolkovsky's equation: delta-v = Isp * g0 * ln(m0/mf). Chemical (bipropellant, solid), electric (ion, Hall), nuclear thermal.</li>
+        <li><strong>Re-entry</strong> — hypersonic aerodynamics, thermal protection (ablative, ceramic tiles), ballistic vs lifting entry, skip entry. Heat flux scales as v^3.</li>
+        <li><strong>Orbital Maneuvers</strong> — Hohmann transfer (minimum energy), plane changes, rendezvous and docking, station-keeping, de-orbit burns.</li>
+        <li><strong>Attitude Control</strong> — reaction wheels, control moment gyroscopes, thrusters, magnetic torquers. Quaternion/Euler angle representations.</li>
+      </ul>
+
+      <h3>Space vs Aviation</h3>
+      <ul>
+        <li>No air: no aerodynamic lift or drag in orbit. All maneuvers use propellant (finite delta-v budget).</li>
+        <li>Orbital speed: ~7.8 km/s in LEO. You don't "hover" in space — you fall around the Earth in a continuous free-fall trajectory.</li>
+        <li>Communication delays: 1.3s to Moon, 3-22 min to Mars, hours to outer planets. Spacecraft must be increasingly autonomous.</li>
+        <li>Radiation: Van Allen belts, solar particle events, galactic cosmic rays. Electronics need radiation hardening; crews need shielding.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="courses">
+      <h2>Free Courses</h2>
+      <div class="cards">
+        <div class="card">
+          <h4><a href="https://ocw.mit.edu/courses/16-346-astrodynamics-fall-2008/">MIT OCW: Astrodynamics</a></h4>
+          <p>Graduate-level orbital mechanics. Kepler problem, Lambert's theorem, orbital perturbations, interplanetary trajectories.</p>
+          <div class="meta">MIT OpenCourseWare | Free | Advanced</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.coursera.org/learn/spacecraft-dynamics-control">Coursera: Spacecraft Dynamics and Control</a></h4>
+          <p>Attitude dynamics, kinematics (DCM, quaternions), reaction wheels, torque-free motion, gravity gradient stabilization.</p>
+          <div class="meta">University of Colorado Boulder | Free audit | Intermediate</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.esa.int/Education/ESA_Academy/Open_Online_Courses">ESA Academy MOOCs</a></h4>
+          <p>European Space Agency online courses. Satellite engineering, space debris, Earth observation. From Europe's space agency.</p>
+          <div class="meta">ESA | Free | Beginner to Intermediate</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.nasa.gov/stem">NASA STEM Resources</a></h4>
+          <p>Extensive educational materials from NASA. Lesson plans, interactive simulations, mission data, and student challenges.</p>
+          <div class="meta">NASA | Free | All levels</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://ocw.mit.edu/courses/16-851-satellite-engineering-fall-2003/">MIT OCW: Satellite Engineering</a></h4>
+          <p>Complete satellite design course. Systems engineering, structures, thermal, power, communications, propulsion, ADCS.</p>
+          <div class="meta">MIT OpenCourseWare | Free | Intermediate</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.coursera.org/specializations/spacecraft-design">Coursera: Spacecraft Design (CU Boulder)</a></h4>
+          <p>Multi-course specialization: orbital mechanics, ADCS, propulsion, mission design. Capstone project. Free to audit.</p>
+          <div class="meta">CU Boulder | Free audit | Intermediate</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="textbooks">
+      <h2>Textbooks</h2>
+      <ul>
+        <li><strong><a href="https://www.elsevier.com/books/orbital-mechanics-for-engineering-students/curtis/978-0-08-102133-0">Curtis: Orbital Mechanics for Engineering Students</a></strong> — Best intro to orbital mechanics. Two-body problem, orbit determination, interplanetary flight, rigid body dynamics.</li>
+        <li><strong><a href="https://arc.aiaa.org/doi/book/10.2514/4.862489">Wertz: Space Mission Engineering — The New SMAD</a></strong> — THE systems engineering reference for space missions. Architecture, budgets, subsystems, cost estimation.</li>
+        <li><strong><a href="https://www.elsevier.com/books/rocket-propulsion-elements/sutton/978-1-118-75365-1">Sutton & Biblarz: Rocket Propulsion Elements</a></strong> — Definitive textbook on rocket propulsion. Nozzle theory, liquid/solid/hybrid/electric propulsion, performance analysis.</li>
+        <li><strong><a href="https://www.cambridge.org/core/books/an-introduction-to-the-mathematics-and-methods-of-astrodynamics/B30FE48F75E53EB13C7EB6AF854B93BE">Battin: Astrodynamics</a></strong> — Graduate-level mathematical astrodynamics. Lambert's problem, perturbation theory, universal variables. The rigorous reference.</li>
+        <li><strong><a href="https://www.springer.com/gp/book/9783540691648">Fortescue et al: Spacecraft Systems Engineering</a></strong> — Comprehensive spacecraft design. Structures, thermal, power, OBDH, telecommunications, AOCS, propulsion.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="research">
+      <h2>Key Research Papers</h2>
+      <div class="cards">
+        <div class="card">
+          <h4><a href="https://archive.org/details/TheExplorationOfCosmicSpaceByMeansOfReactionDevices">Tsiolkovsky (1903): Rocket Equation</a></h4>
+          <p>Derived the fundamental equation of rocketry: delta-v = ve * ln(m0/mf). Proved spaceflight was physically possible. The foundation of all astronautics.</p>
+          <div class="meta">Konstantin Tsiolkovsky | Russia</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://archive.org/details/nasa_techdoc_19990100208">Hohmann (1925): The Attainability of Heavenly Bodies</a></h4>
+          <p>Proposed the minimum-energy transfer orbit between two circular orbits (Hohmann transfer). Still the most fuel-efficient two-impulse maneuver.</p>
+          <div class="meta">Walter Hohmann | NASA translation</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.ion.org/publications/abstract.cfm?articleID=2884">Parkinson & Spilker (1996): GPS Overview</a></h4>
+          <p>Comprehensive overview of the Global Positioning System. Satellite constellation design, signal structure, navigation algorithms, error sources.</p>
+          <div class="meta">GPS: Theory & Applications | AIAA</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.ibiblio.org/apollo/Documents/SGA_Memo11_210ct67.pdf">Apollo Guidance Computer (1967)</a></h4>
+          <p>Documentation of the AGC that guided Apollo missions. 74KB ROM, 4KB RAM, real-time navigation. A masterpiece of early embedded systems engineering.</p>
+          <div class="meta">MIT Instrumentation Lab | NASA</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.sciencedirect.com/science/article/pii/S0094576596001459">Kessler & Cour-Palais (1978): Collision Frequency</a></h4>
+          <p>Predicted cascading orbital debris collisions (Kessler Syndrome). Collisions create fragments that cause more collisions, potentially making orbits unusable.</p>
+          <div class="meta">Donald Kessler | NASA JSC</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://arc.aiaa.org/doi/10.2514/3.26706">Edelbaum (1961): Low-Thrust Transfer</a></h4>
+          <p>Optimal low-thrust orbit transfer theory. Foundation for electric propulsion trajectory design used in modern ion-engine missions.</p>
+          <div class="meta">Theodore Edelbaum | AIAA Journal</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="tools">
+      <h2>Open-Source Tools</h2>
+      <div class="cards">
+        <div class="card">
+          <h4><a href="https://software.nasa.gov/software/GSC-17177-1">GMAT (NASA)</a></h4>
+          <p>General Mission Analysis Tool. Orbit determination, maneuver planning, mission design. NASA's open-source astrodynamics workbench.</p>
+          <div class="meta">MATLAB-like | NASA | Apache 2.0</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.agi.com/products/stk">STK (Free Edition)</a></h4>
+          <p>Systems Tool Kit. 3D orbital visualization, access analysis, sensor coverage. Free desktop version available for non-commercial use.</p>
+          <div class="meta">AGI / Ansys | Free tier | Desktop</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://celestia.space">Celestia</a></h4>
+          <p>Real-time 3D space visualization. Fly through the solar system, visit stars, observe eclipses. Free, cross-platform, extensible.</p>
+          <div class="meta">C++ | Free | GPL</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://stellarium.org">Stellarium</a></h4>
+          <p>Open-source planetarium. Photorealistic sky rendering, 600K+ stars, satellite tracking, telescope control. Available on all platforms.</p>
+          <div class="meta">C++ | Free | GPL</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://naif.jpl.nasa.gov/naif/toolkit.html">NASA SPICE Toolkit</a></h4>
+          <p>Spacecraft ephemeris, instrument geometry, and event computation. Kernels for every NASA mission. The standard for space navigation.</p>
+          <div class="meta">C / Fortran / Python | NASA JPL | Free</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.orekit.org">Orekit</a></h4>
+          <p>Low-level space dynamics library. Orbit propagation, attitude, frames, dates, maneuvers. Java (with Python wrapper). ESA-supported.</p>
+          <div class="meta">Java / Python | ESA | Apache 2.0</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="hardware">
+      <h2>Organizations & Hardware</h2>
+      <div class="cards">
+        <div class="card">
+          <h4><a href="https://www.nasa.gov">NASA</a></h4>
+          <p>National Aeronautics and Space Administration. Artemis (Moon), Mars rovers, ISS, James Webb, Voyager. Open data, open source.</p>
+          <div class="meta">Space agency | United States</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.esa.int">ESA</a></h4>
+          <p>European Space Agency. Ariane 6, Rosetta, ExoMars, Copernicus Earth observation. 22 member states.</p>
+          <div class="meta">Space agency | Europe</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.spacex.com">SpaceX</a></h4>
+          <p>Falcon 9 (reusable), Falcon Heavy, Starship (fully reusable super heavy). Starlink constellation. Revolutionized launch economics.</p>
+          <div class="meta">Launch provider | Commercial</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.rocketlabusa.com">Rocket Lab</a></h4>
+          <p>Electron (small satellite launcher, reusable), Neutron (medium-lift, in development). Photon satellite bus. High launch cadence.</p>
+          <div class="meta">Launch provider | Small-sat</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.planet.com">Planet Labs</a></h4>
+          <p>Operates 200+ Earth-imaging satellites. Daily global coverage. Dove (3m), SkySat (0.5m). Democratizing satellite imagery.</p>
+          <div class="meta">Earth observation | Commercial</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.isro.gov.in">ISRO</a></h4>
+          <p>Indian Space Research Organisation. Chandrayaan (Moon), Mangalyaan (Mars), PSLV/GSLV launchers. Known for cost-effective missions.</p>
+          <div class="meta">Space agency | India</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="reference">
+      <h2>Reference</h2>
+      <h3>Orbital Mechanics</h3>
+      <ul>
+        <li><strong>Kepler's Laws</strong> — (1) elliptical orbits, (2) equal areas swept in equal times (conservation of angular momentum), (3) period squared proportional to semi-major axis cubed: T^2 = (4 pi^2 / mu) * a^3</li>
+        <li><strong>Vis-viva Equation</strong> — v^2 = mu * (2/r - 1/a). Relates speed to position and orbit size. Works for all conics (circles, ellipses, parabolas, hyperbolas).</li>
+        <li><strong>Hohmann Transfer</strong> — minimum-energy two-impulse transfer between circular orbits. Delta-v at periapsis and apoapsis. For LEO to GEO: ~3.9 km/s total.</li>
+        <li><strong>Orbital Elements</strong> — six Keplerian elements: semi-major axis (a), eccentricity (e), inclination (i), RAAN (Omega), argument of periapsis (omega), true anomaly (nu).</li>
+      </ul>
+
+      <h3>Propulsion</h3>
+      <ul>
+        <li><strong>Tsiolkovsky Equation</strong> — delta-v = Isp * g0 * ln(m0/mf). Higher Isp = more efficient. Chemical Isp: 200-460s. Electric Isp: 1000-5000s.</li>
+        <li><strong>Chemical Propulsion</strong> — bipropellant (LOX/LH2, LOX/RP-1, NTO/MMH), solid (ammonium perchlorate + aluminum), hybrid.</li>
+        <li><strong>Electric Propulsion</strong> — ion (Xe gridded), Hall effect, pulsed plasma. High Isp but low thrust. Used for station-keeping and deep space.</li>
+        <li><strong>Staging</strong> — discard empty tanks to reduce mass. Tsiolkovsky equation applied per stage. Optimal mass ratios. Serial vs parallel staging.</li>
+      </ul>
+
+      <h3>Spacecraft Subsystems</h3>
+      <ul>
+        <li><strong>ADCS</strong> — Attitude Determination and Control. Sensors (star trackers, sun sensors, IMUs), actuators (reaction wheels, CMGs, thrusters, magnetorquers).</li>
+        <li><strong>Power</strong> — solar panels (GaAs triple-junction, ~30% efficiency), batteries (Li-ion), RTGs for deep space (Pu-238). Power budget: generation, storage, distribution.</li>
+        <li><strong>Thermal</strong> — passive (MLI blankets, radiators, coatings) and active (heaters, heat pipes, louvers). Space: -270C shadow to +120C sun.</li>
+        <li><strong>Communications</strong> — link budget: transmit power + antenna gain - path loss - noise. S/X/Ka bands. DSN for deep space. Laser comms emerging.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="community">
+      <h2>Community & News</h2>
+      <div class="cards">
+        <div class="card">
+          <h4><a href="https://www.reddit.com/r/space/">r/space</a></h4>
+          <p>Reddit's largest space community. Launches, discoveries, missions, astrophotography, career discussion. 25M+ members.</p>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.reddit.com/r/spacex/">r/SpaceX</a></h4>
+          <p>Dedicated SpaceX community. Launch threads, technical discussion, mission analysis, Starship development tracking. 2M+ members.</p>
+        </div>
+        <div class="card">
+          <h4><a href="https://forum.nasaspaceflight.com">NASASpaceflight Forum</a></h4>
+          <p>The most technically detailed space forum. Launch vehicle development, mission planning, industry insider discussions.</p>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.planetary.org">The Planetary Society</a></h4>
+          <p>World's largest space advocacy organization. Founded by Carl Sagan. Planetary Radio podcast, LightSail missions, advocacy campaigns.</p>
+        </div>
+        <div class="card">
+          <h4><a href="https://arxiv.org/list/astro-ph/new">arXiv astro-ph</a></h4>
+          <p>Preprints in astrophysics. Instrumentation, Earth/planetary, solar, stellar, cosmology, galaxies — cutting-edge research.</p>
+        </div>
+        <div class="card">
+          <h4><a href="https://spacenews.com">SpaceNews</a></h4>
+          <p>Industry news covering launch, satellites, policy, military space, and commercial space. The trade publication of the space industry.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <div class="container">
+      <a href="/">FreeSpaceStore</a> · <a href="/institute/">Institute</a> · Built with <a href="https://zensical.org">Zensical</a>
+    </div>
+  </footer>
+</body>
+</html>
