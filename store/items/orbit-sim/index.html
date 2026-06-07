@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orbit Simulator — FreeSpaceStore</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#000;color:#fafafa;font-family:'Manrope',system-ui,sans-serif;overflow:hidden}
+    canvas{display:block;width:100vw;height:100vh}
+    #hud{position:fixed;top:1rem;left:1rem;font-size:.78rem;color:#525252;line-height:1.7;z-index:10}
+    #hud span{color:#0ea5e9;font-weight:600}
+    #panel{position:fixed;right:1rem;top:1rem;background:rgba(10,10,20,.9);border:1px solid #1e293b;border-radius:12px;padding:1rem;width:220px;z-index:10;backdrop-filter:blur(8px)}
+    #panel h3{font-size:.78rem;color:#64748b;margin:.5rem 0 .25rem;text-transform:uppercase;letter-spacing:.05em}
+    label{font-size:.75rem;color:#94a3b8;display:flex;justify-content:space-between;align-items:center;margin:.2rem 0}
+    label span{color:#0ea5e9;font-weight:600;min-width:3rem;text-align:right}
+    input[type=range]{width:90px;accent-color:#0ea5e9}
+    button{padding:.35rem .7rem;border-radius:6px;border:1px solid #1e293b;background:#0f172a;color:#e2e8f0;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;width:100%;margin:.2rem 0}
+    button:hover{border-color:#0ea5e9;color:#0ea5e9}
+    a{color:#334155;text-decoration:none;position:fixed;bottom:.5rem;right:.5rem;font-size:.68rem;z-index:10}
+  </style>
+</head>
+<body>
+<canvas id="sim"></canvas>
+<div id="hud">
+  <span>Orbit Simulator</span><br>
+  Altitude: <span id="alt">400</span> km<br>
+  Velocity: <span id="vel">7.67</span> km/s<br>
+  Period: <span id="period">92</span> min<br>
+  Apogee: <span id="apo">400</span> km | Perigee: <span id="peri">400</span> km
+</div>
+<div id="panel">
+  <h3>Launch</h3>
+  <label>Altitude <input type="range" id="alt-sl" min="200" max="36000" value="400" step="100"><span id="alt-v">400</span>km</label>
+  <label>Inclination <input type="range" id="inc" min="0" max="90" value="51"><span id="inc-v">51</span>°</label>
+  <label>Eccentricity <input type="range" id="ecc" min="0" max="80" value="0"><span id="ecc-v">0.00</span></label>
+  <button id="btn-launch">Launch Satellite</button>
+  <button id="btn-geo">Geostationary (36,000 km)</button>
+  <button id="btn-iss">ISS (408 km)</button>
+  <button id="btn-molniya">Molniya (eccentric)</button>
+  <h3>Time</h3>
+  <label>Speed <input type="range" id="timescale" min="1" max="500" value="50"><span id="time-v">50</span>x</label>
+  <button id="btn-clear">Clear All</button>
+</div>
+<a href="https://freespacestore.pages.dev">FreeSpaceStore</a>
+
+<script>
+const canvas = document.getElementById('sim');
+const ctx = canvas.getContext('2d');
+let W, H;
+function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+resize(); addEventListener('resize', resize);
+
+const G = 6.674e-11, M_earth = 5.972e24, R_earth = 6371; // km
+const mu = 3.986e5; // km^3/s^2
+
+const satellites = [];
+const sl = id => document.getElementById(id);
+
+for (const [id, vid] of [['alt-sl','alt-v'],['inc','inc-v'],['timescale','time-v']]) {
+  sl(id).addEventListener('input', () => sl(vid).textContent = sl(id).value);
+}
+sl('ecc').addEventListener('input', () => sl('ecc-v').textContent = (+sl('ecc').value/100).toFixed(2));
+
+function launchSat(alt, inc, ecc) {
+  const a = R_earth + alt; // semi-major axis km
+  const e = ecc;
+  const colors = ['#0ea5e9','#10b981','#f97316','#a855f7','#ef4444','#eab308','#ec4899','#06b6d4'];
+  satellites.push({
+    a, e, inc: inc * Math.PI / 180,
+    theta: Math.random() * Math.PI * 2, // true anomaly
+    raan: Math.random() * Math.PI * 2, // right ascension
+    color: colors[satellites.length % colors.length],
+    trail: [],
+  });
+}
+
+sl('btn-launch').addEventListener('click', () => {
+  launchSat(+sl('alt-sl').value, +sl('inc').value, +sl('ecc').value/100);
+});
+sl('btn-geo').addEventListener('click', () => { sl('alt-sl').value=35786; sl('alt-v').textContent='35786'; sl('ecc').value=0; sl('ecc-v').textContent='0.00'; sl('inc').value=0; sl('inc-v').textContent='0'; launchSat(35786,0,0); });
+sl('btn-iss').addEventListener('click', () => { sl('alt-sl').value=408; sl('alt-v').textContent='408'; sl('ecc').value=0; sl('ecc-v').textContent='0.00'; sl('inc').value=51; sl('inc-v').textContent='51'; launchSat(408,51.6,0.0001); });
+sl('btn-molniya').addEventListener('click', () => { sl('alt-sl').value=20000; sl('alt-v').textContent='20000'; sl('ecc').value=73; sl('ecc-v').textContent='0.73'; sl('inc').value=63; sl('inc-v').textContent='63'; launchSat(20000,63.4,0.73); });
+sl('btn-clear').addEventListener('click', () => satellites.length = 0);
+
+// Launch default ISS
+launchSat(408, 51.6, 0.0001);
+
+const earthRotation = { angle: 0 };
+
+function update(dt) {
+  const timeScale = +sl('timescale').value;
+  earthRotation.angle += 7.292e-5 * dt * timeScale; // Earth rotation
+
+  for (const sat of satellites) {
+    // Kepler orbit: advance true anomaly
+    const r = sat.a * (1 - sat.e*sat.e) / (1 + sat.e * Math.cos(sat.theta));
+    const v = Math.sqrt(mu * (2/r - 1/sat.a));
+    const h = Math.sqrt(mu * sat.a * (1 - sat.e*sat.e));
+    const dTheta = h / (r * r) * dt * timeScale;
+    sat.theta += dTheta;
+
+    // Store trail
+    sat.trail.push(sat.theta);
+    if (sat.trail.length > 500) sat.trail.shift();
+  }
+
+  // HUD (first satellite)
+  if (satellites.length > 0) {
+    const s = satellites[0];
+    const r = s.a * (1 - s.e*s.e) / (1 + s.e * Math.cos(s.theta));
+    const alt = r - R_earth;
+    const v = Math.sqrt(mu * (2/r - 1/s.a));
+    const T = 2 * Math.PI * Math.sqrt(s.a*s.a*s.a / mu) / 60; // minutes
+    const apogee = s.a * (1 + s.e) - R_earth;
+    const perigee = s.a * (1 - s.e) - R_earth;
+    sl('alt').textContent = Math.round(alt);
+    sl('vel').textContent = v.toFixed(2);
+    sl('period').textContent = Math.round(T);
+    sl('apo').textContent = Math.round(apogee);
+    sl('peri').textContent = Math.round(perigee);
+  }
+}
+
+function draw() {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  // Stars
+  if (!draw.stars) {
+    draw.stars = [];
+    for (let i = 0; i < 200; i++) {
+      draw.stars.push({x: Math.random()*2000, y: Math.random()*1200, b: 0.3+Math.random()*0.7, s: 0.5+Math.random()});
+    }
+  }
+  for (const star of draw.stars) {
+    ctx.fillStyle = `rgba(255,255,255,${star.b * (0.8 + Math.sin(performance.now()*0.001 + star.x)*0.2)})`;
+    ctx.beginPath(); ctx.arc(star.x % W, star.y % H, star.s, 0, Math.PI*2); ctx.fill();
+  }
+
+  const cx = W/2, cy = H/2;
+  const scale = Math.min(W, H) / 100000; // pixels per km
+  const earthR = R_earth * scale;
+
+  // Earth
+  ctx.save();
+  ctx.translate(cx, cy);
+
+  // Atmosphere glow
+  const glow = ctx.createRadialGradient(0, 0, earthR, 0, 0, earthR * 1.15);
+  glow.addColorStop(0, 'rgba(56, 189, 248, 0.15)');
+  glow.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.arc(0, 0, earthR * 1.15, 0, Math.PI*2); ctx.fill();
+
+  // Earth body
+  const earthGrad = ctx.createRadialGradient(-earthR*0.3, -earthR*0.3, 0, 0, 0, earthR);
+  earthGrad.addColorStop(0, '#1e40af');
+  earthGrad.addColorStop(0.5, '#1e3a5f');
+  earthGrad.addColorStop(1, '#0f172a');
+  ctx.fillStyle = earthGrad;
+  ctx.beginPath(); ctx.arc(0, 0, earthR, 0, Math.PI*2); ctx.fill();
+
+  // Continents (simplified patches)
+  ctx.save();
+  ctx.rotate(earthRotation.angle * 0.01);
+  ctx.fillStyle = '#166534';
+  for (const [ax, ay, ar] of [[0.3,-0.4,0.25],[0.1,0.1,0.2],[-0.3,-0.2,0.15],[-0.2,0.3,0.18],[0.4,0.2,0.12]]) {
+    ctx.beginPath(); ctx.arc(ax*earthR, ay*earthR, ar*earthR, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+
+  // Earth border
+  ctx.strokeStyle = '#1e3a5f'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(0, 0, earthR, 0, Math.PI*2); ctx.stroke();
+
+  // Satellites
+  for (const sat of satellites) {
+    const r = sat.a * (1 - sat.e*sat.e) / (1 + sat.e * Math.cos(sat.theta));
+    const x = r * scale * Math.cos(sat.theta);
+    const y = r * scale * Math.sin(sat.theta) * Math.cos(sat.inc);
+
+    // Orbit path
+    ctx.strokeStyle = sat.color + '30'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let a = 0; a <= Math.PI*2; a += 0.05) {
+      const or = sat.a * (1-sat.e*sat.e) / (1+sat.e*Math.cos(a));
+      const ox = or * scale * Math.cos(a);
+      const oy = or * scale * Math.sin(a) * Math.cos(sat.inc);
+      if (a === 0) ctx.moveTo(ox, oy); else ctx.lineTo(ox, oy);
+    }
+    ctx.closePath(); ctx.stroke();
+
+    // Satellite dot
+    ctx.fillStyle = sat.color;
+    ctx.shadowColor = sat.color; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Altitude line to Earth surface
+    const surfR = earthR;
+    const angle = Math.atan2(y, x);
+    ctx.strokeStyle = sat.color + '20'; ctx.lineWidth = 0.5;
+    ctx.setLineDash([2,3]);
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(angle)*surfR, Math.sin(angle)*surfR);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  ctx.restore();
+
+  // Scale indicator
+  const scaleBarKm = 10000;
+  const scaleBarPx = scaleBarKm * scale;
+  ctx.strokeStyle = '#334155'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(20, H-30); ctx.lineTo(20+scaleBarPx, H-30); ctx.stroke();
+  ctx.fillStyle = '#475569'; ctx.font = '10px Manrope';
+  ctx.fillText(`${scaleBarKm.toLocaleString()} km`, 20, H-35);
+}
+
+let lastTime = performance.now();
+function loop(now) {
+  requestAnimationFrame(loop);
+  const dt = Math.min(0.1, (now - lastTime) / 1000);
+  lastTime = now;
+  update(dt);
+  draw();
+}
+loop(performance.now());
+</script>
+</body>
+</html>
