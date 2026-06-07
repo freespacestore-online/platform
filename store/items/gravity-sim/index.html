@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gravity Simulator — FreeSpaceStore</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#000;color:#fafafa;font-family:'Manrope',system-ui,sans-serif;overflow:hidden}
+    canvas{display:block;width:100vw;height:100vh;cursor:crosshair}
+    #hud{position:fixed;top:1rem;left:1rem;font-size:.78rem;color:#525252;line-height:1.7;z-index:10}
+    #hud span{color:#0ea5e9;font-weight:600}
+    #controls{position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);display:flex;gap:.5rem;z-index:10}
+    button{padding:.35rem .8rem;border-radius:6px;border:1px solid #1e293b;background:#0f172a;color:#e2e8f0;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit}
+    button:hover{border-color:#0ea5e9;color:#0ea5e9}
+    #help{position:fixed;top:1rem;right:1rem;font-size:.68rem;color:#334155;z-index:10;text-align:right;line-height:1.8}
+    .key{display:inline-block;padding:.05rem .25rem;border-radius:3px;border:1px solid #334155;font-family:monospace;font-size:.6rem;color:#64748b}
+    a{color:#334155;text-decoration:none;position:fixed;bottom:.5rem;right:.5rem;font-size:.68rem;z-index:10}
+  </style>
+</head>
+<body>
+<canvas id="sim"></canvas>
+<div id="hud"><span>N-Body Gravity</span><br>Bodies: <span id="count">0</span> | Time: <span id="time">1</span>x</div>
+<div id="help">
+  <span class="key">Click</span> Place star<br>
+  <span class="key">Click+drag</span> Launch with velocity<br>
+  <span class="key">1-5</span> Presets<br>
+  <span class="key">C</span> Clear <span class="key">T</span> Trails
+</div>
+<div id="controls">
+  <button id="btn-star">Star</button>
+  <button id="btn-planet">Planet</button>
+  <button id="btn-moon">Moon</button>
+  <button id="btn-binary">Binary Stars</button>
+  <button id="btn-solar">Solar System</button>
+  <button id="btn-chaos">Chaos (50)</button>
+  <button id="btn-clear">Clear</button>
+</div>
+<a href="https://freespacestore.pages.dev">FreeSpaceStore</a>
+
+<script>
+const canvas = document.getElementById('sim');
+const ctx = canvas.getContext('2d');
+let W, H;
+function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+resize(); addEventListener('resize', resize);
+
+const G = 2;
+let bodies = [], trails = true, timeScale = 1, placing = 'star';
+const types = {
+  star: { mass: 5000, r: 12, color: '#fbbf24', glow: '#fbbf24' },
+  planet: { mass: 50, r: 5, color: '#3b82f6', glow: '#1d4ed8' },
+  moon: { mass: 5, r: 3, color: '#94a3b8', glow: '#475569' },
+};
+
+let dragStart = null, dragEnd = null;
+
+canvas.addEventListener('mousedown', e => { dragStart = { x: e.clientX, y: e.clientY }; });
+canvas.addEventListener('mousemove', e => { if (dragStart) dragEnd = { x: e.clientX, y: e.clientY }; });
+canvas.addEventListener('mouseup', e => {
+  if (!dragStart) return;
+  const t = types[placing];
+  const vx = dragStart ? (dragStart.x - e.clientX) * 0.05 : 0;
+  const vy = dragStart ? (dragStart.y - e.clientY) * 0.05 : 0;
+  bodies.push({
+    x: dragStart.x, y: dragStart.y, vx, vy,
+    mass: t.mass, r: t.r, color: t.color, glow: t.glow,
+    trail: [],
+  });
+  dragStart = null; dragEnd = null;
+});
+
+document.getElementById('btn-star').addEventListener('click', () => placing = 'star');
+document.getElementById('btn-planet').addEventListener('click', () => placing = 'planet');
+document.getElementById('btn-moon').addEventListener('click', () => placing = 'moon');
+document.getElementById('btn-clear').addEventListener('click', () => bodies = []);
+
+document.getElementById('btn-binary').addEventListener('click', () => {
+  bodies = [];
+  const cx = W/2, cy = H/2, d = 80;
+  bodies.push({ x:cx-d, y:cy, vx:0, vy:-1.5, mass:3000, r:10, color:'#fbbf24', glow:'#fbbf24', trail:[] });
+  bodies.push({ x:cx+d, y:cy, vx:0, vy:1.5, mass:3000, r:10, color:'#f97316', glow:'#f97316', trail:[] });
+  // Orbiting planet
+  bodies.push({ x:cx, y:cy-200, vx:3, vy:0, mass:20, r:4, color:'#3b82f6', glow:'#1d4ed8', trail:[] });
+});
+
+document.getElementById('btn-solar').addEventListener('click', () => {
+  bodies = [];
+  const cx = W/2, cy = H/2;
+  bodies.push({ x:cx, y:cy, vx:0, vy:0, mass:8000, r:14, color:'#fbbf24', glow:'#fbbf24', trail:[] });
+  const planets = [[60,2,'#94a3b8',3],[100,1.6,'#f97316',4],[150,1.3,'#3b82f6',5],[220,1,'#ef4444',4],[320,0.7,'#eab308',8]];
+  for (const [dist, speed, color, r] of planets) {
+    bodies.push({ x:cx+dist, y:cy, vx:0, vy:speed, mass:30+r*5, r, color, glow:color, trail:[] });
+  }
+});
+
+document.getElementById('btn-chaos').addEventListener('click', () => {
+  bodies = [];
+  for (let i = 0; i < 50; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 50 + Math.random() * 250;
+    const speed = 0.5 + Math.random() * 1.5;
+    bodies.push({
+      x: W/2 + Math.cos(angle)*dist, y: H/2 + Math.sin(angle)*dist,
+      vx: Math.cos(angle+Math.PI/2)*speed, vy: Math.sin(angle+Math.PI/2)*speed,
+      mass: 10 + Math.random()*100, r: 2+Math.random()*4,
+      color: `hsl(${Math.random()*360},70%,60%)`,
+      glow: `hsl(${Math.random()*360},70%,40%)`,
+      trail: [],
+    });
+  }
+  // Central mass
+  bodies.push({ x:W/2, y:H/2, vx:0, vy:0, mass:5000, r:10, color:'#fbbf24', glow:'#fbbf24', trail:[] });
+});
+
+addEventListener('keydown', e => {
+  if (e.key === 'c') bodies = [];
+  if (e.key === 't') trails = !trails;
+  if (e.key === '1') document.getElementById('btn-binary').click();
+  if (e.key === '2') document.getElementById('btn-solar').click();
+  if (e.key === '3') document.getElementById('btn-chaos').click();
+});
+
+function update() {
+  const dt = 0.5 * timeScale;
+
+  for (let i = 0; i < bodies.length; i++) {
+    let ax = 0, ay = 0;
+    for (let j = 0; j < bodies.length; j++) {
+      if (i === j) continue;
+      const dx = bodies[j].x - bodies[i].x;
+      const dy = bodies[j].y - bodies[i].y;
+      const dist = Math.max(5, Math.sqrt(dx*dx + dy*dy));
+      const force = G * bodies[j].mass / (dist * dist);
+      ax += force * dx / dist;
+      ay += force * dy / dist;
+    }
+    bodies[i].vx += ax * dt;
+    bodies[i].vy += ay * dt;
+  }
+
+  for (const b of bodies) {
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    if (trails) {
+      b.trail.push({ x: b.x, y: b.y });
+      if (b.trail.length > 300) b.trail.shift();
+    }
+  }
+
+  // Merge collisions
+  for (let i = bodies.length - 1; i >= 0; i--) {
+    for (let j = i - 1; j >= 0; j--) {
+      const dx = bodies[i].x - bodies[j].x;
+      const dy = bodies[i].y - bodies[j].y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < bodies[i].r + bodies[j].r) {
+        // Merge into j
+        const totalMass = bodies[i].mass + bodies[j].mass;
+        bodies[j].vx = (bodies[j].vx*bodies[j].mass + bodies[i].vx*bodies[i].mass) / totalMass;
+        bodies[j].vy = (bodies[j].vy*bodies[j].mass + bodies[i].vy*bodies[i].mass) / totalMass;
+        bodies[j].mass = totalMass;
+        bodies[j].r = Math.cbrt(bodies[j].r**3 + bodies[i].r**3);
+        bodies.splice(i, 1);
+        break;
+      }
+    }
+  }
+
+  document.getElementById('count').textContent = bodies.length;
+}
+
+function draw() {
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Stars background (static)
+  if (!draw.bg) {
+    draw.bg = true;
+    ctx.fillStyle = '#000'; ctx.fillRect(0,0,W,H);
+    for (let i = 0; i < 150; i++) {
+      ctx.fillStyle = `rgba(255,255,255,${0.2+Math.random()*0.5})`;
+      ctx.beginPath(); ctx.arc(Math.random()*W, Math.random()*H, Math.random()*0.8, 0, Math.PI*2); ctx.fill();
+    }
+  }
+
+  // Trails
+  for (const b of bodies) {
+    if (b.trail.length < 2) continue;
+    ctx.beginPath();
+    ctx.moveTo(b.trail[0].x, b.trail[0].y);
+    for (let i = 1; i < b.trail.length; i++) ctx.lineTo(b.trail[i].x, b.trail[i].y);
+    ctx.strokeStyle = b.color + '30';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Bodies
+  for (const b of bodies) {
+    // Glow
+    const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r * 3);
+    grad.addColorStop(0, b.glow + '40');
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 3, 0, Math.PI*2); ctx.fill();
+
+    // Body
+    ctx.fillStyle = b.color;
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill();
+
+    // Highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.beginPath(); ctx.arc(b.x - b.r*0.3, b.y - b.r*0.3, b.r*0.3, 0, Math.PI*2); ctx.fill();
+  }
+
+  // Drag indicator
+  if (dragStart && dragEnd) {
+    ctx.strokeStyle = '#0ea5e9'; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(dragStart.x, dragStart.y); ctx.lineTo(dragEnd.x, dragEnd.y); ctx.stroke();
+    ctx.setLineDash([]);
+    // Velocity arrow (opposite direction)
+    const vx = (dragStart.x - dragEnd.x) * 0.05;
+    const vy = (dragStart.y - dragEnd.y) * 0.05;
+    ctx.strokeStyle = '#f97316'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(dragStart.x, dragStart.y);
+    ctx.lineTo(dragStart.x + vx*20, dragStart.y + vy*20);
+    ctx.stroke();
+  }
+}
+
+function loop() { requestAnimationFrame(loop); update(); update(); draw(); }
+
+// Start with solar system
+document.getElementById('btn-solar').click();
+loop();
+</script>
+</body>
+</html>
