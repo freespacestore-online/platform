@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rocket Propulsion — Space Institute</title>
+  <meta name="description" content="Rocket propulsion systems. Chemical rockets, electric propulsion, nuclear propulsion, the thrust equation, and specific impulse explained.">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--accent:#0ea5e9;--paper:#0a0a0a;--ink:#fafafa;--muted:#737373;--panel:#141414;--line:#262626}
+    body{font-family:'Manrope',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.7;-webkit-font-smoothing:antialiased}
+    .container{max-width:900px;margin:0 auto;padding:0 1.5rem}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+    header{border-bottom:1px solid var(--line);padding:.75rem 0}
+    header .container{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:.5rem;text-decoration:none;color:var(--ink)}
+    .brand-emoji{font-size:1.5rem}
+    .brand-text{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700}
+    .brand-tag{font-size:.68rem;color:var(--muted)}
+    nav{display:flex;gap:1rem;font-size:.82rem;font-weight:600;margin-left:auto}
+    nav a{color:var(--muted)}nav a:hover{color:var(--ink)}
+    .hero{text-align:center;padding:2.5rem 0 1.5rem;border-bottom:1px solid var(--line)}
+    .hero h1{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:700;margin-bottom:.5rem}
+    .hero h1 em{color:var(--accent);font-style:normal}
+    .hero p{color:var(--muted);max-width:600px;margin:0 auto;font-size:.95rem}
+    .toc{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem 1.25rem;margin:1.5rem 0}
+    .toc h3{font-size:.85rem;font-weight:700;margin-bottom:.5rem;color:var(--accent)}
+    .toc ul{list-style:none;padding:0;columns:2}
+    .toc li{margin:.2rem 0}.toc a{color:#a3a3a3;font-size:.82rem}.toc a:hover{color:var(--ink)}
+    .section{margin-bottom:2rem;padding-top:1rem}
+    .section h2{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;margin-bottom:.5rem;padding-bottom:.35rem;border-bottom:1px solid var(--line)}
+    .section h3{font-size:.95rem;font-weight:700;margin:1rem 0 .35rem;color:#e5e5e5}
+    .section p,.section li{color:#a3a3a3;font-size:.88rem}
+    ul{padding-left:1.25rem;margin:.35rem 0}
+    li{margin-bottom:.3rem}
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.6rem;margin:.5rem 0}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.85rem;transition:border-color .15s}
+    .card:hover{border-color:var(--accent)}
+    .card h4{font-size:.85rem;font-weight:700;margin-bottom:.2rem}
+    .card h4 a{color:var(--ink)}.card p{font-size:.75rem;color:var(--muted);margin:0;line-height:1.5}
+    .card .meta{font-size:.65rem;color:#525252;margin-top:.25rem}
+    code{background:#1a1a1a;padding:.15rem .35rem;border-radius:4px;font-size:.82rem;color:#e5e5e5}
+    table{width:100%;border-collapse:collapse;margin:.5rem 0;font-size:.82rem}
+    th,td{border:1px solid var(--line);padding:.4rem .6rem;text-align:left}
+    th{background:var(--panel);color:var(--ink);font-weight:600}
+    td{color:#a3a3a3}
+    footer{border-top:1px solid var(--line);padding:1.5rem 0;text-align:center;font-size:.75rem;color:#525252}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/institute/" class="brand">
+        <span class="brand-emoji">🚀</span>
+        <span><span class="brand-text">Space Institute</span><br><span class="brand-tag">Powered by <a href="https://zensical.org" style="color:#525252">Zensical</a></span></span>
+      </a>
+      <nav><a href="/institute/">Overview</a><a href="/institute/orbital-mechanics.html">Orbits</a><a href="/institute/propulsion.html">Propulsion</a><a href="/institute/spacecraft.html">Spacecraft</a><a href="/institute/mission-design.html">Missions</a><a href="/institute/history.html">History</a><a href="/">Simulations</a></nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="hero">
+      <h1>Rocket <em>Propulsion</em></h1>
+      <p>How we escape gravity's grip. From chemical rockets that brute-force their way to orbit to ion engines that patiently accelerate across the solar system.</p>
+    </section>
+
+    <nav class="toc">
+      <h3>Contents</h3>
+      <ul>
+        <li><a href="#fundamentals">Fundamentals</a></li>
+        <li><a href="#chemical">Chemical Rockets</a></li>
+        <li><a href="#solid">Solid Rockets</a></li>
+        <li><a href="#liquid">Liquid Rockets</a></li>
+        <li><a href="#hybrid">Hybrid Rockets</a></li>
+        <li><a href="#electric">Electric Propulsion</a></li>
+        <li><a href="#nuclear">Nuclear Propulsion</a></li>
+        <li><a href="#engines">Notable Engines</a></li>
+        <li><a href="#resources">Resources</a></li>
+      </ul>
+    </nav>
+
+    <section class="section" id="fundamentals">
+      <h2>Fundamentals</h2>
+
+      <h3>Newton's Third Law</h3>
+      <p>Rockets work by ejecting mass (propellant) at high velocity in one direction, generating thrust in the opposite direction. This is Newton's third law: for every action, there is an equal and opposite reaction. A rocket doesn't need anything to "push against" — it works in vacuum, pushing against its own exhaust.</p>
+
+      <h3>The Thrust Equation</h3>
+      <p>F = m_dot * v_e + (p_e - p_a) * A_e, where F is thrust, m_dot is mass flow rate (kg/s), v_e is exhaust velocity, p_e and p_a are exhaust and ambient pressures, and A_e is nozzle exit area. In vacuum (p_a = 0), thrust increases because the pressure term adds to the momentum term. This is why rocket engines produce more thrust in space than at sea level.</p>
+
+      <h3>Specific Impulse (Isp)</h3>
+      <p>The efficiency of a rocket engine. Defined as Isp = F / (m_dot * g_0), measured in seconds. Physically, it's the time a unit weight of propellant can produce a unit force. Higher Isp means more delta-v per kilogram of propellant. Equivalently: Isp = v_e / g_0 (exhaust velocity divided by standard gravity). Chemical rockets: 200-470 s. Ion engines: 1,000-10,000 s. The tyranny of the rocket equation means Isp drives everything.</p>
+
+      <h3>The Tsiolkovsky Rocket Equation</h3>
+      <p>Delta-v = v_e * ln(m_0 / m_f) = Isp * g_0 * ln(m_0 / m_f), where m_0 is initial mass (with propellant), m_f is final mass (dry, without propellant). The logarithm means exponentially more propellant is needed for each additional unit of delta-v. To get 9.4 km/s delta-v (LEO) with Isp=350s: mass ratio m_0/m_f = 15. 93% of the rocket must be propellant. This fundamental constraint shapes all rocket design.</p>
+
+      <h3>Staging</h3>
+      <p>Because the rocket equation penalizes carrying empty structure, multi-stage rockets discard spent stages as they fly. Each stage has its own engines and propellant. When a stage is exhausted, it separates, and the next stage ignites. The delta-v of each stage adds. A two-stage-to-orbit (TSTO) rocket is much more efficient than single-stage-to-orbit (SSTO), which requires a mass fraction so aggressive that it's barely achievable. The Falcon 9's first stage provides ~3.5 km/s before separating; the second stage provides the remaining ~6 km/s to orbit.</p>
+    </section>
+
+    <section class="section" id="chemical">
+      <h2>Chemical Rockets</h2>
+      <p>Chemical propulsion dominates spaceflight because only chemical reactions release enough energy fast enough to produce the extreme thrust needed to escape Earth's gravity. Chemical energy is converted to thermal energy (hot gas), which is expanded through a nozzle to produce high-velocity exhaust.</p>
+
+      <h3>Performance Comparison</h3>
+      <table>
+        <tr><th>Type</th><th>Isp (s)</th><th>Thrust</th><th>T/W Ratio</th><th>Use Case</th></tr>
+        <tr><td>Solid</td><td>200-290</td><td>Very high</td><td>~3-5</td><td>Boosters, missiles, sounding</td></tr>
+        <tr><td>Liquid (LOX/RP-1)</td><td>300-350</td><td>High</td><td>~1.5-3</td><td>First stages</td></tr>
+        <tr><td>Liquid (LOX/LH2)</td><td>420-465</td><td>Moderate</td><td>~0.5-1</td><td>Upper stages</td></tr>
+        <tr><td>Liquid (hypergolic)</td><td>280-320</td><td>Low-moderate</td><td>~0.5-1</td><td>Spacecraft, in-space</td></tr>
+        <tr><td>Liquid (LOX/CH4)</td><td>350-380</td><td>High</td><td>~1-2</td><td>Reusable vehicles</td></tr>
+      </table>
+    </section>
+
+    <section class="section" id="solid">
+      <h2>Solid Rockets</h2>
+      <ul>
+        <li><strong>How they work</strong> — fuel and oxidizer are pre-mixed into a solid grain. Once ignited, the grain burns from the inside out. No turbopumps, no valves, no moving parts (except possibly a nozzle gimbal). Extremely simple and reliable.</li>
+        <li><strong>Propellants</strong> — ammonium perchlorate (oxidizer) + aluminum powder (fuel) + HTPB (hydroxyl-terminated polybutadiene, binder). The Space Shuttle SRBs used this combination. Military missiles use similar formulations.</li>
+        <li><strong>Grain geometry</strong> — the shape of the internal bore determines the burn profile. Star-shaped cross-section provides approximately constant thrust. Circular bore gives increasing thrust (progressive). End-burning gives very long, low-thrust burn.</li>
+        <li><strong>Cannot be throttled or shut down</strong> — once ignited, a solid rocket burns until the propellant is exhausted. Some designs include a thrust termination port (vented forward, neutralizing thrust). This is a major limitation for crewed applications.</li>
+        <li><strong>Examples</strong> — Space Shuttle SRBs (each 1,300 tonnes propellant, 12.5 MN thrust), Ariane 5 EAP boosters, Northrop Grumman GEM-63XL (Atlas V, Vulcan), Minuteman III ICBMs, sounding rockets (Terrier-Improved Malemute).</li>
+      </ul>
+    </section>
+
+    <section class="section" id="liquid">
+      <h2>Liquid Rockets</h2>
+      <p>Liquid-propellant rockets store fuel and oxidizer in separate tanks, pump them into a combustion chamber, ignite them, and expand the hot gas through a nozzle. More complex than solids but can be throttled, shut down, and restarted.</p>
+
+      <h3>Propellant Combinations</h3>
+      <ul>
+        <li><strong>LOX/RP-1 (kerosene)</strong> — dense, storable at moderate temperatures. Isp ~300-350s. Used in: Merlin (Falcon 9), RD-180 (Atlas V), F-1 (Saturn V first stage). Good first-stage propellant because high density means smaller tanks and less drag.</li>
+        <li><strong>LOX/LH2 (liquid hydrogen)</strong> — highest chemical Isp (~420-465s). Very low density (LH2 is 1/14 the density of RP-1), requiring huge tanks. Used in: RS-25 (Space Shuttle main engine), RL-10 (Centaur upper stage), Vulcain (Ariane 5/6), LE-7A (H-IIA). Ideal for upper stages where Isp matters most.</li>
+        <li><strong>LOX/CH4 (liquid methane)</strong> — emerging propellant for reusable rockets. Isp ~350-380s. Denser than LH2 (smaller tanks). Doesn't coke engines (RP-1 leaves soot deposits, problematic for reuse). Can be manufactured on Mars (Sabatier reaction: CO2 + 4H2 &rarr; CH4 + 2H2O). Used in: Raptor (SpaceX Starship), BE-4 (Blue Origin New Glenn, ULA Vulcan).</li>
+        <li><strong>Hypergolic</strong> — fuel and oxidizer ignite on contact (no igniter needed). MMH or UDMH (fuel) + N2O4 or NTO (oxidizer). Toxic and corrosive but storable at room temperature and highly reliable. Isp ~280-320s. Used in: spacecraft thrusters (Dragon, Orion RCS), Proton rocket, many satellite apogee engines. Being phased out due to toxicity — AF-M315E (green monopropellant) is a replacement candidate.</li>
+      </ul>
+
+      <h3>Engine Cycles</h3>
+      <ul>
+        <li><strong>Gas-generator (open cycle)</strong> — a small portion of propellant is burned in a separate gas generator to drive turbopumps. The turbine exhaust is dumped overboard (wasted). Simple and reliable but lower efficiency. Used in: Merlin, F-1, RD-107.</li>
+        <li><strong>Staged combustion (closed cycle)</strong> — all propellant flows through the preburner and turbine before entering the main combustion chamber. No propellant wasted. Higher chamber pressure and Isp. More complex. Two variants: fuel-rich (RS-25, SSME) and oxygen-rich (RD-180, Raptor). Oxygen-rich is harder (hot oxidizer corrodes everything) but enables full-flow staged combustion.</li>
+        <li><strong>Full-flow staged combustion</strong> — two preburners: one fuel-rich, one oxidizer-rich. Both turbine exhausts feed the main chamber. Maximum efficiency, both turbines run cooler (lower stress). Only engine to fly: SpaceX Raptor. Previously only tested by the Soviet RD-270 (never flew).</li>
+        <li><strong>Expander cycle</strong> — heat from the combustion chamber wall vaporizes fuel (LH2), which drives the turbine. No preburner, no separate gas generator. Very efficient and simple but limited thrust (dependent on heat transfer). Used in: RL-10 (Isp 465s, the most efficient flying hydrolox engine).</li>
+        <li><strong>Pressure-fed</strong> — pressurized gas (helium) pushes propellant into the chamber. No turbopumps. Low chamber pressure limits performance but eliminates the most complex and failure-prone component. Used in: spacecraft thrusters, Electron's Rutherford uses electric-pump-fed (unique approach with battery-powered electric motors driving the pumps).</li>
+      </ul>
+    </section>
+
+    <section class="section" id="hybrid">
+      <h2>Hybrid Rockets</h2>
+      <ul>
+        <li><strong>Concept</strong> — solid fuel grain (e.g., HTPB, wax, or ABS plastic) with liquid or gaseous oxidizer (e.g., N2O, LOX). Oxidizer flows over the burning fuel surface. Throttleable and can be shut down (unlike solid rockets). Simpler than liquid (no fuel pump), safer than solid (fuel alone doesn't burn).</li>
+        <li><strong>Advantages</strong> — inherently safe (no detonation risk), throttleable, can use benign propellants, lower cost than liquid systems.</li>
+        <li><strong>Disadvantages</strong> — low regression rate (fuel burns slowly from the surface), lower Isp than LOX/LH2, combustion instabilities, O/F ratio shifts during burn as port geometry changes.</li>
+        <li><strong>Examples</strong> — SpaceShipOne and SpaceShipTwo (HTPB/N2O, then later nylon/N2O). Virgin Orbit's LauncherOne used LOX/RP-1 (liquid, not hybrid). Student and amateur rocketry frequently uses hybrid designs for safety.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="electric">
+      <h2>Electric Propulsion</h2>
+      <p>Electric propulsion uses electrical energy (from solar panels or nuclear reactors) to accelerate propellant to very high exhaust velocities. Much higher Isp than chemical rockets (1,000-10,000s) but much lower thrust. Ideal for long-duration in-space missions where delta-v is high but thrust can be low.</p>
+
+      <h3>Types</h3>
+      <ul>
+        <li><strong>Ion thruster (gridded ion engine)</strong> — ionizes propellant (xenon, krypton) using electron bombardment or radio frequency excitation. Ions are accelerated through electrostatic grids to 30-50 km/s exhaust velocity. Isp: 3,000-5,000s. Thrust: millinewtons to ~1 N. Used in: Dawn (NASA, xenon, NSTAR), GOCE (ESA), Starlink (krypton). Extremely efficient but limited by grid erosion and beam neutralization.</li>
+        <li><strong>Hall-effect thruster (HET)</strong> — propellant (xenon, krypton) is ionized and accelerated in a crossed electric and magnetic field. Simpler than gridded ion engines, higher thrust density, but slightly lower Isp. Isp: 1,500-3,000s. Thrust: 10 mN to ~1 N. Used in: Starlink (SpaceX, krypton HET), Tiangong (Chinese space station orbit maintenance), many commercial GEO satellites for station-keeping and orbit raising.</li>
+        <li><strong>Pulsed Plasma Thruster (PPT)</strong> — ablates a solid propellant (PTFE/Teflon) with an electric arc. Simple, no pressurized propellant tanks. Low thrust, low power. Used on small satellites and CubeSats. The first electric thruster flown in space (SERT-1, 1964, was technically an ion engine; Zond 2 flew a PPT in 1964).</li>
+        <li><strong>Magnetoplasmadynamic (MPD) thruster</strong> — high-power electric thruster. Ionizes propellant and accelerates it using Lorentz force (J x B). Can produce newtons of thrust (much more than ion or Hall). Requires very high power (100 kW to MW). Promising for crewed Mars missions with nuclear electric power. Not yet operational for primary propulsion.</li>
+        <li><strong>Electrospray / FEEP</strong> — accelerate ions or charged droplets from a liquid metal (indium, cesium) or ionic liquid through field emission. Very precise, very low thrust (micronewtons to millinewtons). Used for fine attitude control (LISA Pathfinder, used for drag-free flight to micronewton precision) and CubeSat propulsion.</li>
+      </ul>
+
+      <h3>Power Requirements</h3>
+      <p>Electric propulsion efficiency is fundamentally limited by available power. A 10 kW solar array powering a Hall thruster produces ~0.5 N of thrust — enough to accelerate a 1,000 kg spacecraft by only 0.5 mm/s^2. Over months, this accumulates into tens of km/s of delta-v. For missions beyond Jupiter, solar power becomes insufficient; nuclear electric propulsion (NEP) using fission reactors (10-100+ kW) is needed.</p>
+    </section>
+
+    <section class="section" id="nuclear">
+      <h2>Nuclear Propulsion</h2>
+
+      <h3>Nuclear Thermal Propulsion (NTP)</h3>
+      <ul>
+        <li>A nuclear fission reactor heats propellant (liquid hydrogen) to very high temperatures (~2,500-3,000 K), which is then expelled through a nozzle. No chemical combustion — the nuclear reactor is just a heat source. Isp: 850-1,000s (roughly 2x chemical LOX/LH2). Thrust: comparable to chemical engines (tens to hundreds of kN).</li>
+        <li>The combination of high Isp AND high thrust makes NTP uniquely suited for crewed Mars missions: ~45% less propellant than chemical, cutting transit time to 3-4 months.</li>
+        <li><strong>NERVA program (1960s-1970s)</strong> — NASA successfully ground-tested NTP engines (Phoebus, Pewee, XE-Prime). Demonstrated 845s Isp. Program cancelled in 1973 (budget cuts, no political will for Mars). The technology works.</li>
+        <li><strong>DRACO program (2020s)</strong> — DARPA/NASA program to demonstrate NTP in space by 2027. Lockheed Martin is the prime contractor. Uses low-enriched uranium (LEU) HALEU fuel. If successful, could enable rapid crewed Mars transit.</li>
+      </ul>
+
+      <h3>Nuclear Electric Propulsion (NEP)</h3>
+      <ul>
+        <li>A fission reactor generates electricity (via Brayton or Stirling cycle), which powers electric thrusters (ion, Hall, MPD). High Isp (2,000-10,000s) and high available power (10-100+ kW). Lower thrust-to-weight than NTP but much higher delta-v capability.</li>
+        <li>No NEP system has flown for primary propulsion. The Soviet TOPAZ and US SNAP-10A flew small nuclear reactors in space (SNAP-10A in 1965), but only for electricity generation, not propulsion.</li>
+        <li>Kilopower / KRUSTY — NASA demonstrated a 1 kWe fission reactor in 2018. Scalable to 10 kWe. Could power electric thrusters or surface power on the Moon/Mars.</li>
+      </ul>
+
+      <h3>Nuclear Pulse Propulsion</h3>
+      <p>Project Orion (1958-1965): propel a spacecraft by detonating small nuclear bombs behind a massive pusher plate. Theoretically achievable Isp: 6,000-100,000s (depending on bomb yield and design). Could send a 10,000-tonne spacecraft to Mars in weeks. Prohibited by the Partial Nuclear Test Ban Treaty (1963). Physically the most capable propulsion concept ever seriously studied — limited by politics and fallout, not physics.</p>
+    </section>
+
+    <section class="section" id="engines">
+      <h2>Notable Engines</h2>
+      <div class="cards">
+        <div class="card">
+          <h4>SpaceX Raptor 3</h4>
+          <p>Full-flow staged combustion LOX/CH4 engine. ~280 tonnes-force thrust, Isp ~350s (sea level). Powers Starship Super Heavy. The most advanced rocket engine ever built.</p>
+          <div class="meta">SpaceX | LOX/CH4 | Reusable</div>
+        </div>
+        <div class="card">
+          <h4>Rocketdyne F-1</h4>
+          <p>1.5 million lbf thrust. Five powered the Saturn V first stage to the Moon. Gas-generator cycle, LOX/RP-1. The most powerful single-chamber liquid rocket engine ever flown.</p>
+          <div class="meta">Saturn V | LOX/RP-1 | 1960s</div>
+        </div>
+        <div class="card">
+          <h4>RS-25 (SSME)</h4>
+          <p>Space Shuttle Main Engine. Fuel-rich staged combustion, LOX/LH2, Isp 452s (vacuum). Reusable for 55+ flights. Now powering SLS. Engineering masterpiece.</p>
+          <div class="meta">Aerojet Rocketdyne | LOX/LH2</div>
+        </div>
+        <div class="card">
+          <h4>RL-10</h4>
+          <p>Expander-cycle LOX/LH2 upper-stage engine. Isp 465.5s — the highest of any flying chemical engine. Powers Centaur upper stage (Atlas V, Vulcan). In production since 1963.</p>
+          <div class="meta">Aerojet Rocketdyne | LOX/LH2</div>
+        </div>
+        <div class="card">
+          <h4>RD-180</h4>
+          <p>Oxygen-rich staged combustion, LOX/RP-1. Twin-chamber. 390 tonnes-force thrust, Isp 338s (sea level). Powers Atlas V first stage. Russian-made, legendary performance.</p>
+          <div class="meta">NPO Energomash | LOX/RP-1</div>
+        </div>
+        <div class="card">
+          <h4>Merlin 1D</h4>
+          <p>Gas-generator LOX/RP-1. 190,000 lbf thrust (vacuum). Powers Falcon 9 (nine first-stage, one upper-stage). Designed for reuse. Over 1,000 engines produced.</p>
+          <div class="meta">SpaceX | LOX/RP-1 | Reusable</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="resources">
+      <h2>Resources</h2>
+      <div class="cards">
+        <div class="card">
+          <h4><a href="https://www.braeunig.us/space/propuls.htm">Braeunig: Rocket Propulsion</a></h4>
+          <p>Free online reference covering thrust equations, nozzle theory, propellant chemistry, and engine cycles. Clear derivations with worked examples.</p>
+          <div class="meta">Free | Reference</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.amazon.com/Rocket-Propulsion-Elements-George-Sutton/dp/1118753658">Sutton & Biblarz: Rocket Propulsion Elements</a></h4>
+          <p>The definitive textbook on rocket propulsion. 9th edition (2016). Nozzle theory, thermochemistry, solid/liquid/hybrid/electric engines, testing.</p>
+          <div class="meta">Textbook | Comprehensive</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://everydayastronaut.com/raptor-engine/">Everyday Astronaut: Raptor</a></h4>
+          <p>Tim Dodd's in-depth explainer on SpaceX Raptor and engine cycles. Excellent visuals, accessible explanations. Full-flow staged combustion demystified.</p>
+          <div class="meta">YouTube / Article | Free</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.nasa.gov/centers-and-facilities/glenn/about-the-next-generation-ion-propulsion-system-next-c/">NASA NEXT-C Ion Engine</a></h4>
+          <p>NASA Glenn's next-generation ion propulsion system. 6.9 kW, 4,190s Isp. Powers DART asteroid deflection mission successor concepts. State-of-the-art electric propulsion.</p>
+          <div class="meta">NASA | Reference</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.sciencedirect.com/book/9780123973184/space-propulsion-analysis-and-design">Humble, Henry & Larson: Space Propulsion Analysis and Design</a></h4>
+          <p>Practical propulsion engineering textbook. Trade studies, sizing, performance analysis. Good companion to Sutton.</p>
+          <div class="meta">Textbook | Engineering</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.enginehistory.org/Rockets/RPE/RPE.shtml">Encyclopedia of Rocket Engines</a></h4>
+          <p>Historical catalog of rocket engines with specifications, photographs, and development history. Invaluable reference for engine comparisons.</p>
+          <div class="meta">Free | Historical</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <div class="container">
+      <a href="/">FreeSpaceStore</a> · <a href="/institute/">Institute</a> · Built with <a href="https://zensical.org">Zensical</a>
+    </div>
+  </footer>
+</body>
+</html>

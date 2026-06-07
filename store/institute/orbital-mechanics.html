@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orbital Mechanics — Space Institute</title>
+  <meta name="description" content="Orbital mechanics fundamentals. Kepler's laws, two-body problem, orbital elements, perturbations, orbit transfers, and rendezvous maneuvers.">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--accent:#0ea5e9;--paper:#0a0a0a;--ink:#fafafa;--muted:#737373;--panel:#141414;--line:#262626}
+    body{font-family:'Manrope',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.7;-webkit-font-smoothing:antialiased}
+    .container{max-width:900px;margin:0 auto;padding:0 1.5rem}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+    header{border-bottom:1px solid var(--line);padding:.75rem 0}
+    header .container{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:.5rem;text-decoration:none;color:var(--ink)}
+    .brand-emoji{font-size:1.5rem}
+    .brand-text{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700}
+    .brand-tag{font-size:.68rem;color:var(--muted)}
+    nav{display:flex;gap:1rem;font-size:.82rem;font-weight:600;margin-left:auto}
+    nav a{color:var(--muted)}nav a:hover{color:var(--ink)}
+    .hero{text-align:center;padding:2.5rem 0 1.5rem;border-bottom:1px solid var(--line)}
+    .hero h1{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:700;margin-bottom:.5rem}
+    .hero h1 em{color:var(--accent);font-style:normal}
+    .hero p{color:var(--muted);max-width:600px;margin:0 auto;font-size:.95rem}
+    .toc{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem 1.25rem;margin:1.5rem 0}
+    .toc h3{font-size:.85rem;font-weight:700;margin-bottom:.5rem;color:var(--accent)}
+    .toc ul{list-style:none;padding:0;columns:2}
+    .toc li{margin:.2rem 0}.toc a{color:#a3a3a3;font-size:.82rem}.toc a:hover{color:var(--ink)}
+    .section{margin-bottom:2rem;padding-top:1rem}
+    .section h2{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;margin-bottom:.5rem;padding-bottom:.35rem;border-bottom:1px solid var(--line)}
+    .section h3{font-size:.95rem;font-weight:700;margin:1rem 0 .35rem;color:#e5e5e5}
+    .section p,.section li{color:#a3a3a3;font-size:.88rem}
+    ul{padding-left:1.25rem;margin:.35rem 0}
+    li{margin-bottom:.3rem}
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.6rem;margin:.5rem 0}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.85rem;transition:border-color .15s}
+    .card:hover{border-color:var(--accent)}
+    .card h4{font-size:.85rem;font-weight:700;margin-bottom:.2rem}
+    .card h4 a{color:var(--ink)}.card p{font-size:.75rem;color:var(--muted);margin:0;line-height:1.5}
+    .card .meta{font-size:.65rem;color:#525252;margin-top:.25rem}
+    code{background:#1a1a1a;padding:.15rem .35rem;border-radius:4px;font-size:.82rem;color:#e5e5e5}
+    footer{border-top:1px solid var(--line);padding:1.5rem 0;text-align:center;font-size:.75rem;color:#525252}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/institute/" class="brand">
+        <span class="brand-emoji">🚀</span>
+        <span><span class="brand-text">Space Institute</span><br><span class="brand-tag">Powered by <a href="https://zensical.org" style="color:#525252">Zensical</a></span></span>
+      </a>
+      <nav><a href="/institute/">Overview</a><a href="/institute/orbital-mechanics.html">Orbits</a><a href="/institute/propulsion.html">Propulsion</a><a href="/institute/spacecraft.html">Spacecraft</a><a href="/institute/mission-design.html">Missions</a><a href="/institute/history.html">History</a><a href="/">Simulations</a></nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="hero">
+      <h1>Orbital <em>Mechanics</em></h1>
+      <p>The physics of motion in gravitational fields. How satellites orbit, how spacecraft transfer between orbits, and the mathematics that makes spaceflight possible.</p>
+    </section>
+
+    <nav class="toc">
+      <h3>Contents</h3>
+      <ul>
+        <li><a href="#kepler">Kepler's Laws</a></li>
+        <li><a href="#two-body">Two-Body Problem</a></li>
+        <li><a href="#elements">Orbital Elements</a></li>
+        <li><a href="#orbits">Common Orbits</a></li>
+        <li><a href="#perturbations">Perturbations</a></li>
+        <li><a href="#transfers">Orbit Transfers</a></li>
+        <li><a href="#rendezvous">Rendezvous</a></li>
+        <li><a href="#resources">Resources</a></li>
+      </ul>
+    </nav>
+
+    <section class="section" id="kepler">
+      <h2>Kepler's Laws</h2>
+      <p>Johannes Kepler published his three laws of planetary motion between 1609 and 1619, derived from Tycho Brahe's precise observations of Mars. Newton later showed these laws are consequences of his law of universal gravitation and apply to any two bodies orbiting under gravity.</p>
+
+      <h3>First Law: The Law of Ellipses</h3>
+      <p>Every orbit is an ellipse with the central body at one focus. Circular orbits are a special case (eccentricity e = 0). The closest point to the central body is periapsis (perigee for Earth orbits, perihelion for solar orbits); the farthest is apoapsis (apogee, aphelion). The semi-major axis (a) is half the longest diameter. For a circle, a = radius.</p>
+
+      <h3>Second Law: The Law of Equal Areas</h3>
+      <p>A line connecting the orbiting body to the central body sweeps equal areas in equal time intervals. This means objects move faster at periapsis and slower at apoapsis. Equivalently, angular momentum is conserved in the two-body problem: h = r x v is constant throughout the orbit.</p>
+
+      <h3>Third Law: The Harmonic Law</h3>
+      <p>The square of the orbital period (T) is proportional to the cube of the semi-major axis (a). For orbits around the same central body: T^2 = (4 * pi^2 / mu) * a^3, where mu = GM (gravitational parameter). For Earth: mu = 3.986 x 10^14 m^3/s^2. This means a higher orbit has a longer period. ISS at 408 km: T = 92.7 minutes. GEO at 35,786 km: T = 23.93 hours (sidereal day). Moon at 384,400 km: T = 27.3 days.</p>
+    </section>
+
+    <section class="section" id="two-body">
+      <h2>The Two-Body Problem</h2>
+      <p>The two-body problem considers two point masses interacting only through gravity. It has an exact analytical solution, first derived by Newton. The relative motion of the smaller body around the larger reduces to the equation: d^2r/dt^2 = -mu/r^3 * r, where r is the position vector and mu = G(M+m) (approximately GM for M >> m).</p>
+
+      <h3>Energy and Velocity</h3>
+      <ul>
+        <li><strong>Specific orbital energy</strong> — epsilon = v^2/2 - mu/r = -mu/(2a). Constant throughout the orbit. Negative for ellipses (bound), zero for parabolas (escape), positive for hyperbolas (unbound).</li>
+        <li><strong>Vis-viva equation</strong> — v^2 = mu * (2/r - 1/a). The most important equation in orbital mechanics. Gives velocity at any point in the orbit. For a circular orbit: v_circ = sqrt(mu/r). For Earth at 200 km altitude: v = 7.78 km/s.</li>
+        <li><strong>Escape velocity</strong> — v_esc = sqrt(2 * mu / r). Setting a = infinity in the vis-viva equation. At Earth's surface: v_esc = 11.2 km/s. At LEO altitude: ~10.9 km/s.</li>
+        <li><strong>Specific angular momentum</strong> — h = r x v. Constant in the two-body problem. Its magnitude determines the orbit's shape and size. For a circular orbit: h = r * v_circ.</li>
+      </ul>
+
+      <h3>Conic Sections</h3>
+      <ul>
+        <li><strong>Circle</strong> — e = 0. All points equidistant from center. Special case of ellipse.</li>
+        <li><strong>Ellipse</strong> — 0 &lt; e &lt; 1. Bound orbit. Period is finite. All planets and most satellites follow elliptical orbits.</li>
+        <li><strong>Parabola</strong> — e = 1. Escape trajectory with zero excess velocity at infinity. The boundary between bound and unbound orbits. Theoretical — real escapes are always slightly hyperbolic.</li>
+        <li><strong>Hyperbola</strong> — e &gt; 1. Unbound trajectory. Object escapes with finite excess velocity (v_infinity). Interplanetary trajectories and gravity assists produce hyperbolic paths relative to each body.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="elements">
+      <h2>Classical Orbital Elements</h2>
+      <p>Six numbers completely describe an orbit and the position of an object in it. These are the Keplerian elements, defined relative to a reference frame (usually Earth's equatorial plane and the vernal equinox direction).</p>
+
+      <ul>
+        <li><strong>Semi-major axis (a)</strong> — size of the orbit. Determines energy and period. Measured in km or AU (1 AU = 149,597,870.7 km, Earth-Sun distance).</li>
+        <li><strong>Eccentricity (e)</strong> — shape of the orbit. e=0 is a circle, 0&lt;e&lt;1 is an ellipse, e=1 is a parabola, e&gt;1 is a hyperbola. LEO satellites: e &lt; 0.01. Molniya orbit: e = 0.74.</li>
+        <li><strong>Inclination (i)</strong> — tilt of the orbital plane relative to the equatorial plane. i=0 is equatorial, i=90 is polar, i&gt;90 is retrograde. ISS: 51.6 degrees. Sun-synchronous: ~98 degrees (retrograde, precesses to match Earth's revolution around the Sun).</li>
+        <li><strong>Right Ascension of Ascending Node (RAAN, Omega)</strong> — angle in the equatorial plane from the vernal equinox to where the orbit crosses the equator going north (ascending node). Defines the orientation of the orbital plane.</li>
+        <li><strong>Argument of Periapsis (omega)</strong> — angle in the orbital plane from the ascending node to the periapsis point. Defines the orientation of the ellipse within the orbital plane.</li>
+        <li><strong>True Anomaly (nu)</strong> — angle in the orbital plane from periapsis to the current position of the object. nu=0 at periapsis, nu=180 at apoapsis. Varies with time (faster near periapsis).</li>
+      </ul>
+
+      <h3>Alternative Elements</h3>
+      <ul>
+        <li><strong>Mean anomaly (M)</strong> — linearly proportional to time. M = n * (t - t_periapsis), where n = 2*pi/T is the mean motion. Easier to propagate than true anomaly but requires conversion via Kepler's equation: M = E - e*sin(E) (E = eccentric anomaly).</li>
+        <li><strong>TLE (Two-Line Elements)</strong> — NORAD format used to track all objects in Earth orbit. Contains epoch, inclination, RAAN, eccentricity, argument of perigee, mean anomaly, mean motion, and drag terms. Used with SGP4/SDP4 propagators. Available from <a href="https://celestrak.org">CelesTrak</a> and <a href="https://www.space-track.org">Space-Track</a>.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="orbits">
+      <h2>Common Orbits</h2>
+      <ul>
+        <li><strong>LEO (Low Earth Orbit)</strong> — 200-2,000 km altitude. Period 88-127 minutes. ISS (408 km), Hubble (540 km), Starlink (~550 km). Most of humanity's satellites. Atmospheric drag significant below ~600 km, causing orbit decay.</li>
+        <li><strong>MEO (Medium Earth Orbit)</strong> — 2,000-35,786 km. GPS constellation (20,200 km, period 12 hours, 55 deg inclination), Galileo (23,222 km), GLONASS (19,130 km). Van Allen radiation belts are a concern (inner belt ~1,000-5,000 km, outer belt ~15,000-25,000 km).</li>
+        <li><strong>GEO (Geostationary Orbit)</strong> — 35,786 km altitude, 0 deg inclination, period = 1 sidereal day. Satellite appears stationary over one point on the equator. Used for communications, weather observation, and TV broadcasting. Only one GEO ring exists — slots are managed by the ITU.</li>
+        <li><strong>GTO (Geostationary Transfer Orbit)</strong> — highly elliptical orbit with perigee in LEO (~200-300 km) and apogee at GEO altitude (35,786 km). Satellites are launched into GTO, then fire their own engine at apogee to circularize into GEO. Inclination depends on launch site latitude.</li>
+        <li><strong>Sun-Synchronous Orbit (SSO)</strong> — near-polar, slightly retrograde (i ~97-99 deg). The orbital plane precesses at exactly the same rate as Earth's revolution around the Sun, so the satellite crosses each latitude at the same local solar time every orbit. Critical for Earth observation (consistent lighting conditions). Altitude typically 600-800 km.</li>
+        <li><strong>Molniya Orbit</strong> — highly elliptical (e = 0.74), inclined 63.4 deg (critical inclination, no apsidal rotation). Period ~12 hours. Spends ~8 hours near apogee over northern latitudes. Used by Russia for communications coverage of high-latitude regions where GEO satellites appear low on the horizon.</li>
+        <li><strong>Halo / Lagrange Point Orbits</strong> — orbits around the Sun-Earth Lagrange points (L1, L2). JWST orbits Sun-Earth L2 (~1.5 million km from Earth). SOHO at L1 (between Earth and Sun). These are three-body orbits requiring station-keeping.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="perturbations">
+      <h2>Perturbations</h2>
+      <p>Real orbits deviate from ideal Keplerian ellipses due to various perturbing forces. Understanding perturbations is essential for accurate orbit prediction, mission design, and satellite operations.</p>
+
+      <h3>Major Perturbations</h3>
+      <ul>
+        <li><strong>Earth's oblateness (J2)</strong> — Earth is not a perfect sphere; it bulges at the equator (equatorial radius is 21 km larger than polar radius). The J2 term in the gravitational potential causes: (1) RAAN precession (the orbital plane rotates, eastward for prograde orbits, westward for retrograde). Rate depends on inclination and altitude. (2) Apsidal rotation (argument of perigee changes). At i = 63.4 deg, apsidal rotation is zero (Molniya critical inclination). J2 is the dominant perturbation for LEO satellites.</li>
+        <li><strong>Atmospheric drag</strong> — below ~1,000 km, the atmosphere exerts drag on satellites. Reduces semi-major axis and eccentricity (orbit circularizes and decays). Drag depends on cross-sectional area, mass, atmospheric density (which varies with solar activity), and velocity. ISS loses ~2 km/month altitude without reboosts. Satellites below ~200 km re-enter within days.</li>
+        <li><strong>Third-body effects</strong> — gravitational attraction from the Moon and Sun perturb orbits. Significant for GEO and higher orbits. The Moon causes periodic changes in inclination and eccentricity. For cislunar missions, three-body effects dominate and Keplerian elements become meaningless.</li>
+        <li><strong>Solar radiation pressure (SRP)</strong> — photon momentum from sunlight pushes on satellite surfaces. Magnitude: ~4.56 x 10^-6 N/m^2 at 1 AU. Significant for large, lightweight structures (solar sails, GPS satellites with large solar panels). Causes periodic eccentricity and semi-major axis variations.</li>
+        <li><strong>Higher-order gravity harmonics</strong> — J3, J4, tesseral harmonics (Cnm, Snm) model Earth's gravity field in detail. Important for precise orbit determination. Gravity field models (EGM2008, GGM05S) are derived from dedicated missions (GRACE, GOCE).</li>
+        <li><strong>Relativistic effects</strong> — general relativity causes a small precession of periapsis (~43 arcseconds/century for Mercury). For GPS, relativistic time dilation (both special and general) must be corrected — GPS clocks run 38 microseconds/day faster than ground clocks. Without correction, GPS would accumulate ~10 km/day error.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="transfers">
+      <h2>Orbit Transfers</h2>
+
+      <h3>Hohmann Transfer</h3>
+      <p>The most fuel-efficient two-impulse transfer between coplanar circular orbits. Discovered by Walter Hohmann in 1925. Uses an elliptical transfer orbit tangent to both the initial and final circular orbits. First burn at periapsis raises apoapsis to the target orbit altitude; second burn at apoapsis circularizes. Total delta-v is the sum of both burns. Used for LEO to GEO transfers, interplanetary transfers, and orbit raising.</p>
+      <ul>
+        <li>Delta-v for LEO (200 km) to GEO: ~3.9 km/s total (2.46 km/s first burn + 1.47 km/s second burn).</li>
+        <li>Transfer time = half the period of the transfer ellipse. LEO to GEO: ~5.3 hours.</li>
+        <li>Only optimal when the ratio of final to initial orbit radius is less than ~11.94. Above this ratio, a bi-elliptic transfer is more efficient.</li>
+      </ul>
+
+      <h3>Bi-Elliptic Transfer</h3>
+      <p>Three-impulse transfer: first burn raises apoapsis far beyond the target orbit, second burn at the high apoapsis raises periapsis to the target orbit, third burn at the target orbit circularizes. Uses more total delta-v than Hohmann for small orbit ratios, but less for very large ratios (&gt;11.94). Trade-off: much longer transfer time. Rarely used in practice because the time penalty is severe.</p>
+
+      <h3>Plane Change</h3>
+      <ul>
+        <li><strong>Simple plane change</strong> — a single impulse perpendicular to the velocity changes the orbital plane. Delta-v = 2 * v * sin(delta_i / 2). Extremely expensive at high velocities. A 28.5 deg plane change at LEO velocity (7.7 km/s) costs 3.8 km/s — nearly as much as reaching orbit.</li>
+        <li><strong>Combined maneuver</strong> — plane changes are cheapest when velocity is lowest (at apoapsis). GEO transfer combines plane change with the circularization burn at GEO altitude, where velocity is only ~1.6 km/s. This is why most GTO-to-GEO maneuvers include inclination change.</li>
+        <li><strong>Launch site latitude</strong> — determines minimum achievable inclination (equal to the launch site latitude for direct launch). Kennedy Space Center (28.5 deg N) can directly reach orbits with i >= 28.5 deg. Reaching lower inclinations requires a costly plane change — this is why equatorial launch sites (Guiana Space Centre, 5 deg N) are preferred for GEO missions.</li>
+      </ul>
+
+      <h3>Low-Thrust Transfers</h3>
+      <p>Electric propulsion systems (ion engines, Hall thrusters) produce very low thrust but high specific impulse. Instead of impulsive burns, they spiral outward (or inward) over many orbits. Transfer times are much longer (months instead of hours) but total propellant mass is dramatically lower. NASA's Dawn mission used ion propulsion to orbit both Vesta and Ceres — impossible with chemical propulsion. Starlink satellites use krypton Hall thrusters for orbit raising from deployment altitude (~300 km) to operational altitude (~550 km) over several weeks.</p>
+    </section>
+
+    <section class="section" id="rendezvous">
+      <h2>Rendezvous & Proximity Operations</h2>
+      <p>Rendezvous is the process of bringing two spacecraft to the same orbit at the same position. First achieved by Gemini 6A and 7 in December 1965 (orbital rendezvous without docking), followed by Gemini 8 in March 1966 (first docking).</p>
+
+      <h3>Phasing Maneuver</h3>
+      <ul>
+        <li>When chaser and target are in the same orbit but at different positions, the chaser enters a phasing orbit (slightly lower or higher) to adjust the arrival time. A lower orbit has a shorter period, so the chaser "catches up" to a target ahead. A higher orbit lets the chaser "wait" for a target behind.</li>
+        <li>Phase angle to close determines the phasing orbit period. Multiple revolutions in the phasing orbit give more gentle corrections. ISS rendezvous traditionally used ~2 days; newer "fast-track" profiles reach ISS in ~3 hours (Soyuz MS-17, 2020).</li>
+      </ul>
+
+      <h3>Clohessy-Wiltshire (Hill's) Equations</h3>
+      <p>Linearized equations of relative motion for two spacecraft in nearby circular orbits. Describe the motion of a chaser relative to a target in the target's local vertical / local horizontal (LVLH) frame. Key behaviors: (1) Objects displaced radially oscillate around the target. (2) Objects displaced along-track drift apart (if at different altitudes). (3) The V-bar (velocity vector) and R-bar (radial) approaches are standard proximity strategies.</p>
+
+      <h3>Docking and Berthing</h3>
+      <ul>
+        <li><strong>Docking</strong> — active approach under the spacecraft's own control, using thrusters for final alignment. Docking mechanism mates and latches. Used by Soyuz, Crew Dragon, Starliner. Requires precise sensors (lidar, cameras, reflectors).</li>
+        <li><strong>Berthing</strong> — spacecraft approaches to a stand-off distance, then is grappled by a robotic arm (Canadarm2 on ISS) and positioned onto the berthing port. Used by Cygnus, HTV, earlier Dragon cargo missions. Slower but allows larger hatches (bigger cargo).</li>
+        <li><strong>Autonomous rendezvous</strong> — modern systems (Crew Dragon, HTV, ATV) perform rendezvous and docking autonomously using GPS relative navigation, lidar, and computer vision. Manual override available but rarely used.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="resources">
+      <h2>Resources</h2>
+      <div class="cards">
+        <div class="card">
+          <h4><a href="https://orbital-mechanics.space">Orbital Mechanics for Engineering Students (Howard Curtis)</a></h4>
+          <p>Comprehensive textbook covering the two-body problem, orbit determination, transfers, interplanetary trajectories, and attitude dynamics. MATLAB examples.</p>
+          <div class="meta">Textbook | Intermediate</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.braeunig.us/space/orbmech.htm">Braeunig: Orbital Mechanics</a></h4>
+          <p>Free online reference covering Kepler's laws, orbit types, transfers, launch windows, and interplanetary trajectories. Clear derivations and worked examples.</p>
+          <div class="meta">Free | Reference</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://celestrak.org">CelesTrak</a></h4>
+          <p>TLE data for all tracked objects in Earth orbit. Maintained by T.S. Kelso. Essential for satellite tracking, conjunction analysis, and orbit propagation.</p>
+          <div class="meta">Free | Data</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://github.com/poliastro/poliastro">poliastro</a></h4>
+          <p>Python library for astrodynamics. Orbit propagation, maneuver planning, plotting. Built on Astropy. Open-source, well-documented.</p>
+          <div class="meta">GitHub | Python | MIT</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://ocw.mit.edu/courses/16-346-astrodynamics-fall-2008/">MIT 16.346: Astrodynamics</a></h4>
+          <p>Graduate-level MIT course. Two-body problem, Lambert's theorem, orbit determination, perturbation theory. Lecture notes and problem sets.</p>
+          <div class="meta">MIT OCW | Free</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.gmat.wiki">GMAT (General Mission Analysis Tool)</a></h4>
+          <p>NASA's open-source mission design tool. Orbit propagation, maneuver planning, trajectory optimization. Used for real mission design. Free.</p>
+          <div class="meta">NASA | Free | Open-source</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <div class="container">
+      <a href="/">FreeSpaceStore</a> · <a href="/institute/">Institute</a> · Built with <a href="https://zensical.org">Zensical</a>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spacecraft Design — Space Institute</title>
+  <meta name="description" content="Spacecraft design fundamentals. Subsystems: ADCS, power, thermal, communications, propulsion. Design process, CubeSats, and mass budgets.">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--accent:#0ea5e9;--paper:#0a0a0a;--ink:#fafafa;--muted:#737373;--panel:#141414;--line:#262626}
+    body{font-family:'Manrope',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.7;-webkit-font-smoothing:antialiased}
+    .container{max-width:900px;margin:0 auto;padding:0 1.5rem}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+    header{border-bottom:1px solid var(--line);padding:.75rem 0}
+    header .container{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:.5rem;text-decoration:none;color:var(--ink)}
+    .brand-emoji{font-size:1.5rem}
+    .brand-text{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700}
+    .brand-tag{font-size:.68rem;color:var(--muted)}
+    nav{display:flex;gap:1rem;font-size:.82rem;font-weight:600;margin-left:auto}
+    nav a{color:var(--muted)}nav a:hover{color:var(--ink)}
+    .hero{text-align:center;padding:2.5rem 0 1.5rem;border-bottom:1px solid var(--line)}
+    .hero h1{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:700;margin-bottom:.5rem}
+    .hero h1 em{color:var(--accent);font-style:normal}
+    .hero p{color:var(--muted);max-width:600px;margin:0 auto;font-size:.95rem}
+    .toc{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem 1.25rem;margin:1.5rem 0}
+    .toc h3{font-size:.85rem;font-weight:700;margin-bottom:.5rem;color:var(--accent)}
+    .toc ul{list-style:none;padding:0;columns:2}
+    .toc li{margin:.2rem 0}.toc a{color:#a3a3a3;font-size:.82rem}.toc a:hover{color:var(--ink)}
+    .section{margin-bottom:2rem;padding-top:1rem}
+    .section h2{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;margin-bottom:.5rem;padding-bottom:.35rem;border-bottom:1px solid var(--line)}
+    .section h3{font-size:.95rem;font-weight:700;margin:1rem 0 .35rem;color:#e5e5e5}
+    .section p,.section li{color:#a3a3a3;font-size:.88rem}
+    ul{padding-left:1.25rem;margin:.35rem 0}
+    li{margin-bottom:.3rem}
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.6rem;margin:.5rem 0}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.85rem;transition:border-color .15s}
+    .card:hover{border-color:var(--accent)}
+    .card h4{font-size:.85rem;font-weight:700;margin-bottom:.2rem}
+    .card h4 a{color:var(--ink)}.card p{font-size:.75rem;color:var(--muted);margin:0;line-height:1.5}
+    .card .meta{font-size:.65rem;color:#525252;margin-top:.25rem}
+    footer{border-top:1px solid var(--line);padding:1.5rem 0;text-align:center;font-size:.75rem;color:#525252}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/institute/" class="brand">
+        <span class="brand-emoji">🚀</span>
+        <span><span class="brand-text">Space Institute</span><br><span class="brand-tag">Powered by <a href="https://zensical.org" style="color:#525252">Zensical</a></span></span>
+      </a>
+      <nav><a href="/institute/">Overview</a><a href="/institute/orbital-mechanics.html">Orbits</a><a href="/institute/propulsion.html">Propulsion</a><a href="/institute/spacecraft.html">Spacecraft</a><a href="/institute/mission-design.html">Missions</a><a href="/institute/history.html">History</a><a href="/">Simulations</a></nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="hero">
+      <h1>Spacecraft <em>Design</em></h1>
+      <p>A spacecraft is a system of systems. Every subsystem must work in the extreme environment of space: vacuum, radiation, thermal extremes, and microgravity. Here is how they fit together.</p>
+    </section>
+
+    <nav class="toc">
+      <h3>Contents</h3>
+      <ul>
+        <li><a href="#overview">Design Overview</a></li>
+        <li><a href="#adcs">ADCS</a></li>
+        <li><a href="#power">Power</a></li>
+        <li><a href="#thermal">Thermal</a></li>
+        <li><a href="#comms">Communications</a></li>
+        <li><a href="#propulsion">Propulsion</a></li>
+        <li><a href="#structures">Structures</a></li>
+        <li><a href="#cdh">Command & Data</a></li>
+        <li><a href="#cubesats">CubeSats</a></li>
+        <li><a href="#mass-budget">Mass Budget</a></li>
+        <li><a href="#resources">Resources</a></li>
+      </ul>
+    </nav>
+
+    <section class="section" id="overview">
+      <h2>Design Overview</h2>
+      <p>Spacecraft design is fundamentally a systems engineering challenge. Every subsystem affects every other: the solar panels must generate enough power for the transmitter, the transmitter generates heat that the thermal subsystem must reject, the thermal radiators add mass that the propulsion subsystem must account for, and all mass drives the launch vehicle selection.</p>
+
+      <h3>The Design Process</h3>
+      <ul>
+        <li><strong>Mission requirements</strong> — define what the spacecraft must accomplish. Payload, orbit, lifetime, reliability. These drive all design choices.</li>
+        <li><strong>Concept exploration</strong> — trade studies between architectures. Single vs multiple spacecraft, orbit selection, launcher selection, technology choices.</li>
+        <li><strong>Preliminary design</strong> — define subsystem requirements, mass/power/volume budgets, interfaces. Preliminary Design Review (PDR).</li>
+        <li><strong>Detailed design</strong> — detailed hardware and software specifications. Build, test, and integrate subsystems. Critical Design Review (CDR).</li>
+        <li><strong>Integration and test</strong> — assemble the spacecraft, run environmental tests (vibration, thermal vacuum, EMC, acoustic). Flight Readiness Review (FRR).</li>
+        <li><strong>Operations</strong> — launch, early orbit operations, commissioning, routine operations, end-of-life disposal.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="adcs">
+      <h2>ADCS (Attitude Determination and Control System)</h2>
+      <p>ADCS keeps the spacecraft pointed in the right direction. Telescopes must point at targets, solar panels at the Sun, antennas at Earth, and thrusters along the desired thrust vector.</p>
+
+      <h3>Attitude Sensors</h3>
+      <ul>
+        <li><strong>Star trackers</strong> — cameras that image star fields and match patterns against a catalog to determine pointing to arcsecond accuracy. The primary attitude sensor for most spacecraft. Typical accuracy: 1-10 arcseconds. Blinded by Sun, Moon, Earth in the field of view.</li>
+        <li><strong>Sun sensors</strong> — detect the direction to the Sun. Coarse (cosine response, ~1 deg accuracy) or fine (quadrant detector, ~0.01 deg). Used for safe mode and initial attitude acquisition.</li>
+        <li><strong>Earth sensors (horizon sensors)</strong> — detect Earth's infrared horizon to determine nadir direction. Used for Earth-pointing satellites. Accuracy ~0.05-0.1 degrees.</li>
+        <li><strong>Gyroscopes (IMU)</strong> — measure angular rate, not absolute attitude. Integrated over time to track attitude changes. Drift accumulates, so gyros must be periodically updated by star trackers. Ring laser gyros, fiber optic gyros, MEMS gyros (CubeSats).</li>
+        <li><strong>Magnetometers</strong> — measure Earth's magnetic field direction. Compare to a model (IGRF) to determine attitude. Low accuracy (~1-2 deg) but simple and robust. Useful only in LEO where the field is strong enough.</li>
+      </ul>
+
+      <h3>Attitude Actuators</h3>
+      <ul>
+        <li><strong>Reaction wheels</strong> — spinning flywheels that exchange angular momentum with the spacecraft. Speed up the wheel, the spacecraft rotates in the opposite direction (conservation of angular momentum). Three wheels for three-axis control, typically four for redundancy. Can saturate (reach maximum speed) — must be desaturated using other actuators.</li>
+        <li><strong>Control Moment Gyroscopes (CMGs)</strong> — gimbaled flywheels. Produce much larger torques than reaction wheels for a given mass. Used on large spacecraft (ISS has 4 CMGs at 4,760 kg each). Complex control algorithms to avoid gimbal lock.</li>
+        <li><strong>Magnetorquers</strong> — electromagnetic coils that interact with Earth's magnetic field to produce torque. Low torque but no propellant consumption. Used for desaturation of reaction wheels in LEO. Three orthogonal coils. Cannot produce torque parallel to the field.</li>
+        <li><strong>Thrusters</strong> — fire small thrusters (cold gas, monopropellant, or bipropellant) for attitude control. Consume propellant but provide torque in any direction. Used for large maneuvers and when reaction wheels can't keep up (e.g., during orbit maneuvers).</li>
+        <li><strong>Gravity gradient</strong> — long boom extends from the spacecraft. The gravity gradient naturally aligns the boom with the local vertical. Passive, no power or propellant. Only provides nadir pointing (~5-10 deg accuracy). Used on some early satellites and CubeSats.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="power">
+      <h2>Electrical Power System (EPS)</h2>
+      <ul>
+        <li><strong>Solar panels</strong> — photovoltaic cells (triple-junction GaInP/GaAs/Ge, ~30% efficiency; emerging perovskite tandems ~33%). Body-mounted (small satellites) or deployed arrays (large spacecraft). ISS has 2,500 m^2 of solar arrays generating ~120 kW. Degrade ~1-3% per year from radiation and micrometeorites.</li>
+        <li><strong>Batteries</strong> — store energy for eclipse periods and peak loads. Lithium-ion (most modern spacecraft), lithium-polymer (CubeSats). ISS uses 48 lithium-ion batteries (total ~300 kWh). Design for ~30,000+ charge/discharge cycles over mission life. Depth of discharge (DoD) limited to 20-40% for longevity.</li>
+        <li><strong>RTGs (Radioisotope Thermoelectric Generators)</strong> — convert heat from plutonium-238 decay into electricity via thermocouples. No moving parts. ~5-7% efficiency but extremely reliable and independent of sunlight. Used for outer planet missions: Voyager 1&2 (~470 W at launch, ~240 W today), Curiosity/Perseverance (MMRTG, ~110 W), New Horizons. Limited by Pu-238 supply.</li>
+        <li><strong>Power distribution</strong> — regulated bus (constant voltage, e.g., 28V or 100V DC) or unregulated (voltage varies with array illumination). Power conditioning electronics: shunt regulators (dump excess power), battery charge regulators, DC-DC converters for different subsystem voltages.</li>
+      </ul>
+
+      <h3>Power Budget</h3>
+      <p>A power budget lists every subsystem's power consumption in each operating mode (nominal, safe mode, maneuver, eclipse, peak). Total generation must exceed total consumption with margin (typically 10-20%). Eclipse duration drives battery sizing. End-of-life solar array degradation must be accounted for. The power budget is one of the first and most critical documents in spacecraft design.</p>
+    </section>
+
+    <section class="section" id="thermal">
+      <h2>Thermal Control</h2>
+      <p>In space, there is no convection or conduction through air. Heat transfer is only by radiation and conduction through structural elements. Spacecraft temperatures can range from -150C (shadow) to +150C (sunlit surfaces) without thermal control. Electronics typically operate in the -20C to +50C range.</p>
+
+      <h3>Passive Methods</h3>
+      <ul>
+        <li><strong>Multi-Layer Insulation (MLI)</strong> — the gold/silver blankets that wrap spacecraft. Multiple thin layers (aluminized Mylar or Kapton) separated by low-conductivity spacers. Reflects solar radiation and reduces radiative heat loss. Every spacecraft uses MLI.</li>
+        <li><strong>Surface coatings and finishes</strong> — control absorptivity (alpha, fraction of solar energy absorbed) and emissivity (epsilon, infrared radiation efficiency). White paint: low alpha, high epsilon (stays cool). Gold foil: low alpha, low epsilon (reflects everything). Black paint: high alpha, high epsilon (radiator).</li>
+        <li><strong>Radiators</strong> — large surfaces that radiate heat to space. Power radiated = epsilon * sigma * A * T^4 (Stefan-Boltzmann law). ISS has massive radiators on the truss. Must face away from the Sun and Earth for maximum effectiveness.</li>
+        <li><strong>Heat pipes</strong> — sealed tubes containing a working fluid. Liquid evaporates at the hot end, vapor flows to the cold end, condenses, and wicks back. No moving parts, no power. Transfer heat from electronics to radiators. Used on nearly every spacecraft.</li>
+      </ul>
+
+      <h3>Active Methods</h3>
+      <ul>
+        <li><strong>Heaters</strong> — electrical resistance heaters keep components above minimum temperature during eclipse or cold conditions. Thermostatically controlled. Propellant lines, batteries, and optical elements often need heaters.</li>
+        <li><strong>Louvers</strong> — mechanical shutters over radiators that open/close based on temperature (bimetallic springs). More open = more heat rejected. Passive or active control. Used on many GEO satellites.</li>
+        <li><strong>Fluid loops</strong> — pumped fluid (ammonia, water, Freon) transports heat from hot components to external radiators. Used on ISS, crewed vehicles, and high-power spacecraft. More complex and heavier than heat pipes but can transport more heat over longer distances.</li>
+        <li><strong>Cryocoolers</strong> — mechanical refrigerators for instruments requiring very low temperatures (infrared detectors, 60-80 K). Stirling, pulse-tube, or Joule-Thomson coolers. JWST uses a pulse-tube cryocooler to reach 6 K for MIRI's detector. Critical for space astronomy.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="comms">
+      <h2>Communications</h2>
+      <ul>
+        <li><strong>Link budget</strong> — calculates whether a communication link will close (received signal exceeds noise). Factors: transmit power, antenna gain (both ends), path loss (1/r^2), receiver sensitivity, data rate, modulation, coding. Deep space links are extremely constrained — New Horizons at Pluto: 1 kbps downlink.</li>
+        <li><strong>S-band (2-4 GHz)</strong> — traditional NASA/ESA tracking band. Low data rate but reliable. Used for telemetry and commanding.</li>
+        <li><strong>X-band (8-12 GHz)</strong> — higher data rate. Standard for deep space missions. Mars orbiters: 2-6 Mbps to Earth.</li>
+        <li><strong>Ka-band (26-40 GHz)</strong> — highest data rates. JWST uses Ka-band for 28 Mbps downlink. Rain attenuation limits ground station availability.</li>
+        <li><strong>Optical (laser) communications</strong> — emerging technology. NASA LCRD and DSOC (Deep Space Optical Communications) demonstrated 267 Mbps from near-Earth and laser comms from Psyche (deep space) in 2023-2024. 10-100x improvement over RF for the same power and antenna mass. Limited by pointing accuracy and atmospheric effects.</li>
+        <li><strong>Relay networks</strong> — TDRS (Tracking and Data Relay Satellite System) for LEO spacecraft. Mars relay orbiters (MRO, MAVEN, TGO) for Mars surface missions. Dramatically increase coverage and data volume.</li>
+        <li><strong>Antennas</strong> — omni-directional (low gain, for safe mode), medium-gain (horns, patches), high-gain parabolic dishes (HGA, for high-rate data). JWST has a 0.6m HGA. Deep Space Network ground stations have 34m and 70m dishes.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="propulsion">
+      <h2>Spacecraft Propulsion</h2>
+      <ul>
+        <li><strong>Chemical monopropellant</strong> — hydrazine (N2H4) decomposed over a catalyst (Shell 405 iridium). Isp ~220-230s. Simple, reliable. Standard for spacecraft attitude control and small maneuvers. Toxic — green alternatives (AF-M315E / LMP-103S) offer higher performance and lower toxicity.</li>
+        <li><strong>Chemical bipropellant</strong> — MMH/NTO (hypergolic). Isp ~310-320s. Higher thrust and efficiency than monopropellant. Used for orbit insertion, large maneuvers (Orion service module, Mars orbiters).</li>
+        <li><strong>Cold gas</strong> — pressurized nitrogen or other inert gas expelled through nozzles. Very low Isp (~60-80s) but extremely simple. Used for CubeSats and fine attitude control. No contamination risk for sensitive instruments.</li>
+        <li><strong>Electric</strong> — Hall thrusters or ion engines for station-keeping, orbit raising, and interplanetary missions. See propulsion page for details.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="structures">
+      <h2>Structures & Mechanisms</h2>
+      <ul>
+        <li><strong>Primary structure</strong> — the load-bearing skeleton that supports all subsystems and withstands launch loads (3-6 g axial, 1-2 g lateral, vibration up to 2000 Hz). Materials: aluminum honeycomb panels (most common), carbon fiber reinforced polymer (CFRP, high stiffness-to-weight), titanium (high-temperature areas).</li>
+        <li><strong>Deployment mechanisms</strong> — solar panels, antennas, booms, and instruments must be stowed for launch and deployed in orbit. Spring-loaded hinges, shape-memory alloy actuators, motor-driven mechanisms. Single points of failure — deployment must be extremely reliable. JWST's sunshield deployment had 344 single-point failures.</li>
+        <li><strong>Separation systems</strong> — release the spacecraft from the launch vehicle. Pyrotechnic bolts (explosive separation, shock), clamp bands (Lightband, ESPA), and push-off springs. Minimal shock is preferred to protect sensitive instruments.</li>
+        <li><strong>Radiation shielding</strong> — electronics are vulnerable to single-event effects (SEE: bit flips, latch-up) and total ionizing dose (TID). Aluminum shielding (1-10 mm), radiation-hardened (rad-hard) electronics, error-correcting memory, and watchdog timers. GEO and deep space missions need more shielding than LEO. JWST electronics designed for 10-year L2 radiation environment.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="cdh">
+      <h2>Command & Data Handling (C&DH)</h2>
+      <ul>
+        <li><strong>Flight computer</strong> — the spacecraft brain. Runs flight software, processes commands, manages subsystems, handles autonomy. Radiation-hardened processors: BAE RAD750 (used on Curiosity, Juno, JWST), Vorago VA10820 (ARM Cortex-M based, newer missions). CubeSats often use commercial processors (ARM Cortex, FPGA) with software mitigation for radiation.</li>
+        <li><strong>Flight software</strong> — real-time operating system (VxWorks is dominant, also RTEMS, Linux for some CubeSats). Written in C or C++. Handles: attitude control loops, power management, thermal control, data compression, fault detection and recovery. NASA's Core Flight System (cFS) is an open-source framework used by many missions.</li>
+        <li><strong>Data storage</strong> — solid-state recorders (SSR). Flash memory or SDRAM. Store science data between downlink opportunities. Mars missions may have hours between relay passes; outer planet missions may have days. Typical capacity: 8-256 Gbit. Radiation can cause bit errors — error correction and scrubbing are essential.</li>
+        <li><strong>Fault protection</strong> — autonomous response to anomalies. Safe mode: spacecraft powers down non-essential systems, points solar panels at the Sun, and waits for commands. Fault detection: out-of-range telemetry, watchdog timers, redundancy switching. Deep space missions must handle faults autonomously — light-time to Mars is 4-24 minutes.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="cubesats">
+      <h2>CubeSats</h2>
+      <p>CubeSats are standardized small satellites based on the 10x10x10 cm "1U" form factor. Developed by Jordi Puig-Suari (Cal Poly) and Bob Twiggs (Stanford) in 1999 to give university students access to space. Now used by NASA, ESA, and commercial companies for real science and technology demonstrations.</p>
+
+      <h3>Form Factors</h3>
+      <ul>
+        <li><strong>1U</strong> — 10x10x10 cm, ~1.33 kg max. Very limited payload. Mostly educational or technology demonstration.</li>
+        <li><strong>3U</strong> — 10x10x34 cm, ~4 kg max. The most common size. Enough for a useful payload (camera, radio, science instrument). ISARA (JPL): demonstrated Ka-band antenna on a 3U.</li>
+        <li><strong>6U</strong> — 10x20x34 cm, ~12 kg max. Increasingly popular for serious missions. MarCO (Mars Cube One): two 6U CubeSats flew with InSight as the first interplanetary CubeSats, providing real-time relay during Mars landing (2018).</li>
+        <li><strong>12U</strong> — 20x20x34 cm, ~24 kg max. CAPSTONE (4 kg, 12U): orbited the Moon in NRHO to pathfind for Lunar Gateway.</li>
+      </ul>
+
+      <h3>COTS Components</h3>
+      <p>CubeSats use Commercial Off-The-Shelf components: reaction wheels (Blue Canyon XACT, ~$50K), star trackers (Arcsec Sagitta), radios (Astrodev Lithium, ISIS), solar panels (EnduroSat, DHV), flight computers (GomSpace NanoMind, Unibap SpaceCloud). Total 3U CubeSat cost: $200K-$2M (vs $100M-$1B for traditional spacecraft). Launch costs: $50K-$300K for a rideshare slot.</p>
+    </section>
+
+    <section class="section" id="mass-budget">
+      <h2>Mass Budget</h2>
+      <p>The mass budget is the most critical bookkeeping tool in spacecraft design. Every gram matters because launch costs scale directly with mass ($2,000-$10,000/kg to LEO). The mass budget tracks every component, includes margins for growth (typically 10-30% depending on design maturity), and must close against the launch vehicle's capability to the target orbit.</p>
+
+      <h3>Typical Mass Breakdown</h3>
+      <ul>
+        <li><strong>Structure</strong> — 15-25% of dry mass. Primary structure, secondary structure, mechanisms, fasteners.</li>
+        <li><strong>Power</strong> — 15-25%. Solar panels, batteries, power electronics, harness.</li>
+        <li><strong>ADCS</strong> — 5-10%. Reaction wheels, star trackers, gyros, magnetorquers.</li>
+        <li><strong>Thermal</strong> — 3-8%. MLI, radiators, heaters, heat pipes, louvers.</li>
+        <li><strong>Communications</strong> — 3-8%. Antennas, transponders, amplifiers, cables.</li>
+        <li><strong>C&DH</strong> — 3-5%. Flight computer, data recorders, harness.</li>
+        <li><strong>Propulsion (dry)</strong> — 3-10%. Tanks, thrusters, plumbing, valves.</li>
+        <li><strong>Payload</strong> — 15-40%. The instrument or equipment that fulfills the mission (telescope, radar, camera, science instruments).</li>
+        <li><strong>Propellant</strong> — highly variable (0-60% of total mass depending on delta-v requirements).</li>
+        <li><strong>Margin</strong> — 10-30% of dry mass depending on design phase. Carried as unallocated mass to accommodate growth.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="resources">
+      <h2>Resources</h2>
+      <div class="cards">
+        <div class="card">
+          <h4><a href="https://www.smad.com">SMAD: Space Mission Analysis and Design (Wertz et al.)</a></h4>
+          <p>The spacecraft designer's bible. Covers all subsystems, mission design, cost estimation. 4th edition. Every aerospace engineer's desk reference.</p>
+          <div class="meta">Textbook | Comprehensive</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.cubesat.org">CubeSat.org</a></h4>
+          <p>Official CubeSat standard specifications, launch providers, mission database. Cal Poly's CubeSat program homepage.</p>
+          <div class="meta">Reference | Free</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.nasa.gov/smallsat-institute/">NASA Small Spacecraft Technology Program</a></h4>
+          <p>State-of-the-art small spacecraft technology report. Reviews COTS components, subsystem technology, and mission examples. Updated periodically.</p>
+          <div class="meta">NASA | Free</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://ntrs.nasa.gov">NASA Technical Reports Server</a></h4>
+          <p>Free access to NASA research publications, technical memoranda, and conference papers. Invaluable for spacecraft design details and lessons learned.</p>
+          <div class="meta">NASA | Free</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://www.esa.int/Enabling_Support/Space_Engineering_Technology">ESA Space Engineering</a></h4>
+          <p>ESA's engineering standards (ECSS), technology development programs, and spacecraft design guidelines. Comprehensive European space engineering resources.</p>
+          <div class="meta">ESA | Free</div>
+        </div>
+        <div class="card">
+          <h4><a href="https://satellitesoftware.com">Satellite Tool Kit (STK)</a></h4>
+          <p>Industry-standard software for satellite mission analysis. Orbit propagation, access analysis, communications link budget, coverage analysis. Free version available.</p>
+          <div class="meta">AGI/Ansys | Free tier</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <div class="container">
+      <a href="/">FreeSpaceStore</a> · <a href="/institute/">Institute</a> · Built with <a href="https://zensical.org">Zensical</a>
+    </div>
+  </footer>
+</body>
+</html>
