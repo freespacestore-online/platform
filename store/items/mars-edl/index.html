@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mars Entry Descent Landing</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0408;color:#e0e0e8;font-family:'Segoe UI',system-ui,sans-serif;overflow-x:hidden}
+h1{text-align:center;padding:14px;font-size:1.5rem;color:#ef4444;letter-spacing:1px}
+.container{display:flex;flex-wrap:wrap;gap:12px;padding:0 12px 12px;max-width:1440px;margin:0 auto}
+.panel{background:#140a0a;border:1px solid #3a1a1a;border-radius:10px;padding:14px;flex:1;min-width:300px}
+.panel h2{color:#f87171;font-size:.9rem;margin-bottom:8px;border-bottom:1px solid #3a1a1a;padding-bottom:4px}
+canvas{display:block;margin:0 auto;border-radius:6px}
+button{background:#ef4444;color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:.82rem;margin:3px}
+button:hover{background:#dc2626}
+button.secondary{background:#4a1a1a}
+button.secondary:hover{background:#5a2a2a}
+.controls{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0}
+label{font-size:.76rem;color:#a08080}
+input[type=range]{width:120px;accent-color:#ef4444}
+.telemetry{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:6px}
+.tm{background:#0a0505;padding:8px;border-radius:5px;text-align:center;border:1px solid #2a1515}
+.tm .val{font-size:1.1rem;font-weight:700;color:#ef4444;font-family:monospace}
+.tm .lbl{font-size:.65rem;color:#8a6060}
+.tm.warn .val{color:#fbbf24;animation:pulse 0.5s infinite}
+.tm.crit .val{color:#ef4444;animation:pulse 0.3s infinite}
+@keyframes pulse{50%{opacity:0.5}}
+.phase{font-size:.82rem;padding:6px 12px;border-radius:4px;text-align:center;margin:6px 0;font-weight:700;letter-spacing:1px}
+.phase-entry{background:#7f1d1d;color:#fca5a5}
+.phase-chute{background:#713f12;color:#fde68a}
+.phase-powered{background:#14532d;color:#86efac}
+.phase-skycrane{background:#1e3a5f;color:#93c5fd}
+.phase-landed{background:#166534;color:#4ade80}
+.phase-failed{background:#7f1d1d;color:#fca5a5;animation:pulse 0.5s infinite}
+#simCanvas{background:#0a0408;border:1px solid #3a1a1a}
+#plotCanvas{background:#0a0505;border:1px solid #2a1515}
+.result{text-align:center;font-size:1.3rem;font-weight:700;margin:10px 0;padding:12px;border-radius:8px}
+.result.success{background:#14532d;color:#4ade80}
+.result.failure{background:#7f1d1d;color:#fca5a5}
+.info{font-size:.76rem;color:#8a6060;margin-top:6px;line-height:1.5}
+</style>
+</head>
+<body>
+<h1>Mars Entry, Descent & Landing</h1>
+<div class="container">
+  <div class="panel" style="flex:2;min-width:500px">
+    <h2>Simulation View</h2>
+    <canvas id="simCanvas" width="700" height="500"></canvas>
+    <div class="controls">
+      <button onclick="startEDL()">Start EDL</button>
+      <button class="secondary" onclick="resetEDL()">Reset</button>
+      <label>Speed:</label>
+      <button class="secondary" onclick="simSpeed=1">1x</button>
+      <button class="secondary" onclick="simSpeed=5">5x</button>
+      <button class="secondary" onclick="simSpeed=20">20x</button>
+      <button class="secondary" onclick="simSpeed=50">50x</button>
+      <label>Entry angle: <span id="entryAngleVal">-15.5</span> deg</label>
+      <input type="range" id="entryAngle" min="-250" max="-50" value="-155" oninput="updateAngle()">
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Flight Data</h2>
+    <div id="phaseDisplay" class="phase phase-entry">AWAITING ENTRY INTERFACE</div>
+    <div class="telemetry">
+      <div class="tm" id="tmAlt"><div class="val">125.0</div><div class="lbl">Altitude (km)</div></div>
+      <div class="tm" id="tmVel"><div class="val">5500</div><div class="lbl">Velocity (m/s)</div></div>
+      <div class="tm" id="tmAcc"><div class="val">0.0</div><div class="lbl">Deceleration (g)</div></div>
+      <div class="tm" id="tmTemp"><div class="val">-63</div><div class="lbl">Shield Temp (C)</div></div>
+      <div class="tm" id="tmMach"><div class="val">26.4</div><div class="lbl">Mach Number</div></div>
+      <div class="tm" id="tmDynP"><div class="val">0.0</div><div class="lbl">Dyn Press (Pa)</div></div>
+      <div class="tm" id="tmTime"><div class="val">0.0</div><div class="lbl">Time (s)</div></div>
+      <div class="tm" id="tmFuel"><div class="val">100</div><div class="lbl">Fuel (%)</div></div>
+    </div>
+
+    <h2 style="margin-top:10px">Altitude vs Velocity</h2>
+    <canvas id="plotCanvas" width="320" height="200"></canvas>
+
+    <div id="resultDisplay" class="result" style="display:none"></div>
+
+    <div class="info">
+      <strong>The 7 Minutes of Terror:</strong> From atmosphere entry at 125 km altitude and 5.5 km/s,
+      the spacecraft must decelerate to a gentle landing in about 7 minutes. The entire sequence is autonomous
+      — light-speed delay to Earth is 4-24 minutes, so no real-time control is possible.
+      Entry angle is critical: too steep (< -17 deg) means excessive heating and burnup; too shallow (> -12 deg)
+      means skipping off the atmosphere back into space.
+    </div>
+  </div>
+</div>
+
+<script>
+// Mars atmospheric model
+const MARS_G = 3.72; // m/s^2
+const MARS_R = 3389500; // meters
+const GAMMA = 1.3; // CO2 atmosphere
+const R_GAS = 188.9; // J/(kg*K) for CO2
+const T0 = 210; // K surface temp
+const P0 = 636; // Pa surface pressure
+const SPEED_SOUND_SURFACE = Math.sqrt(GAMMA * R_GAS * T0); // ~208 m/s
+
+function marsAtmo(alt) {
+  // Exponential atmosphere model
+  const H = R_GAS * T0 / MARS_G; // scale height ~11.1 km
+  const rho0 = P0 / (R_GAS * T0); // ~0.02 kg/m^3
+  const rho = rho0 * Math.exp(-alt / H);
+  const T = T0 - 2.5 * alt/1000; // lapse rate
+  const P = rho * R_GAS * Math.max(T, 100);
+  const cs = Math.sqrt(GAMMA * R_GAS * Math.max(T, 100));
+  return { rho, T, P, cs };
+}
+
+// Spacecraft parameters
+const SC = {
+  mass: 3300, // kg (Perseverance-like)
+  cd: 1.7,    // drag coefficient (capsule)
+  area: 15.9, // m^2 (4.5m diameter heat shield)
+  heatShieldLimit: 2100, // C
+  chuteDeployMach: 1.7,
+  chuteCd: 2.5,
+  chuteArea: 200, // m^2 (21.5m diameter)
+  thrustMax: 30000, // N (MLE engines)
+  Isp: 220,   // s
+  fuelMass: 400, // kg
+  roverMass: 1025, // kg
+  craneLength: 7.5, // m
+};
+
+// Simulation state
+let state = null;
+let running = false;
+let simSpeed = 1;
+let entryAngleDeg = -15.5;
+let trailPoints = [];
+let plotData = [];
+
+function initState() {
+  const angle = entryAngleDeg * Math.PI/180;
+  return {
+    alt: 125000, // m
+    vel: 5500, // m/s
+    vx: Math.cos(angle) * 5500,
+    vy: Math.sin(angle) * 5500, // negative = descending
+    time: 0,
+    phase: 'entry', // entry, chute, heatshield-jettison, powered, skycrane, landed, failed
+    fuel: SC.fuelMass,
+    shieldTemp: -63,
+    maxG: 0,
+    chuteDeployed: false,
+    shieldJettisoned: false,
+    poweredStart: false,
+    skycraneStart: false,
+    craneExtension: 0,
+    landed: false,
+    failed: false,
+    failReason: '',
+    particles: [],
+  };
+}
+
+function updateAngle() {
+  entryAngleDeg = parseInt(document.getElementById('entryAngle').value)/10;
+  document.getElementById('entryAngleVal').textContent = entryAngleDeg.toFixed(1);
+}
+
+function resetEDL() {
+  running = false;
+  state = initState();
+  trailPoints = [];
+  plotData = [];
+  document.getElementById('resultDisplay').style.display = 'none';
+  render();
+}
+
+function startEDL() {
+  resetEDL();
+  running = true;
+  simLoop();
+}
+
+function physicsStep(dt) {
+  if(!state || state.landed || state.failed) return;
+
+  const atmo = marsAtmo(state.alt);
+  const speed = Math.sqrt(state.vx*state.vx + state.vy*state.vy);
+  const mach = speed / atmo.cs;
+
+  // Aerodynamic drag
+  let cd = SC.cd, area = SC.area;
+  if(state.chuteDeployed) {
+    cd = SC.chuteCd;
+    area = SC.area + SC.chuteArea;
+  }
+
+  const dynPressure = 0.5 * atmo.rho * speed * speed;
+  const drag = cd * area * dynPressure;
+  const dragAx = -(state.vx/speed) * drag / SC.mass;
+  const dragAy = -(state.vy/speed) * drag / SC.mass;
+
+  // Gravity
+  const gravAy = -MARS_G;
+
+  // Thrust (powered descent)
+  let thrustAx = 0, thrustAy = 0;
+  if(state.phase === 'powered' || state.phase === 'skycrane') {
+    if(state.fuel > 0) {
+      // Thrust to slow down
+      const targetVy = state.phase === 'skycrane' ? -0.75 : -(state.alt/500 + 2);
+      const thrustNeeded = SC.mass * (MARS_G + (state.vy - targetVy)*2);
+      const thrust = Math.min(Math.max(thrustNeeded, 0), SC.thrustMax);
+
+      thrustAy = thrust / SC.mass;
+      // Also kill horizontal velocity
+      if(Math.abs(state.vx) > 0.5) {
+        thrustAx = -Math.sign(state.vx) * Math.min(Math.abs(state.vx)*2, thrust*0.3/SC.mass);
+      }
+
+      // Fuel consumption
+      const fuelRate = thrust / (SC.Isp * 9.81);
+      state.fuel -= fuelRate * dt;
+      if(state.fuel < 0) state.fuel = 0;
+    }
+  }
+
+  // Total acceleration
+  const ax = dragAx + thrustAx;
+  const ay = gravAy + dragAy + thrustAy;
+  const totalG = Math.sqrt(ax*ax + (ay+MARS_G)*(ay+MARS_G)) / 9.81;
+  if(totalG > state.maxG) state.maxG = totalG;
+
+  // Integrate
+  state.vx += ax * dt;
+  state.vy += ay * dt;
+  state.alt += state.vy * dt;
+  state.time += dt;
+  state.vel = Math.sqrt(state.vx*state.vx + state.vy*state.vy);
+
+  // Heat shield temperature
+  const heatFlux = 1.7e-4 * Math.sqrt(atmo.rho/0.02) * Math.pow(speed, 3);
+  state.shieldTemp = Math.max(-63, -63 + heatFlux * 0.00005);
+
+  // Phase transitions
+  if(state.phase === 'entry') {
+    // Check for burnup
+    if(state.shieldTemp > SC.heatShieldLimit) {
+      state.failed = true;
+      state.failReason = `BURNUP: Heat shield exceeded ${SC.heatShieldLimit}C (${Math.round(state.shieldTemp)}C)`;
+      state.phase = 'failed';
+      return;
+    }
+    // Check for skip-off
+    if(state.vy > 0 && state.alt > 80000) {
+      state.failed = true;
+      state.failReason = 'SKIP-OFF: Entry angle too shallow, spacecraft bounced off atmosphere';
+      state.phase = 'failed';
+      return;
+    }
+    // Deploy chute at Mach 1.7
+    if(mach <= SC.chuteDeployMach && state.alt < 12000 && !state.chuteDeployed) {
+      state.chuteDeployed = true;
+      state.phase = 'chute';
+    }
+  }
+
+  if(state.phase === 'chute') {
+    // Jettison heat shield at ~8km
+    if(state.alt < 8000 && !state.shieldJettisoned) {
+      state.shieldJettisoned = true;
+    }
+    // Start powered descent at ~2km
+    if(state.alt < 2100) {
+      state.phase = 'powered';
+      state.chuteDeployed = false; // jettison chute
+    }
+  }
+
+  if(state.phase === 'powered') {
+    // Sky crane at ~20m
+    if(state.alt < 20 && Math.abs(state.vy) < 3) {
+      state.phase = 'skycrane';
+    }
+  }
+
+  if(state.phase === 'skycrane') {
+    state.craneExtension = Math.min(SC.craneLength, state.craneExtension + 0.5*dt);
+    if(state.alt <= state.craneExtension + 0.5) {
+      state.landed = true;
+      state.phase = 'landed';
+    }
+  }
+
+  // Crash check
+  if(state.alt <= 0 && !state.landed) {
+    if(Math.abs(state.vy) > 5 || state.phase === 'entry') {
+      state.failed = true;
+      state.failReason = `CRASH: Impact at ${Math.abs(state.vy).toFixed(1)} m/s`;
+      state.phase = 'failed';
+    } else {
+      state.landed = true;
+      state.phase = 'landed';
+    }
+    state.alt = 0;
+  }
+
+  // Fuel check
+  if(state.fuel <= 0 && (state.phase === 'powered' || state.phase === 'skycrane') && state.alt > 5) {
+    state.failed = true;
+    state.failReason = 'FUEL EXHAUSTED during powered descent';
+    state.phase = 'failed';
+  }
+
+  // Record data
+  if(state.time % 0.5 < dt) {
+    plotData.push({alt: state.alt/1000, vel: state.vel, time: state.time});
+    trailPoints.push({alt: state.alt, phase: state.phase});
+  }
+
+  // Particles
+  if(state.phase === 'entry' && state.shieldTemp > 200) {
+    for(let i=0;i<3;i++){
+      state.particles.push({
+        x: 0, y: 0, vx: (Math.random()-0.5)*50, vy: Math.random()*30+10,
+        life: 1, type: 'heat'
+      });
+    }
+  }
+  if(state.phase === 'powered' || state.phase === 'skycrane') {
+    for(let i=0;i<2;i++){
+      state.particles.push({
+        x: 0, y: 0, vx: (Math.random()-0.5)*20, vy: -Math.random()*40-20,
+        life: 1, type: 'thrust'
+      });
+    }
+  }
+
+  state.particles = state.particles.filter(p=>{
+    p.x += p.vx*dt;
+    p.y += p.vy*dt;
+    p.life -= dt*2;
+    return p.life > 0;
+  });
+}
+
+function render() {
+  const c = document.getElementById('simCanvas');
+  const ctx = c.getContext('2d');
+  const W=c.width, H=c.height;
+
+  // Background gradient (space to Mars surface)
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0, '#000005');
+  grad.addColorStop(0.3, '#0a0205');
+  grad.addColorStop(0.7, '#1a0808');
+  grad.addColorStop(0.85, '#2a1510');
+  grad.addColorStop(1, '#8B4513');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,W,H);
+
+  if(!state) return;
+
+  // Stars
+  for(let i=0;i<40;i++){
+    const sx = (i*47+20)%W;
+    const sy = (i*31+10)%(H*0.4);
+    ctx.fillStyle=`rgba(255,255,255,${0.3+Math.random()*0.3})`;
+    ctx.fillRect(sx, sy, 1, 1);
+  }
+
+  // Atmosphere glow line
+  const atmoY = H * 0.25;
+  ctx.strokeStyle='rgba(200,100,50,0.3)';
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(0, atmoY);
+  ctx.lineTo(W, atmoY);
+  ctx.stroke();
+  ctx.fillStyle='rgba(200,100,50,0.15)';
+  ctx.font='10px sans-serif';
+  ctx.fillText('125 km - Entry Interface', 10, atmoY-4);
+
+  // Surface
+  const surfY = H - 40;
+  ctx.fillStyle='#8B4513';
+  ctx.fillRect(0, surfY, W, 40);
+  // Surface details
+  ctx.fillStyle='#6B3410';
+  for(let i=0;i<20;i++){
+    const sx = (i*37+15)%W;
+    ctx.beginPath();
+    ctx.arc(sx, surfY+20, 3+Math.random()*8, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // Map altitude to screen Y
+  const maxAlt = 130000;
+  const scY = alt => surfY - (alt/maxAlt) * (surfY - 20);
+
+  // Spacecraft position
+  const scX = W * 0.5;
+  const scYPos = scY(state.alt);
+
+  // Trail
+  ctx.strokeStyle='rgba(239,68,68,0.3)';
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  trailPoints.forEach((p,i)=>{
+    const y = scY(p.alt);
+    if(i===0) ctx.moveTo(scX, y); else ctx.lineTo(scX, y);
+  });
+  ctx.stroke();
+
+  // Draw spacecraft based on phase
+  ctx.save();
+  ctx.translate(scX, scYPos);
+
+  // Particles
+  state.particles.forEach(p=>{
+    const alpha = p.life;
+    if(p.type === 'heat') {
+      ctx.fillStyle = `rgba(255,${Math.floor(100+155*p.life)},0,${alpha})`;
+    } else {
+      ctx.fillStyle = `rgba(255,200,50,${alpha})`;
+    }
+    ctx.beginPath();
+    ctx.arc(p.x, -p.y, 2+Math.random()*2, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  if(state.phase === 'entry') {
+    // Capsule shape (entry configuration)
+    ctx.fillStyle='#888';
+    ctx.beginPath();
+    ctx.moveTo(-12, -8);
+    ctx.lineTo(12, -8);
+    ctx.lineTo(8, 8);
+    ctx.lineTo(-8, 8);
+    ctx.closePath();
+    ctx.fill();
+
+    // Heat shield glow
+    if(state.shieldTemp > 100) {
+      const intensity = Math.min(1, (state.shieldTemp-100)/1500);
+      ctx.fillStyle=`rgba(255,${Math.floor(150-intensity*100)},0,${intensity})`;
+      ctx.beginPath();
+      ctx.ellipse(0, 10, 14, 4, 0, 0, Math.PI);
+      ctx.fill();
+
+      // Plasma trail
+      ctx.fillStyle=`rgba(255,100,0,${intensity*0.5})`;
+      ctx.beginPath();
+      ctx.moveTo(-14, 8);
+      ctx.quadraticCurveTo(-20, 30, -30, 50+Math.random()*20);
+      ctx.lineTo(30+Math.random()*10, 50+Math.random()*20);
+      ctx.quadraticCurveTo(20, 30, 14, 8);
+      ctx.closePath();
+      ctx.fill();
+    }
+  } else if(state.phase === 'chute') {
+    // Capsule
+    ctx.fillStyle='#888';
+    ctx.beginPath();
+    ctx.moveTo(-8, -6); ctx.lineTo(8, -6); ctx.lineTo(6, 6); ctx.lineTo(-6, 6);
+    ctx.closePath();
+    ctx.fill();
+
+    // Parachute
+    ctx.strokeStyle='#aaa';
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(-5, -6); ctx.lineTo(-25, -60);
+    ctx.moveTo(5, -6); ctx.lineTo(25, -60);
+    ctx.moveTo(0, -6); ctx.lineTo(0, -55);
+    ctx.stroke();
+
+    ctx.fillStyle='rgba(200,50,50,0.8)';
+    ctx.beginPath();
+    ctx.arc(0, -60, 30, Math.PI, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle='#fff';
+    ctx.lineWidth=0.5;
+    // Chute segments
+    for(let i=-25;i<=25;i+=10){
+      ctx.beginPath();
+      ctx.moveTo(i, -60-Math.sqrt(900-i*i)*0.3);
+      ctx.lineTo(i*0.8, -60);
+      ctx.stroke();
+    }
+
+    // Jettisoned heat shield
+    if(state.shieldJettisoned) {
+      const shieldDrop = (state.time - state.time*0.95) * 20;
+      ctx.fillStyle='#555';
+      ctx.beginPath();
+      ctx.ellipse(0, 10+shieldDrop, 8, 3, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+  } else if(state.phase === 'powered') {
+    // Descent stage
+    ctx.fillStyle='#777';
+    ctx.fillRect(-10, -8, 20, 12);
+    // Rover underneath
+    ctx.fillStyle='#aa8844';
+    ctx.fillRect(-8, 4, 16, 6);
+    // Engines
+    ctx.fillStyle='#555';
+    ctx.fillRect(-12, -12, 4, 4);
+    ctx.fillRect(8, -12, 4, 4);
+    // Thrust plumes
+    if(state.fuel > 0) {
+      const fl = 15 + Math.random()*10;
+      ctx.fillStyle='rgba(255,200,50,0.8)';
+      ctx.beginPath();
+      ctx.moveTo(-12, -12); ctx.lineTo(-10, -12-fl); ctx.lineTo(-8, -12);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(8, -12); ctx.lineTo(10, -12-fl); ctx.lineTo(12, -12);
+      ctx.fill();
+    }
+  } else if(state.phase === 'skycrane') {
+    // Descent stage (higher)
+    const craneY = -state.craneExtension * 3;
+    ctx.fillStyle='#777';
+    ctx.fillRect(-10, craneY-8, 20, 12);
+    // Engines
+    ctx.fillStyle='#555';
+    ctx.fillRect(-12, craneY-12, 4, 4);
+    ctx.fillRect(8, craneY-12, 4, 4);
+    // Thrust
+    if(state.fuel > 0) {
+      const fl = 12+Math.random()*8;
+      ctx.fillStyle='rgba(255,200,50,0.7)';
+      ctx.beginPath();
+      ctx.moveTo(-12, craneY-12); ctx.lineTo(-10, craneY-12-fl); ctx.lineTo(-8, craneY-12);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(8, craneY-12); ctx.lineTo(10, craneY-12-fl); ctx.lineTo(12, craneY-12);
+      ctx.fill();
+    }
+    // Cables
+    ctx.strokeStyle='#ccc';
+    ctx.lineWidth=1;
+    ctx.setLineDash([3,2]);
+    ctx.beginPath();
+    ctx.moveTo(-6, craneY+4); ctx.lineTo(-6, 0);
+    ctx.moveTo(6, craneY+4); ctx.lineTo(6, 0);
+    ctx.moveTo(0, craneY+4); ctx.lineTo(0, 0);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // Rover
+    ctx.fillStyle='#aa8844';
+    ctx.fillRect(-8, 0, 16, 6);
+    // Wheels
+    ctx.fillStyle='#666';
+    ctx.beginPath(); ctx.arc(-7, 7, 3, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(7, 7, 3, 0, Math.PI*2); ctx.fill();
+  } else if(state.phase === 'landed') {
+    // Rover on surface
+    ctx.fillStyle='#aa8844';
+    ctx.fillRect(-10, -6, 20, 8);
+    // Mast
+    ctx.strokeStyle='#888';
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(4, -6); ctx.lineTo(4, -18);
+    ctx.stroke();
+    ctx.fillStyle='#aaa';
+    ctx.fillRect(0, -20, 8, 4);
+    // Wheels
+    ctx.fillStyle='#666';
+    ctx.beginPath(); ctx.arc(-8, 3, 3, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(8, 3, 3, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 3, 3, 0, Math.PI*2); ctx.fill();
+  } else if(state.phase === 'failed') {
+    // Explosion
+    for(let i=0;i<8;i++){
+      const angle = i*Math.PI/4 + Math.random()*0.3;
+      const dist = 10+Math.random()*20;
+      ctx.fillStyle=`rgba(255,${Math.floor(Math.random()*150)},0,${0.5+Math.random()*0.5})`;
+      ctx.beginPath();
+      ctx.arc(Math.cos(angle)*dist, Math.sin(angle)*dist, 3+Math.random()*5, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  ctx.restore();
+
+  // Altitude scale
+  ctx.fillStyle='#8a6060';
+  ctx.font='9px monospace';
+  ctx.textAlign='right';
+  const altMarks = [0,10,25,50,75,100,125];
+  altMarks.forEach(km=>{
+    const y = scY(km*1000);
+    ctx.fillText(`${km} km`, W-8, y+3);
+    ctx.strokeStyle='rgba(100,50,50,0.2)';
+    ctx.lineWidth=0.5;
+    ctx.beginPath();
+    ctx.moveTo(W-60, y); ctx.lineTo(W-4, y);
+    ctx.stroke();
+  });
+
+  // Phase label
+  const phaseNames = {
+    entry: 'ATMOSPHERIC ENTRY', chute: 'PARACHUTE DESCENT', powered: 'POWERED DESCENT',
+    skycrane: 'SKY CRANE', landed: 'TOUCHDOWN', failed: 'MISSION FAILURE'
+  };
+  ctx.fillStyle = state.phase === 'failed' ? '#ef4444' : state.phase === 'landed' ? '#4ade80' : '#f87171';
+  ctx.font='bold 14px sans-serif';
+  ctx.textAlign='left';
+  ctx.fillText(phaseNames[state.phase] || '', 10, 20);
+
+  // Time
+  ctx.fillStyle='#8a6060';
+  ctx.font='11px monospace';
+  ctx.fillText(`T+${state.time.toFixed(1)}s`, 10, H-10);
+}
+
+function updateUI() {
+  if(!state) return;
+
+  const atmo = marsAtmo(state.alt);
+  const mach = state.vel / atmo.cs;
+  const dynP = 0.5 * atmo.rho * state.vel * state.vel;
+  const gLoad = state.maxG;
+
+  const setTm = (id, val, warn, crit) => {
+    const el = document.getElementById(id);
+    el.querySelector('.val').textContent = val;
+    el.className = 'tm' + (crit ? ' crit' : warn ? ' warn' : '');
+  };
+
+  setTm('tmAlt', (state.alt/1000).toFixed(state.alt<1000?2:1), state.alt<2000, state.alt<500);
+  setTm('tmVel', Math.round(state.vel), state.vel>1000, state.vel>3000);
+  setTm('tmAcc', gLoad.toFixed(1), gLoad>5, gLoad>10);
+  setTm('tmTemp', Math.round(state.shieldTemp), state.shieldTemp>800, state.shieldTemp>1500);
+  setTm('tmMach', mach.toFixed(1), false, false);
+  setTm('tmDynP', Math.round(dynP), dynP>5000, dynP>15000);
+  setTm('tmTime', state.time.toFixed(1), false, false);
+  setTm('tmFuel', Math.round(state.fuel/SC.fuelMass*100), state.fuel/SC.fuelMass<0.3, state.fuel/SC.fuelMass<0.1);
+
+  // Phase display
+  const phaseEl = document.getElementById('phaseDisplay');
+  const phaseMap = {
+    entry: ['ATMOSPHERIC ENTRY', 'phase-entry'],
+    chute: ['PARACHUTE DEPLOYED', 'phase-chute'],
+    powered: ['POWERED DESCENT', 'phase-powered'],
+    skycrane: ['SKY CRANE MANEUVER', 'phase-skycrane'],
+    landed: ['TOUCHDOWN CONFIRMED', 'phase-landed'],
+    failed: ['MISSION FAILURE', 'phase-failed'],
+  };
+  const [text, cls] = phaseMap[state.phase] || ['UNKNOWN', 'phase-entry'];
+  phaseEl.textContent = text;
+  phaseEl.className = 'phase ' + cls;
+
+  // Result
+  if(state.landed || state.failed) {
+    const rd = document.getElementById('resultDisplay');
+    rd.style.display = 'block';
+    if(state.landed) {
+      rd.className = 'result success';
+      rd.textContent = `LANDING SUCCESS! Time: ${state.time.toFixed(1)}s | Peak G: ${state.maxG.toFixed(1)} | Final velocity: ${state.vel.toFixed(1)} m/s`;
+    } else {
+      rd.className = 'result failure';
+      rd.textContent = state.failReason;
+    }
+  }
+
+  drawPlot();
+}
+
+function drawPlot() {
+  const c = document.getElementById('plotCanvas');
+  const ctx = c.getContext('2d');
+  const W=c.width, H=c.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#0a0505';
+  ctx.fillRect(0,0,W,H);
+
+  if(plotData.length < 2) return;
+
+  const margin={l:45,r:10,t:10,b:30};
+  const pw=W-margin.l-margin.r, ph=H-margin.t-margin.b;
+
+  const maxAlt = 130;
+  const maxVel = 6000;
+
+  // Axes
+  ctx.strokeStyle='#2a1515';
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(margin.l, margin.t);
+  ctx.lineTo(margin.l, H-margin.b);
+  ctx.lineTo(W-margin.r, H-margin.b);
+  ctx.stroke();
+
+  ctx.fillStyle='#8a6060';
+  ctx.font='9px sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('Velocity (m/s)', W/2, H-4);
+  ctx.save();
+  ctx.translate(10, H/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText('Alt (km)',0,0);
+  ctx.restore();
+
+  // Plot altitude vs velocity
+  ctx.strokeStyle='#ef4444';
+  ctx.lineWidth=1.5;
+  ctx.beginPath();
+  plotData.forEach((d,i)=>{
+    const x = margin.l + (d.vel/maxVel)*pw;
+    const y = H - margin.b - (d.alt/maxAlt)*ph;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // Current point
+  if(state) {
+    const cx = margin.l + (state.vel/maxVel)*pw;
+    const cy = H - margin.b - (state.alt/1000/maxAlt)*ph;
+    ctx.fillStyle='#fbbf24';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 4, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function simLoop() {
+  if(!running || !state) return;
+  if(state.landed || state.failed) {
+    render();
+    updateUI();
+    return;
+  }
+
+  for(let i=0;i<simSpeed;i++){
+    physicsStep(1/60);
+    if(state.landed || state.failed) break;
+  }
+
+  render();
+  updateUI();
+  requestAnimationFrame(simLoop);
+}
+
+// Init
+state = initState();
+render();
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exoplanet Transit Detection</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#060810;color:#e0e0e8;font-family:'Segoe UI',system-ui,sans-serif;overflow-x:hidden}
+h1{text-align:center;padding:14px;font-size:1.5rem;color:#0ea5e9;letter-spacing:1px}
+.container{display:flex;flex-wrap:wrap;gap:12px;padding:0 12px 12px;max-width:1440px;margin:0 auto}
+.panel{background:#0c1018;border:1px solid #1a2a40;border-radius:10px;padding:14px;flex:1;min-width:300px}
+.panel h2{color:#38bdf8;font-size:.9rem;margin-bottom:8px;border-bottom:1px solid #1a2a40;padding-bottom:4px}
+canvas{display:block;margin:0 auto;border-radius:6px}
+button{background:#0ea5e9;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:.8rem;margin:3px}
+button:hover{background:#0284c7}
+button.active{background:#0369a1;box-shadow:0 0 8px #0ea5e9}
+.controls{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin:6px 0}
+label{font-size:.76rem;color:#64748b}
+input[type=range]{width:110px;accent-color:#0ea5e9}
+input[type=checkbox]{accent-color:#0ea5e9}
+select{background:#0f1828;color:#e0e0e8;border:1px solid #1a2a40;padding:3px 6px;border-radius:4px;font-size:.78rem}
+.telemetry{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:6px}
+.tm{background:#080c14;padding:6px;border-radius:5px;text-align:center;border:1px solid #1a2a40}
+.tm .val{font-size:.95rem;font-weight:700;color:#0ea5e9;font-family:monospace}
+.tm .lbl{font-size:.63rem;color:#475569}
+.tm.hz{border-color:#22c55e}
+.tm.hz .val{color:#22c55e}
+#orbitCanvas{background:#060810;border:1px solid #1a2a40}
+#curveCanvas{background:#080c14;border:1px solid #1a2a40}
+.preset{font-size:.72rem;padding:3px 8px;background:#0f1828;border:1px solid #1a2a40;color:#38bdf8;border-radius:4px;cursor:pointer;margin:2px}
+.preset:hover{background:#1a2a40}
+.preset.active{background:#0ea5e9;color:#fff;border-color:#0ea5e9}
+.info{font-size:.74rem;color:#475569;margin-top:6px;line-height:1.5}
+</style>
+</head>
+<body>
+<h1>Exoplanet Transit Detection</h1>
+<div class="container">
+  <div class="panel" style="flex:1.3;min-width:450px">
+    <h2>Star System View (Edge-on)</h2>
+    <canvas id="orbitCanvas" width="580" height="340"></canvas>
+    <div class="controls">
+      <button onclick="togglePause()"><span id="pauseLabel">Pause</span></button>
+      <button onclick="resetSim()">Reset</button>
+      <label>Speed:</label>
+      <button onclick="timeScale=0.5">0.5x</button>
+      <button onclick="timeScale=1">1x</button>
+      <button onclick="timeScale=5">5x</button>
+      <button onclick="timeScale=20">20x</button>
+      <input type="checkbox" id="showOrbit" checked><label>Show orbit</label>
+      <input type="checkbox" id="multiPlanet" onchange="toggleMulti()"><label>Multi-planet</label>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Planet Parameters</h2>
+    <div class="controls">
+      <label>Planet radius: <span id="rpVal">1.0</span> R_Earth</label>
+      <input type="range" id="rpSlider" min="5" max="120" value="10" oninput="updateParam('rp',this.value/10)">
+    </div>
+    <div class="controls">
+      <label>Orbital period: <span id="perVal">10.0</span> days</label>
+      <input type="range" id="perSlider" min="5" max="365" value="10" oninput="updateParam('period',this.value)">
+    </div>
+    <div class="controls">
+      <label>Inclination: <span id="incVal">90.0</span> deg</label>
+      <input type="range" id="incSlider" min="70" max="90" value="90" oninput="updateParam('inc',this.value)">
+    </div>
+    <div class="controls">
+      <label>Star radius: <span id="rsVal">1.0</span> R_Sun</label>
+      <input type="range" id="rsSlider" min="3" max="30" value="10" oninput="updateParam('rs',this.value/10)">
+    </div>
+    <div class="controls">
+      <label>Star temp: <span id="stVal">5778</span> K</label>
+      <input type="range" id="stSlider" min="3000" max="10000" value="5778" oninput="updateParam('stemp',this.value)">
+    </div>
+    <div class="controls">
+      <input type="checkbox" id="noiseCheck" onchange="updateParam('noise',this.checked)"><label>Add photometric noise</label>
+      <label>SNR: <span id="snrVal">100</span></label>
+      <input type="range" id="snrSlider" min="10" max="500" value="100" oninput="updateParam('snr',this.value)">
+    </div>
+
+    <h2 style="margin-top:10px">Presets</h2>
+    <div class="controls" style="flex-wrap:wrap">
+      <span class="preset" onclick="loadPreset('earth')">Earth</span>
+      <span class="preset" onclick="loadPreset('jupiter')">Hot Jupiter</span>
+      <span class="preset" onclick="loadPreset('kepler186f')">Kepler-186f</span>
+      <span class="preset" onclick="loadPreset('trappist1e')">TRAPPIST-1e</span>
+      <span class="preset" onclick="loadPreset('hd209458b')">HD 209458 b</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="panel" style="flex:2;min-width:500px">
+    <h2>Light Curve</h2>
+    <canvas id="curveCanvas" width="700" height="250"></canvas>
+  </div>
+
+  <div class="panel">
+    <h2>Derived Properties</h2>
+    <div class="telemetry">
+      <div class="tm"><div class="val" id="dRp">--</div><div class="lbl">Planet Radius (R_E)</div></div>
+      <div class="tm"><div class="val" id="dPer">--</div><div class="lbl">Period (days)</div></div>
+      <div class="tm"><div class="val" id="dDepth">--</div><div class="lbl">Transit Depth (%)</div></div>
+      <div class="tm"><div class="val" id="dSMA">--</div><div class="lbl">Semi-major Axis (AU)</div></div>
+      <div class="tm"><div class="val" id="dTeq">--</div><div class="lbl">Equilib. Temp (K)</div></div>
+      <div class="tm" id="dHZtm"><div class="val" id="dHZ">--</div><div class="lbl">Habitable Zone?</div></div>
+      <div class="tm"><div class="val" id="dDur">--</div><div class="lbl">Transit Duration (h)</div></div>
+      <div class="tm"><div class="val" id="dRatio">--</div><div class="lbl">Rp/Rs Ratio</div></div>
+      <div class="tm"><div class="val" id="dStarL">--</div><div class="lbl">Star Luminosity (L_S)</div></div>
+    </div>
+    <div class="info" id="planetInfo">
+      The transit method detects planets by measuring the tiny dip in a star's brightness when a planet
+      crosses in front of it. From the dip depth, we calculate the planet's radius.
+      From the spacing between dips, we get the orbital period. Kepler's third law gives us the distance.
+      With the star's luminosity, we compute the equilibrium temperature and check if the planet is in
+      the habitable zone.
+    </div>
+  </div>
+</div>
+
+<script>
+const R_SUN = 696340; // km
+const R_EARTH = 6371; // km
+const R_JUPITER = 69911; // km
+const AU = 1.496e8; // km
+const STEFAN_BOLTZMANN = 5.67e-8;
+const L_SUN = 3.828e26; // W
+
+// Parameters
+let params = {
+  rp: 1.0,      // planet radius in R_Earth
+  period: 10,    // days
+  inc: 90,       // degrees
+  rs: 1.0,       // star radius in R_Sun
+  stemp: 5778,   // star temp K
+  noise: false,
+  snr: 100,
+};
+
+// Multi-planet
+let planets = [];
+let multiMode = false;
+
+// Simulation
+let time = 0;
+let timeScale = 1;
+let paused = false;
+let lightCurveData = [];
+const LC_MAX = 600;
+
+function updateParam(key, val) {
+  if(key === 'rp') { params.rp = parseFloat(val); document.getElementById('rpVal').textContent = params.rp.toFixed(1); }
+  if(key === 'period') { params.period = parseFloat(val); document.getElementById('perVal').textContent = params.period.toFixed(0); }
+  if(key === 'inc') { params.inc = parseFloat(val); document.getElementById('incVal').textContent = params.inc.toFixed(0); }
+  if(key === 'rs') { params.rs = parseFloat(val); document.getElementById('rsVal').textContent = params.rs.toFixed(1); }
+  if(key === 'stemp') { params.stemp = parseInt(val); document.getElementById('stVal').textContent = params.stemp; }
+  if(key === 'noise') { params.noise = val; }
+  if(key === 'snr') { params.snr = parseInt(val); document.getElementById('snrVal').textContent = params.snr; }
+  computeDerived();
+}
+
+function loadPreset(name) {
+  const presets = {
+    earth: { rp:1.0, period:365, inc:89.9, rs:1.0, stemp:5778, label:'Earth analog' },
+    jupiter: { rp:11.2, period:3.5, inc:86.7, rs:1.15, stemp:6065, label:'HD 209458 b (Hot Jupiter)' },
+    kepler186f: { rp:1.11, period:129.9, inc:89.9, rs:0.47, stemp:3788, label:'Kepler-186f (first Earth-size in HZ)' },
+    trappist1e: { rp:0.92, period:6.1, inc:89.86, rs:0.121, stemp:2566, label:'TRAPPIST-1e (temperate rocky)' },
+    hd209458b: { rp:15.0, period:3.52, inc:86.7, rs:1.2, stemp:6065, label:'HD 209458 b (first transiting exoplanet)' },
+  };
+  const p = presets[name];
+  if(!p) return;
+
+  params.rp = p.rp; params.period = p.period; params.inc = p.inc;
+  params.rs = p.rs; params.stemp = p.stemp;
+
+  document.getElementById('rpSlider').value = Math.min(120, p.rp*10);
+  document.getElementById('perSlider').value = Math.min(365, p.period);
+  document.getElementById('incSlider').value = Math.min(90, p.inc);
+  document.getElementById('rsSlider').value = Math.min(30, p.rs*10);
+  document.getElementById('stSlider').value = p.stemp;
+
+  document.getElementById('rpVal').textContent = p.rp.toFixed(1);
+  document.getElementById('perVal').textContent = p.period.toFixed(0);
+  document.getElementById('incVal').textContent = p.inc.toFixed(1);
+  document.getElementById('rsVal').textContent = p.rs.toFixed(1);
+  document.getElementById('stVal').textContent = p.stemp;
+
+  document.getElementById('planetInfo').textContent = p.label + ': ' +
+    `Rp=${p.rp.toFixed(2)} R_Earth, P=${p.period} days, Rs=${p.rs} R_Sun, T*=${p.stemp} K`;
+
+  lightCurveData = [];
+  time = 0;
+  computeDerived();
+}
+
+function toggleMulti() {
+  multiMode = document.getElementById('multiPlanet').checked;
+  if(multiMode) {
+    planets = [
+      { rp: params.rp, period: params.period, inc: params.inc, phase: 0, color: '#3b82f6' },
+      { rp: params.rp*0.6, period: params.period*2.3, inc: params.inc-0.5, phase: Math.PI*0.7, color: '#22c55e' },
+      { rp: params.rp*1.4, period: params.period*5.1, inc: params.inc-1, phase: Math.PI*1.3, color: '#f59e0b' },
+    ];
+  }
+  lightCurveData = [];
+  time = 0;
+}
+
+function togglePause() {
+  paused = !paused;
+  document.getElementById('pauseLabel').textContent = paused ? 'Resume' : 'Pause';
+}
+
+function resetSim() {
+  time = 0;
+  lightCurveData = [];
+  paused = false;
+  document.getElementById('pauseLabel').textContent = 'Pause';
+}
+
+// Compute transit flux
+function transitFlux(rpRe, periodDays, incDeg, rsRsun, t) {
+  const rStar = rsRsun * R_SUN;
+  const rPlanet = rpRe * R_EARTH;
+  const ratio = rPlanet / rStar;
+  const depth = ratio * ratio; // fractional flux drop
+
+  // Semi-major axis from Kepler's third law (simplified, solar mass assumed proportional to rs^2)
+  const mStar = Math.pow(rsRsun, 2); // rough mass-radius for main sequence
+  const a = Math.pow(mStar * periodDays * periodDays / 365.25 / 365.25, 1/3) * AU;
+
+  // Orbital position
+  const phase = (2 * Math.PI * t / periodDays) % (2 * Math.PI);
+  const x = a * Math.cos(phase); // along line of sight
+  const y = a * Math.sin(phase); // perpendicular in orbital plane
+  const z = y * Math.cos(incDeg * Math.PI/180); // projected impact parameter
+
+  // Check if transiting
+  const impactParam = Math.abs(z) / rStar;
+  const inFront = Math.sin(phase) > 0; // planet between us and star
+
+  if(!inFront || impactParam > 1 + ratio) return 1.0;
+
+  // Compute overlap area
+  if(impactParam <= 1 - ratio) {
+    // Full transit
+    return 1.0 - depth;
+  }
+
+  // Partial transit (ingress/egress)
+  const d = impactParam; // normalized impact parameter
+  const r1 = 1; // star (normalized)
+  const r2 = ratio; // planet (normalized)
+
+  // Area of intersection of two circles
+  if(d >= r1 + r2) return 1.0;
+  if(d <= Math.abs(r1 - r2)) return 1.0 - r2*r2;
+
+  const a1 = Math.acos((d*d + r1*r1 - r2*r2) / (2*d*r1));
+  const a2 = Math.acos((d*d + r2*r2 - r1*r1) / (2*d*r2));
+  const overlap = r1*r1*a1 + r2*r2*a2 - 0.5*Math.sqrt(
+    (-d+r1+r2)*(d+r1-r2)*(d-r1+r2)*(d+r1+r2)
+  );
+
+  return 1.0 - overlap / (Math.PI * r1 * r1);
+}
+
+function computeDerived() {
+  const rStar = params.rs * R_SUN;
+  const rPlanet = params.rp * R_EARTH;
+  const ratio = rPlanet / rStar;
+  const depth = ratio * ratio * 100; // percent
+
+  // Kepler's third law
+  const mStar = Math.pow(params.rs, 2);
+  const a_AU = Math.pow(mStar * params.period*params.period / 365.25/365.25, 1/3);
+  const a_km = a_AU * AU;
+
+  // Luminosity
+  const L = Math.pow(params.rs, 2) * Math.pow(params.stemp/5778, 4);
+
+  // Equilibrium temperature
+  const Teq = params.stemp * Math.pow(params.rs * R_SUN / (2 * a_km), 0.5) * Math.pow(1-0.3, 0.25);
+
+  // Habitable zone check (0.95 to 1.37 AU * sqrt(L))
+  const hzInner = 0.95 * Math.sqrt(L);
+  const hzOuter = 1.37 * Math.sqrt(L);
+  const inHZ = a_AU >= hzInner && a_AU <= hzOuter;
+
+  // Transit duration
+  const v_orb = 2 * Math.PI * a_km / (params.period * 86400); // km/s
+  const chord = 2 * rStar * Math.sqrt(1 - Math.pow(Math.cos(params.inc*Math.PI/180)*a_km/rStar, 2));
+  const duration = Math.max(0, chord / v_orb / 3600); // hours
+
+  document.getElementById('dRp').textContent = params.rp.toFixed(2);
+  document.getElementById('dPer').textContent = params.period.toFixed(1);
+  document.getElementById('dDepth').textContent = depth.toFixed(depth<0.01?4:3);
+  document.getElementById('dSMA').textContent = a_AU.toFixed(3);
+  document.getElementById('dTeq').textContent = Math.round(Teq);
+  document.getElementById('dHZ').textContent = inHZ ? 'YES' : 'No';
+  document.getElementById('dHZtm').className = inHZ ? 'tm hz' : 'tm';
+  document.getElementById('dDur').textContent = duration.toFixed(2);
+  document.getElementById('dRatio').textContent = ratio.toFixed(4);
+  document.getElementById('dStarL').textContent = L.toFixed(3);
+}
+
+// Star color from temperature
+function starColor(T) {
+  // Approximate blackbody color
+  let r, g, b;
+  if(T < 3500) { r=255; g=Math.floor(100+T/3500*100); b=Math.floor(T/3500*80); }
+  else if(T < 5000) { r=255; g=Math.floor(200+(T-3500)/1500*55); b=Math.floor(80+(T-3500)/1500*120); }
+  else if(T < 6500) { r=255; g=255; b=Math.floor(200+(T-5000)/1500*55); }
+  else if(T < 8000) { r=Math.floor(255-(T-6500)/1500*30); g=Math.floor(255-(T-6500)/1500*15); b=255; }
+  else { r=200; g=210; b=255; }
+  return `rgb(${r},${g},${b})`;
+}
+
+function renderOrbit() {
+  const c = document.getElementById('orbitCanvas');
+  const ctx = c.getContext('2d');
+  const W=c.width, H=c.height, cx=W/2, cy=H/2;
+
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#060810';
+  ctx.fillRect(0,0,W,H);
+
+  // Background stars
+  for(let i=0;i<50;i++){
+    const sx = (i*73+20)%W, sy = (i*51+10)%H;
+    ctx.fillStyle=`rgba(200,220,255,${0.1+Math.random()*0.3})`;
+    ctx.fillRect(sx, sy, 1, 1);
+  }
+
+  const starR = Math.min(60, 20 + params.rs*15);
+  const sc = starR / (params.rs * R_SUN); // km to pixels
+
+  // Star glow
+  const grd = ctx.createRadialGradient(cx, cy, starR*0.3, cx, cy, starR*3);
+  const baseColor = starColor(params.stemp);
+  grd.addColorStop(0, baseColor);
+  grd.addColorStop(0.3, baseColor.replace('rgb','rgba').replace(')',',0.4)'));
+  grd.addColorStop(1, 'transparent');
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.arc(cx, cy, starR*3, 0, Math.PI*2);
+  ctx.fill();
+
+  // Star
+  ctx.fillStyle = baseColor;
+  ctx.beginPath();
+  ctx.arc(cx, cy, starR, 0, Math.PI*2);
+  ctx.fill();
+
+  // Limb darkening
+  const limbGrad = ctx.createRadialGradient(cx-starR*0.2, cy-starR*0.2, 0, cx, cy, starR);
+  limbGrad.addColorStop(0, 'rgba(255,255,255,0.15)');
+  limbGrad.addColorStop(0.7, 'rgba(0,0,0,0)');
+  limbGrad.addColorStop(1, 'rgba(0,0,0,0.3)');
+  ctx.fillStyle = limbGrad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, starR, 0, Math.PI*2);
+  ctx.fill();
+
+  const drawPlanet = (rp, period, inc, phase, color, label) => {
+    const rPlanet = rp * R_EARTH;
+    const mStar = Math.pow(params.rs, 2);
+    const a_AU = Math.pow(mStar * period*period / 365.25/365.25, 1/3);
+    const a_km = a_AU * AU;
+
+    const orbitR = Math.min(W*0.4, Math.max(starR*2, a_km*sc*0.00005+starR*1.5));
+    const pR = Math.max(2, rPlanet * sc * 0.001);
+
+    const angle = (2*Math.PI*time/period + phase) % (2*Math.PI);
+    const px = cx + orbitR * Math.cos(angle);
+    const py_full = orbitR * Math.sin(angle);
+    const py = cy + py_full * Math.cos(inc*Math.PI/180);
+    const behind = Math.sin(angle) < 0;
+
+    // Orbit ellipse
+    if(document.getElementById('showOrbit').checked) {
+      ctx.strokeStyle = color + '40';
+      ctx.lineWidth=1;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, orbitR, orbitR*Math.cos(inc*Math.PI/180), 0, 0, Math.PI*2);
+      ctx.stroke();
+    }
+
+    // Draw planet (behind star = skip)
+    if(!behind || Math.abs(py-cy) > starR) {
+      ctx.fillStyle = '#111';
+      ctx.beginPath();
+      ctx.arc(px, py, pR, 0, Math.PI*2);
+      ctx.fill();
+
+      // Subtle planet outline
+      ctx.strokeStyle = color + '60';
+      ctx.lineWidth=0.5;
+      ctx.stroke();
+    }
+
+    if(label) {
+      ctx.fillStyle = color;
+      ctx.font='9px sans-serif';
+      ctx.fillText(label, px+pR+3, py+3);
+    }
+  };
+
+  if(multiMode && planets.length > 0) {
+    planets.forEach((p,i) => drawPlanet(p.rp, p.period, p.inc, p.phase, p.color, `P${i+1}`));
+  } else {
+    drawPlanet(params.rp, params.period, params.inc, 0, '#3b82f6', null);
+  }
+
+  // HZ annotation
+  ctx.fillStyle='#475569';
+  ctx.font='10px sans-serif';
+  ctx.fillText(`t = ${time.toFixed(1)} days`, 10, 16);
+  ctx.fillText(`Speed: ${timeScale}x`, 10, 30);
+}
+
+function renderLightCurve() {
+  const c = document.getElementById('curveCanvas');
+  const ctx = c.getContext('2d');
+  const W=c.width, H=c.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#080c14';
+  ctx.fillRect(0,0,W,H);
+
+  if(lightCurveData.length < 2) return;
+
+  const margin={l:55,r:15,t:15,b:30};
+  const pw=W-margin.l-margin.r, ph=H-margin.t-margin.b;
+
+  // Find data range
+  const minFlux = Math.min(...lightCurveData.map(d=>d.flux));
+  const maxFlux = Math.max(...lightCurveData.map(d=>d.flux));
+  const range = Math.max(maxFlux-minFlux, 0.0001);
+  const yMin = minFlux - range*0.1;
+  const yMax = maxFlux + range*0.1;
+  const yRange = yMax-yMin;
+
+  const tMin = lightCurveData[0].t;
+  const tMax = lightCurveData[lightCurveData.length-1].t;
+  const tRange = tMax-tMin || 1;
+
+  // Grid
+  ctx.strokeStyle='#1a2a40';
+  ctx.lineWidth=0.5;
+  for(let i=0;i<=4;i++){
+    const y = margin.t + (i/4)*ph;
+    ctx.beginPath();
+    ctx.moveTo(margin.l, y);
+    ctx.lineTo(W-margin.r, y);
+    ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle='#2a3a50';
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(margin.l, margin.t);
+  ctx.lineTo(margin.l, H-margin.b);
+  ctx.lineTo(W-margin.r, H-margin.b);
+  ctx.stroke();
+
+  // Labels
+  ctx.fillStyle='#64748b';
+  ctx.font='10px sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('Time (days)', W/2, H-4);
+  ctx.save();
+  ctx.translate(12, H/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText('Relative Flux',0,0);
+  ctx.restore();
+
+  // Y-axis labels
+  ctx.font='8px monospace';
+  ctx.textAlign='right';
+  for(let i=0;i<=4;i++){
+    const v = yMax - (i/4)*yRange;
+    const y = margin.t + (i/4)*ph;
+    ctx.fillText(v.toFixed(4), margin.l-4, y+3);
+  }
+
+  // X-axis labels
+  ctx.textAlign='center';
+  for(let i=0;i<=5;i++){
+    const t = tMin + (i/5)*tRange;
+    const x = margin.l + (i/5)*pw;
+    ctx.fillText(t.toFixed(1), x, H-margin.b+14);
+  }
+
+  // Plot data
+  if(multiMode) {
+    // Individual planet contributions
+    const colors = ['#3b82f680','#22c55e80','#f59e0b80'];
+    // Just plot combined
+  }
+
+  ctx.strokeStyle='#0ea5e9';
+  ctx.lineWidth=1.5;
+  ctx.beginPath();
+  lightCurveData.forEach((d,i)=>{
+    const x = margin.l + ((d.t-tMin)/tRange)*pw;
+    const y = margin.t + ((yMax-d.flux)/yRange)*ph;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // Transit depth annotation
+  if(minFlux < 0.9999) {
+    const depthPct = (1-minFlux)*100;
+    const y1 = margin.t + ((yMax-1.0)/yRange)*ph;
+    const y2 = margin.t + ((yMax-minFlux)/yRange)*ph;
+
+    ctx.strokeStyle='#f87171';
+    ctx.lineWidth=1;
+    ctx.setLineDash([3,3]);
+    ctx.beginPath();
+    ctx.moveTo(margin.l, y1);
+    ctx.lineTo(W-margin.r, y1);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Depth arrow
+    const arrowX = W-margin.r-40;
+    if(y2 > y1+5) {
+      ctx.strokeStyle='#f87171';
+      ctx.lineWidth=1;
+      ctx.beginPath();
+      ctx.moveTo(arrowX, y1);
+      ctx.lineTo(arrowX, y2);
+      ctx.stroke();
+
+      ctx.fillStyle='#f87171';
+      ctx.font='9px monospace';
+      ctx.textAlign='left';
+      ctx.fillText(`${depthPct.toFixed(depthPct<0.01?4:3)}%`, arrowX+4, (y1+y2)/2+3);
+    }
+  }
+
+  // 1.0 reference label
+  ctx.fillStyle='#475569';
+  ctx.font='8px monospace';
+  ctx.textAlign='right';
+}
+
+function mainLoop() {
+  if(!paused) {
+    const dt = timeScale * 0.02; // days per frame
+    time += dt;
+
+    // Compute flux
+    let flux = 1.0;
+    if(multiMode && planets.length > 0) {
+      planets.forEach(p=>{
+        const f = transitFlux(p.rp, p.period, p.inc, params.rs, time - p.phase*p.period/(2*Math.PI));
+        flux *= f;
+      });
+    } else {
+      flux = transitFlux(params.rp, params.period, params.inc, params.rs, time);
+    }
+
+    // Add noise
+    if(params.noise) {
+      flux += (Math.random()-0.5) * 2 / params.snr;
+    }
+
+    lightCurveData.push({t: time, flux});
+    if(lightCurveData.length > LC_MAX) lightCurveData.shift();
+  }
+
+  renderOrbit();
+  renderLightCurve();
+  computeDerived();
+  requestAnimationFrame(mainLoop);
+}
+
+computeDerived();
+mainLoop();
+</script>
+</body>
+</html>

@@ -1,6 +1,42 @@
 {
   "robots": [
     {
+      "id": "exoplanet",
+      "name": "Exoplanet Transit",
+      "description": "Detect exoplanets from light curve dips. Adjustable planet size/period/inclination. Habitable zone check. TRAPPIST-1 preset.",
+      "storeType": "behavior",
+      "category": "discovery",
+      "icon": "\ud83e\ude90",
+      "iconBg": "#0ea5e9",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
+      "id": "mars-edl",
+      "name": "Mars EDL",
+      "description": "7 minutes of terror \u2014 atmospheric entry, parachute, powered descent, sky crane. Entry angle controls failure modes.",
+      "storeType": "behavior",
+      "category": "mission",
+      "icon": "\ud83d\udd25",
+      "iconBg": "#ef4444",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
+      "id": "attitude-control",
+      "name": "Attitude Control",
+      "description": "3D wireframe spacecraft with reaction wheels. 6 modes",
+      "storeType": " manual, rate damping, sun-pointing, detumble. Quaternion dynamics.",
+      "category": "behavior",
+      "icon": "control",
+      "iconBg": "\ud83d\udef8:#0ea5e9",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
       "id": "solar-system",
       "name": "Solar System",
       "description": "All 8 planets with real Keplerian orbits. Kepler equation solver. Asteroid belt, dwarf planets, Saturn rings. NASA data.",
