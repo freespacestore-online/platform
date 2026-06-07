@@ -1,6 +1,18 @@
 {
   "robots": [
     {
+      "id": "mission-pipeline",
+      "name": "Mission Planning Pipeline",
+      "description": "Chain",
+      "storeType": " rocket design \u2192 Hohmann transfer \u2192 animated orbital insertion. Full mission report.",
+      "category": "behavior",
+      "icon": "pipelines",
+      "iconBg": "\ud83c\udfaf:#0ea5e9",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
       "id": "exoplanet",
       "name": "Exoplanet Transit",
       "description": "Detect exoplanets from light curve dips. Adjustable planet size/period/inclination. Habitable zone check. TRAPPIST-1 preset.",
@@ -200,6 +212,50 @@
       "category": "mission",
       "icon": "\ud83d\uddfa\ufe0f",
       "iconBg": "#0ea5e9",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
+      "id": "gravity-assist-planner",
+      "name": "Gravity Assist Planner",
+      "description": "Simulate gravity slingshots around planets. Pick departure, flyby, destination. See delta-v savings vs direct transfer.",
+      "category": "maneuvers",
+      "icon": "🪃",
+      "iconBg": "#3b82f6",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
+      "id": "constellation-designer",
+      "name": "Satellite Constellation",
+      "description": "Design Walker, sun-sync, polar constellations. 3D globe with orbiting satellites. Ground coverage and revisit times.",
+      "category": "orbits",
+      "icon": "🛰️",
+      "iconBg": "#3b82f6",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
+      "id": "reentry-sim",
+      "name": "Reentry Simulator",
+      "description": "Heat shield physics: ablative vs radiative. Simulate g-forces, temperature, altitude. Capsule, shuttle, skip profiles.",
+      "category": "physics",
+      "icon": "🔥",
+      "iconBg": "#ef4444",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
+      "id": "rocket-staging",
+      "name": "Rocket Staging Optimizer",
+      "description": "Design multi-stage rockets. Pick engines, propellant, payload. Optimize stage ratios. Tsiolkovsky equation per stage.",
+      "category": "propulsion",
+      "icon": "🚀",
+      "iconBg": "#f97316",
       "creator": "serge-ivo",
       "creatorName": "Serge",
       "creatorAvatar": "https://github.com/serge-ivo.png?size=96"

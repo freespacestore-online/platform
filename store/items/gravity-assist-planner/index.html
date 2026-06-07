@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gravity Assist Planner - FreeSpaceStore</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#fafafa;font-family:"Manrope",system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+a{color:#3b82f6;text-decoration:none}
+.top-bar{padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #1a1a1a}
+.top-bar a{font-size:.82rem;font-weight:600}
+h1{text-align:center;color:#3b82f6;margin:14px 0 4px;font-size:1.35rem}
+.desc{text-align:center;color:#737373;font-size:.82rem;margin-bottom:10px;max-width:700px;margin-left:auto;margin-right:auto}
+.main{display:flex;gap:14px;padding:0 16px;flex:1;max-width:1200px;margin:0 auto;width:100%}
+.left{flex:1;min-width:0}
+.right{width:300px;flex-shrink:0}
+canvas{width:100%;background:#080810;border:1px solid #222;border-radius:8px}
+.panel{background:#141414;border:1px solid #1a1a1a;border-radius:8px;padding:12px;margin-bottom:10px}
+.panel h3{font-size:.82rem;color:#3b82f6;margin-bottom:8px}
+label{font-size:.75rem;color:#aaa;display:block;margin-bottom:4px}
+select,input[type=range]{background:#222;color:#fafafa;border:1px solid #333;padding:5px 8px;border-radius:4px;font-size:.78rem;width:100%;font-family:inherit;margin-bottom:8px}
+input[type=range]{padding:0;accent-color:#3b82f6}
+button{background:#3b82f6;color:#fafafa;border:none;padding:6px 14px;border-radius:4px;font-size:.78rem;cursor:pointer;font-weight:600;font-family:inherit}
+button:hover{background:#2563eb}
+button.secondary{background:#222;color:#fafafa;border:1px solid #333}
+button.secondary:hover{background:#333}
+.btn-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.stat-box{background:#1a1a1a;border-radius:6px;padding:8px;text-align:center}
+.stat-val{font-size:1rem;font-weight:700;color:#3b82f6}
+.stat-label{font-size:.65rem;color:#737373;margin-top:2px}
+footer{border-top:1px solid #1a1a1a;padding:12px;text-align:center;font-size:.7rem;color:#404040;margin-top:auto}
+@media(max-width:800px){.main{flex-direction:column}.right{width:100%}}
+</style>
+</head>
+<body>
+<div class="top-bar"><a href="/">&#8592; FreeSpaceStore</a></div>
+<h1>Gravity Assist Planner</h1>
+<p class="desc">Simulate gravity slingshots around planets. Compare delta-v savings vs direct transfer.</p>
+<div class="main">
+<div class="left">
+ <canvas id="c" width="800" height="520"></canvas>
+</div>
+<div class="right">
+ <div class="panel">
+  <h3>Mission Setup</h3>
+  <label>Departure</label>
+  <select id="from">
+   <option value="earth" selected>Earth</option>
+   <option value="mars">Mars</option>
+   <option value="venus">Venus</option>
+  </select>
+  <label>Flyby Planet</label>
+  <select id="flyby">
+   <option value="venus">Venus</option>
+   <option value="mars">Mars</option>
+   <option value="jupiter" selected>Jupiter</option>
+   <option value="saturn">Saturn</option>
+  </select>
+  <label>Destination</label>
+  <select id="dest">
+   <option value="mars">Mars</option>
+   <option value="jupiter">Jupiter</option>
+   <option value="saturn" selected>Saturn</option>
+   <option value="neptune">Neptune</option>
+  </select>
+  <label>Approach Angle: <span id="angleV">45</span>deg</label>
+  <input type="range" id="angle" min="10" max="80" value="45">
+  <label>Probe Speed: <span id="speedV">5</span> km/s</label>
+  <input type="range" id="speed" min="2" max="15" step="0.5" value="5">
+  <div class="btn-row" style="margin-top:8px">
+   <button id="launch">Launch</button>
+   <button class="secondary" id="reset">Reset</button>
+  </div>
+  <div class="btn-row">
+   <button class="secondary" id="voyager">Voyager 2 Path</button>
+  </div>
+ </div>
+ <div class="panel">
+  <h3>Mission Results</h3>
+  <div class="stats-grid">
+   <div class="stat-box"><div class="stat-val" id="dv1">-</div><div class="stat-label">Direct dv (km/s)</div></div>
+   <div class="stat-box"><div class="stat-val" id="dv2">-</div><div class="stat-label">Assist dv (km/s)</div></div>
+   <div class="stat-box"><div class="stat-val" id="saved">-</div><div class="stat-label">dv Saved</div></div>
+   <div class="stat-box"><div class="stat-val" id="vgain">-</div><div class="stat-label">Velocity Gain</div></div>
+  </div>
+ </div>
+ <div class="panel">
+  <h3>How It Works</h3>
+  <div style="font-size:.72rem;color:#aaa;line-height:1.5">
+   A spacecraft steals orbital energy from a planet by swinging behind it. The planet barely notices, but the probe can gain or lose significant velocity. The trajectory bends due to gravity, like a ball bouncing off a moving wall.
+  </div>
+ </div>
+</div>
+</div>
+<footer><a href="/">FreeSpaceStore</a></footer>
+
+<script>
+const C=document.getElementById('c'),ctx=C.getContext('2d');
+const W=800,H=520;
+const CX=W/2,CY=H/2;
+
+const PLANETS={
+  sun:{name:'Sun',r:20,orbR:0,color:'#f59e0b',mass:1e6,speed:0},
+  venus:{name:'Venus',r:7,orbR:90,color:'#f97316',mass:500,speed:0.012},
+  earth:{name:'Earth',r:8,orbR:130,color:'#3b82f6',mass:600,speed:0.01},
+  mars:{name:'Mars',r:6,orbR:175,color:'#ef4444',mass:400,speed:0.008},
+  jupiter:{name:'Jupiter',r:14,orbR:240,color:'#d97706',mass:3000,speed:0.004},
+  saturn:{name:'Saturn',r:12,orbR:310,color:'#eab308',mass:2500,speed:0.003},
+  neptune:{name:'Neptune',r:9,orbR:380,color:'#2563eb',mass:1500,speed:0.002},
+};
+
+let planets={};
+let probes=[];
+let t=0;
+let directTrail=[],assistTrail=[];
+
+function initPlanets(){
+  planets={};
+  for(const[k,p] of Object.entries(PLANETS)){
+    planets[k]={...p,angle:Math.random()*Math.PI*2,key:k};
+  }
+}
+
+function planetPos(p){
+  if(p.orbR===0) return{x:CX,y:CY};
+  return{x:CX+Math.cos(p.angle)*p.orbR,y:CY+Math.sin(p.angle)*p.orbR};
+}
+
+function launch(){
+  const fromKey=document.getElementById('from').value;
+  const flybyKey=document.getElementById('flyby').value;
+  const destKey=document.getElementById('dest').value;
+  const approachAngle=(+document.getElementById('angle').value)*Math.PI/180;
+  const probeSpeed=+document.getElementById('speed').value;
+
+  const fp=planets[fromKey];
+  const pos=planetPos(fp);
+  // Launch toward flyby planet
+  const fb=planets[flybyKey];
+  const fbPos=planetPos(fb);
+  const dx=fbPos.x-pos.x,dy=fbPos.y-pos.y;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  const vx=dx/dist*probeSpeed;
+  const vy=dy/dist*probeSpeed;
+
+  probes=[{x:pos.x,y:pos.y,vx,vy,trail:[],active:true,color:'#22c55e',name:'Assist'}];
+  assistTrail=[];directTrail=[];
+
+  // Also compute direct transfer
+  const dp=planets[destKey];
+  const dpPos=planetPos(dp);
+  const ddx=dpPos.x-pos.x,ddy=dpPos.y-pos.y;
+  const ddist=Math.sqrt(ddx*ddx+ddy*ddy);
+  const dvDirect=Math.sqrt(2*PLANETS.sun.mass/PLANETS[fromKey].orbR)*(Math.sqrt(2*PLANETS[destKey].orbR/(PLANETS[fromKey].orbR+PLANETS[destKey].orbR))-1);
+  const dvAssist=probeSpeed*0.6; // simplified
+
+  document.getElementById('dv1').textContent=Math.abs(dvDirect*3).toFixed(1);
+  document.getElementById('dv2').textContent=Math.abs(dvAssist*3).toFixed(1);
+  document.getElementById('saved').textContent=((1-dvAssist/Math.abs(dvDirect))*100).toFixed(0)+'%';
+  document.getElementById('vgain').textContent='+'+((probeSpeed*0.4)*3).toFixed(1)+' km/s';
+}
+
+function step(){
+  t+=0.016;
+  // Move planets
+  for(const p of Object.values(planets)){
+    if(p.orbR>0) p.angle+=p.speed;
+  }
+  // Move probes
+  for(const pr of probes){
+    if(!pr.active) continue;
+    // Gravity from sun
+    let ax=0,ay=0;
+    const sunDx=CX-pr.x,sunDy=CY-pr.y;
+    const sunDist=Math.max(30,Math.sqrt(sunDx*sunDx+sunDy*sunDy));
+    const sunF=PLANETS.sun.mass/(sunDist*sunDist);
+    ax+=sunDx/sunDist*sunF*0.001;
+    ay+=sunDy/sunDist*sunF*0.001;
+
+    // Gravity from each planet
+    for(const p of Object.values(planets)){
+      if(p.orbR===0) continue;
+      const pos=planetPos(p);
+      const dx=pos.x-pr.x,dy=pos.y-pr.y;
+      const dist=Math.max(p.r+5,Math.sqrt(dx*dx+dy*dy));
+      const f=p.mass/(dist*dist);
+      ax+=dx/dist*f*0.0004;
+      ay+=dy/dist*f*0.0004;
+
+      // Check close approach for velocity boost visualization
+      if(dist<p.r+20&&dist>p.r+5){
+        // Slingshot effect: add velocity in direction of planet's orbital motion
+        const tangX=-Math.sin(p.angle)*p.speed*p.orbR*0.02;
+        const tangY=Math.cos(p.angle)*p.speed*p.orbR*0.02;
+        pr.vx+=tangX*0.1;pr.vy+=tangY*0.1;
+      }
+    }
+    pr.vx+=ax;pr.vy+=ay;
+    pr.x+=pr.vx;pr.y+=pr.vy;
+    pr.trail.push({x:pr.x,y:pr.y});
+    if(pr.trail.length>2000) pr.trail.shift();
+    // Deactivate if off screen
+    if(pr.x<-50||pr.x>W+50||pr.y<-50||pr.y>H+50) pr.active=false;
+  }
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+
+  // Starfield
+  ctx.fillStyle='#111';
+  for(let i=0;i<60;i++){
+    const sx=(i*137.5)%W,sy=(i*97.3)%H;
+    ctx.fillRect(sx,sy,1,1);
+  }
+
+  // Orbits
+  for(const p of Object.values(planets)){
+    if(p.orbR===0) continue;
+    ctx.strokeStyle='#1a1a1a';ctx.lineWidth=1;
+    ctx.beginPath();ctx.arc(CX,CY,p.orbR,0,Math.PI*2);ctx.stroke();
+  }
+
+  // Planets
+  for(const p of Object.values(planets)){
+    const pos=planetPos(p);
+    ctx.beginPath();ctx.arc(pos.x,pos.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=p.color;ctx.fill();
+    ctx.fillStyle='#aaa';ctx.font='10px Manrope,system-ui';ctx.textAlign='center';
+    ctx.fillText(p.name,pos.x,pos.y+p.r+12);ctx.textAlign='left';
+  }
+
+  // Probe trails and probes
+  for(const pr of probes){
+    if(pr.trail.length>1){
+      ctx.strokeStyle=pr.color+'88';ctx.lineWidth=1.5;ctx.beginPath();
+      pr.trail.forEach((pt,i)=>{if(i===0)ctx.moveTo(pt.x,pt.y);else ctx.lineTo(pt.x,pt.y);});
+      ctx.stroke();
+    }
+    if(pr.active){
+      ctx.beginPath();ctx.arc(pr.x,pr.y,4,0,Math.PI*2);
+      ctx.fillStyle=pr.color;ctx.fill();
+      // Velocity vector
+      ctx.strokeStyle=pr.color;ctx.lineWidth=1;ctx.beginPath();
+      ctx.moveTo(pr.x,pr.y);
+      ctx.lineTo(pr.x+pr.vx*8,pr.y+pr.vy*8);ctx.stroke();
+      // Arrowhead
+      const angle=Math.atan2(pr.vy,pr.vx);
+      const ax2=pr.x+pr.vx*8,ay2=pr.y+pr.vy*8;
+      ctx.beginPath();ctx.moveTo(ax2,ay2);
+      ctx.lineTo(ax2-6*Math.cos(angle-0.4),ay2-6*Math.sin(angle-0.4));
+      ctx.lineTo(ax2-6*Math.cos(angle+0.4),ay2-6*Math.sin(angle+0.4));
+      ctx.closePath();ctx.fillStyle=pr.color;ctx.fill();
+    }
+  }
+
+  // Speed readout
+  if(probes.length>0&&probes[0].active){
+    const spd=Math.sqrt(probes[0].vx*probes[0].vx+probes[0].vy*probes[0].vy);
+    ctx.fillStyle='#fafafa';ctx.font='12px Manrope,system-ui';
+    ctx.fillText(`Speed: ${(spd*3).toFixed(1)} km/s`,20,H-20);
+  }
+
+  step();
+  requestAnimationFrame(draw);
+}
+
+document.getElementById('launch').addEventListener('click',launch);
+document.getElementById('reset').addEventListener('click',()=>{probes=[];initPlanets();
+  document.getElementById('dv1').textContent='-';document.getElementById('dv2').textContent='-';
+  document.getElementById('saved').textContent='-';document.getElementById('vgain').textContent='-';
+});
+
+document.getElementById('voyager').addEventListener('click',()=>{
+  document.getElementById('from').value='earth';
+  document.getElementById('flyby').value='jupiter';
+  document.getElementById('dest').value='neptune';
+  document.getElementById('angle').value=35;document.getElementById('angleV').textContent='35';
+  document.getElementById('speed').value=8;document.getElementById('speedV').textContent='8';
+  // Position Jupiter favorably
+  planets.jupiter.angle=-0.3;
+  launch();
+});
+
+function bindSlider(id,sp){document.getElementById(id).addEventListener('input',e=>{document.getElementById(sp).textContent=e.target.value;});}
+bindSlider('angle','angleV');bindSlider('speed','speedV');
+
+initPlanets();draw();
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

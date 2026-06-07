@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atmospheric Reentry Simulator - FreeSpaceStore</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#fafafa;font-family:"Manrope",system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+a{color:#3b82f6;text-decoration:none}
+.top-bar{padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #1a1a1a}
+.top-bar a{font-size:.82rem;font-weight:600}
+h1{text-align:center;color:#3b82f6;margin:14px 0 4px;font-size:1.35rem}
+.desc{text-align:center;color:#737373;font-size:.82rem;margin-bottom:10px;max-width:700px;margin-left:auto;margin-right:auto}
+.main{display:flex;gap:14px;padding:0 16px;flex:1;max-width:1200px;margin:0 auto;width:100%}
+.left{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.right{width:300px;flex-shrink:0}
+canvas{width:100%;background:#111;border:1px solid #222;border-radius:8px}
+.panel{background:#141414;border:1px solid #1a1a1a;border-radius:8px;padding:12px;margin-bottom:10px}
+.panel h3{font-size:.82rem;color:#3b82f6;margin-bottom:8px}
+label{font-size:.75rem;color:#aaa;display:block;margin-bottom:4px}
+select,input[type=range]{background:#222;color:#fafafa;border:1px solid #333;padding:5px 8px;border-radius:4px;font-size:.78rem;width:100%;font-family:inherit;margin-bottom:8px}
+input[type=range]{padding:0;accent-color:#3b82f6}
+button{background:#3b82f6;color:#fafafa;border:none;padding:6px 14px;border-radius:4px;font-size:.78rem;cursor:pointer;font-weight:600;font-family:inherit}
+button:hover{background:#2563eb}
+button.secondary{background:#222;color:#fafafa;border:1px solid #333}
+button.secondary:hover{background:#333}
+.btn-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.canvas-label{font-size:.72rem;color:#737373;margin-bottom:2px;font-weight:600}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.stat-box{background:#1a1a1a;border-radius:6px;padding:8px;text-align:center}
+.stat-val{font-size:1rem;font-weight:700;color:#3b82f6}
+.stat-val.danger{color:#ef4444}
+.stat-label{font-size:.65rem;color:#737373;margin-top:2px}
+footer{border-top:1px solid #1a1a1a;padding:12px;text-align:center;font-size:.7rem;color:#404040;margin-top:auto}
+@media(max-width:800px){.main{flex-direction:column}.right{width:100%}}
+</style>
+</head>
+<body>
+<div class="top-bar"><a href="/">&#8592; FreeSpaceStore</a></div>
+<h1>Atmospheric Reentry Simulator</h1>
+<p class="desc">Simulate heat shield physics, g-forces, temperature, and altitude during atmospheric reentry</p>
+<div class="main">
+<div class="left">
+ <div class="canvas-label">Reentry Visualization</div>
+ <canvas id="cVis" width="800" height="240"></canvas>
+ <div class="canvas-label">Altitude / Velocity / Temperature / G-Force Charts</div>
+ <canvas id="cChart" width="800" height="280"></canvas>
+</div>
+<div class="right">
+ <div class="panel">
+  <h3>Vehicle Profile</h3>
+  <label>Vehicle Type</label>
+  <select id="vehicle">
+   <option value="capsule" selected>Capsule (Apollo)</option>
+   <option value="shuttle">Space Shuttle</option>
+   <option value="skip">Skip Reentry (Shenzhou)</option>
+  </select>
+  <label>Heat Shield</label>
+  <select id="shield">
+   <option value="ablative" selected>Ablative (PICA-X)</option>
+   <option value="radiative">Radiative (Ceramic Tiles)</option>
+  </select>
+  <label>Entry Angle: <span id="entryV">-6</span>deg</label>
+  <input type="range" id="entry" min="-12" max="-1" step="0.5" value="-6">
+  <label>Entry Velocity: <span id="velV">7.8</span> km/s</label>
+  <input type="range" id="vel" min="5" max="12" step="0.1" value="7.8">
+  <div class="btn-row" style="margin-top:8px">
+   <button id="start">Start Reentry</button>
+   <button class="secondary" id="reset">Reset</button>
+  </div>
+ </div>
+ <div class="panel">
+  <h3>Live Telemetry</h3>
+  <div class="stats-grid">
+   <div class="stat-box"><div class="stat-val" id="tAlt">120.0</div><div class="stat-label">Altitude (km)</div></div>
+   <div class="stat-box"><div class="stat-val" id="tVel">7.8</div><div class="stat-label">Velocity (km/s)</div></div>
+   <div class="stat-box"><div class="stat-val" id="tTemp">20</div><div class="stat-label">Shield Temp (C)</div></div>
+   <div class="stat-box"><div class="stat-val" id="tG">0.0</div><div class="stat-label">G-Force</div></div>
+   <div class="stat-box"><div class="stat-val" id="tMach">-</div><div class="stat-label">Mach Number</div></div>
+   <div class="stat-box"><div class="stat-val" id="tStatus">Ready</div><div class="stat-label">Status</div></div>
+  </div>
+ </div>
+ <div class="panel">
+  <h3>Chart Legend</h3>
+  <div style="font-size:.72rem;line-height:1.8">
+   <span style="color:#3b82f6">--- Altitude (km)</span><br>
+   <span style="color:#22c55e">--- Velocity (km/s)</span><br>
+   <span style="color:#ef4444">--- Temperature (C)</span><br>
+   <span style="color:#f59e0b">--- G-Force</span>
+  </div>
+ </div>
+</div>
+</div>
+<footer><a href="/">FreeSpaceStore</a></footer>
+
+<script>
+const cVis=document.getElementById('cVis'),ctxV=cVis.getContext('2d');
+const cChart=document.getElementById('cChart'),ctxC=cChart.getContext('2d');
+const VW=800,VH=240,CW=800,CH=280;
+
+const VEHICLES={
+  capsule:{Cd:1.2,A:12,mass:5500,Ld:0.3,name:'Capsule'},
+  shuttle:{Cd:0.8,A:250,mass:78000,Ld:1.1,name:'Shuttle'},
+  skip:{Cd:1.0,A:10,mass:3800,Ld:0.5,name:'Skip Reentry'},
+};
+
+let sim={alt:120,vel:7.8,angle:-6,temp:20,gforce:0,time:0};
+let history=[];
+let running=false,animId=null;
+let vehicle='capsule',shield='ablative';
+
+function bindSlider(id,sp){document.getElementById(id).addEventListener('input',e=>{document.getElementById(sp).textContent=e.target.value;});}
+bindSlider('entry','entryV');bindSlider('vel','velV');
+
+function density(alt){
+  // Exponential atmosphere model
+  return 1.225*Math.exp(-alt/8.5);
+}
+
+function resetSim(){
+  running=false;if(animId)cancelAnimationFrame(animId);
+  sim={alt:120,vel:+document.getElementById('vel').value,angle:+document.getElementById('entry').value,temp:20,gforce:0,time:0};
+  history=[];
+  vehicle=document.getElementById('vehicle').value;
+  shield=document.getElementById('shield').value;
+  updateTelemetry();drawVis();drawChart();
+}
+
+function stepSim(){
+  const v=VEHICLES[vehicle];
+  const dt=0.1; // seconds
+  sim.time+=dt;
+
+  const rho=density(sim.alt);
+  const velMs=sim.vel*1000;
+  const angleRad=sim.angle*Math.PI/180;
+
+  // Drag force
+  const drag=0.5*rho*velMs*velMs*v.Cd*v.A;
+  // Lift force
+  const lift=0.5*rho*velMs*velMs*v.Cd*v.A*v.Ld;
+  // Deceleration
+  const decel=drag/v.mass;
+  sim.gforce=decel/9.81;
+
+  // Update velocity
+  sim.vel-=decel*dt/1000;
+  if(sim.vel<0) sim.vel=0;
+
+  // Update altitude
+  sim.alt+=Math.sin(angleRad)*sim.vel*dt;
+
+  // Skip reentry: angle changes based on lift
+  if(vehicle==='skip'&&sim.alt<80&&sim.alt>40){
+    sim.angle+=0.005*v.Ld*(1+Math.sin(sim.time*0.1));
+    if(sim.angle>2) sim.angle=2;
+  }
+
+  // Gravity pulls down
+  sim.alt-=0.0001*dt*9.81;
+
+  // Heating (Sutton-Graves approximation simplified)
+  const heatFlux=1.83e-4*Math.sqrt(rho/0.5)*Math.pow(velMs,3);
+  const heatRate=heatFlux*dt/1e6;
+
+  if(shield==='ablative'){
+    sim.temp+=heatRate*0.3;// ablative absorbs more
+    sim.temp-=dt*0.8;// ablation cooling
+  }else{
+    sim.temp+=heatRate*0.6;// radiative less efficient at peak
+    sim.temp-=dt*Math.pow(sim.temp/1000,4)*0.01;// radiative cooling
+  }
+  if(sim.temp<20) sim.temp=20;
+
+  // Mach number
+  const speedOfSound=340-sim.alt*2;
+  const mach=velMs/Math.max(speedOfSound,200);
+
+  history.push({...sim,mach});
+
+  updateTelemetry();
+
+  if(sim.alt<=0){
+    sim.alt=0;running=false;
+    document.getElementById('tStatus').textContent=sim.vel<0.3?'Landed!':'Impact!';
+    document.getElementById('tStatus').parentElement.querySelector('.stat-val').className=sim.vel<0.3?'stat-val':'stat-val danger';
+    return false;
+  }
+  if(sim.alt>200){running=false;document.getElementById('tStatus').textContent='Bounced off!';return false;}
+  return true;
+}
+
+function updateTelemetry(){
+  document.getElementById('tAlt').textContent=sim.alt.toFixed(1);
+  document.getElementById('tVel').textContent=sim.vel.toFixed(1);
+  document.getElementById('tTemp').textContent=Math.round(sim.temp);
+  const gEl=document.getElementById('tG');
+  gEl.textContent=sim.gforce.toFixed(1);
+  gEl.className=sim.gforce>8?'stat-val danger':'stat-val';
+  const last=history[history.length-1];
+  document.getElementById('tMach').textContent=last?last.mach.toFixed(1):'-';
+  if(running) document.getElementById('tStatus').textContent='In progress';
+}
+
+function drawVis(){
+  ctxV.clearRect(0,0,VW,VH);
+
+  // Sky gradient based on altitude
+  const skyFrac=Math.min(1,sim.alt/120);
+  const grad=ctxV.createLinearGradient(0,0,0,VH);
+  grad.addColorStop(0,`rgb(${Math.round(5+skyFrac*5)},${Math.round(5+skyFrac*5)},${Math.round(20+skyFrac*20)})`);
+  grad.addColorStop(1,`rgb(${Math.round(30-skyFrac*20)},${Math.round(60-skyFrac*40)},${Math.round(100-skyFrac*60)})`);
+  ctxV.fillStyle=grad;ctxV.fillRect(0,0,VW,VH);
+
+  // Ground
+  const groundY=VH-20;
+  ctxV.fillStyle='#1a3a1a';ctxV.fillRect(0,groundY,VW,20);
+
+  // Atmosphere layers
+  const layers=[
+    {alt:100,name:'Karman Line',color:'#3b82f622'},
+    {alt:80,name:'Mesosphere',color:'#3b82f633'},
+    {alt:50,name:'Stratosphere',color:'#3b82f644'},
+    {alt:12,name:'Troposphere',color:'#3b82f655'},
+  ];
+  layers.forEach(l=>{
+    const y=groundY*(1-l.alt/130);
+    ctxV.strokeStyle=l.color;ctxV.setLineDash([4,4]);ctxV.lineWidth=1;
+    ctxV.beginPath();ctxV.moveTo(0,y);ctxV.lineTo(VW,y);ctxV.stroke();
+    ctxV.setLineDash([]);
+    ctxV.fillStyle='#3b82f644';ctxV.font='9px Manrope,system-ui';
+    ctxV.fillText(`${l.name} (${l.alt}km)`,VW-130,y-3);
+  });
+
+  // Vehicle
+  const vx=VW*0.3+sim.time*2;
+  const vy=groundY*(1-sim.alt/130);
+  const clampedVx=Math.min(vx,VW-50);
+
+  // Heat glow
+  if(sim.temp>200){
+    const glowR=Math.min(40,sim.temp/50);
+    const glowGrad=ctxV.createRadialGradient(clampedVx,vy,0,clampedVx,vy,glowR);
+    glowGrad.addColorStop(0,`rgba(255,${Math.max(0,200-sim.temp/10)},0,0.6)`);
+    glowGrad.addColorStop(1,'rgba(255,100,0,0)');
+    ctxV.fillStyle=glowGrad;ctxV.beginPath();ctxV.arc(clampedVx,vy,glowR,0,Math.PI*2);ctxV.fill();
+  }
+
+  // Plasma trail
+  if(sim.temp>500){
+    for(let i=0;i<8;i++){
+      const tx=clampedVx-10-Math.random()*30;
+      const ty=vy+Math.random()*10-5;
+      const tr=Math.random()*3+1;
+      ctxV.fillStyle=`rgba(255,${Math.round(100+Math.random()*100)},0,${0.3+Math.random()*0.3})`;
+      ctxV.beginPath();ctxV.arc(tx,ty,tr,0,Math.PI*2);ctxV.fill();
+    }
+  }
+
+  // Vehicle shape
+  ctxV.fillStyle=sim.temp>1000?'#ff6b35':'#aaa';
+  ctxV.beginPath();
+  if(vehicle==='shuttle'){
+    ctxV.moveTo(clampedVx+12,vy);ctxV.lineTo(clampedVx-8,vy-5);
+    ctxV.lineTo(clampedVx-12,vy-8);ctxV.lineTo(clampedVx-12,vy+3);
+    ctxV.lineTo(clampedVx-8,vy+5);
+  }else{
+    ctxV.arc(clampedVx,vy,6,0,Math.PI*2);
+  }
+  ctxV.closePath();ctxV.fill();
+
+  // Altitude text
+  ctxV.fillStyle='#fafafa';ctxV.font='12px Manrope,system-ui';
+  ctxV.fillText(`${sim.alt.toFixed(1)} km`,clampedVx+15,vy-5);
+}
+
+function drawChart(){
+  ctxC.clearRect(0,0,CW,CH);
+  ctxC.fillStyle='#0d0d0d';ctxC.fillRect(0,0,CW,CH);
+
+  if(history.length<2) return;
+
+  const margin={l:50,r:20,t:15,b:25};
+  const pw=CW-margin.l-margin.r,ph=CH-margin.t-margin.b;
+
+  // Grid
+  ctxC.strokeStyle='#1a1a1a';ctxC.lineWidth=0.5;
+  for(let i=0;i<=5;i++){
+    const y=margin.t+ph*i/5;
+    ctxC.beginPath();ctxC.moveTo(margin.l,y);ctxC.lineTo(CW-margin.r,y);ctxC.stroke();
+  }
+
+  const series=[
+    {key:'alt',max:130,color:'#3b82f6',label:'Alt'},
+    {key:'vel',max:12,color:'#22c55e',label:'Vel'},
+    {key:'temp',max:Math.max(2000,...history.map(h=>h.temp)),color:'#ef4444',label:'Temp'},
+    {key:'gforce',max:Math.max(12,...history.map(h=>h.gforce)),color:'#f59e0b',label:'G'},
+  ];
+
+  series.forEach(s=>{
+    ctxC.strokeStyle=s.color;ctxC.lineWidth=1.5;ctxC.beginPath();
+    history.forEach((h,i)=>{
+      const x=margin.l+i/history.length*pw;
+      const y=margin.t+ph*(1-h[s.key]/s.max);
+      if(i===0)ctxC.moveTo(x,y);else ctxC.lineTo(x,y);
+    });
+    ctxC.stroke();
+  });
+
+  // Time axis
+  ctxC.fillStyle='#555';ctxC.font='9px Manrope,system-ui';
+  ctxC.fillText('Time (s)',CW/2,CH-4);
+  const maxTime=history[history.length-1].time;
+  for(let i=0;i<=4;i++){
+    const x=margin.l+pw*i/4;
+    ctxC.fillText(Math.round(maxTime*i/4)+'s',x,CH-10);
+  }
+}
+
+function loop(){
+  if(!running) return;
+  for(let i=0;i<5;i++){
+    if(!stepSim()){drawVis();drawChart();return;}
+  }
+  drawVis();drawChart();
+  animId=requestAnimationFrame(loop);
+}
+
+document.getElementById('start').addEventListener('click',()=>{
+  resetSim();running=true;
+  document.getElementById('tStatus').textContent='In progress';
+  loop();
+});
+document.getElementById('reset').addEventListener('click',resetSim);
+
+resetSim();drawVis();drawChart();
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

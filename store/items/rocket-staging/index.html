@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rocket Staging Optimizer - FreeSpaceStore</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#fafafa;font-family:"Manrope",system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+a{color:#3b82f6;text-decoration:none}
+.top-bar{padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #1a1a1a}
+.top-bar a{font-size:.82rem;font-weight:600}
+h1{text-align:center;color:#3b82f6;margin:14px 0 4px;font-size:1.35rem}
+.desc{text-align:center;color:#737373;font-size:.82rem;margin-bottom:10px;max-width:700px;margin-left:auto;margin-right:auto}
+.main{display:flex;gap:14px;padding:0 16px;flex:1;max-width:1200px;margin:0 auto;width:100%}
+.left{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.right{width:320px;flex-shrink:0}
+canvas{width:100%;background:#111;border:1px solid #222;border-radius:8px}
+.panel{background:#141414;border:1px solid #1a1a1a;border-radius:8px;padding:12px;margin-bottom:10px}
+.panel h3{font-size:.82rem;color:#3b82f6;margin-bottom:8px}
+label{font-size:.75rem;color:#aaa;display:block;margin-bottom:4px}
+select,input[type=number],input[type=range]{background:#222;color:#fafafa;border:1px solid #333;padding:5px 8px;border-radius:4px;font-size:.78rem;width:100%;font-family:inherit;margin-bottom:8px}
+input[type=range]{padding:0;accent-color:#3b82f6}
+button{background:#3b82f6;color:#fafafa;border:none;padding:6px 14px;border-radius:4px;font-size:.78rem;cursor:pointer;font-weight:600;font-family:inherit}
+button:hover{background:#2563eb}
+button.secondary{background:#222;color:#fafafa;border:1px solid #333}
+button.secondary:hover{background:#333}
+.btn-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.canvas-label{font-size:.72rem;color:#737373;margin-bottom:2px;font-weight:600}
+.stage-row{background:#1a1a1a;border-radius:6px;padding:8px;margin-bottom:6px}
+.stage-row h4{font-size:.78rem;color:#3b82f6;margin-bottom:6px}
+.stage-row .fields{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.stage-row label{margin-bottom:2px;font-size:.7rem}
+.stage-row input,.stage-row select{margin-bottom:4px;font-size:.72rem;padding:3px 6px}
+.results{font-size:.78rem;color:#aaa;line-height:1.8}
+.results b{color:#3b82f6}
+.results .total{font-size:1rem;color:#22c55e;font-weight:700}
+footer{border-top:1px solid #1a1a1a;padding:12px;text-align:center;font-size:.7rem;color:#404040;margin-top:auto}
+@media(max-width:800px){.main{flex-direction:column}.right{width:100%}}
+</style>
+</head>
+<body>
+<div class="top-bar"><a href="/">&#8592; FreeSpaceStore</a></div>
+<h1>Rocket Staging Optimizer</h1>
+<p class="desc">Design multi-stage rockets. Optimize stage ratios for maximum delta-v with the Tsiolkovsky equation.</p>
+<div class="main">
+<div class="left">
+ <div class="canvas-label">Rocket Diagram & Delta-V Breakdown</div>
+ <canvas id="cRocket" width="800" height="300"></canvas>
+ <div class="canvas-label">Delta-V Comparison (1-stage vs 2-stage vs 3-stage)</div>
+ <canvas id="cCompare" width="800" height="220"></canvas>
+</div>
+<div class="right">
+ <div class="panel">
+  <h3>Payload</h3>
+  <label>Payload Mass (kg): <span id="payloadV">5000</span></label>
+  <input type="range" id="payload" min="100" max="50000" step="100" value="5000">
+  <label>Number of Stages</label>
+  <select id="nStages">
+   <option value="1">1 Stage</option>
+   <option value="2" selected>2 Stages</option>
+   <option value="3">3 Stages</option>
+  </select>
+ </div>
+
+ <div id="stageConfig"></div>
+
+ <div class="btn-row">
+  <button id="calc">Calculate</button>
+  <button class="secondary" id="optimize">Auto-Optimize</button>
+ </div>
+ <div class="btn-row">
+  <button class="secondary" id="saturn">Saturn V</button>
+  <button class="secondary" id="falcon">Falcon 9</button>
+  <button class="secondary" id="electron">Electron</button>
+ </div>
+
+ <div class="panel">
+  <h3>Results</h3>
+  <div class="results" id="results">Configure stages and click Calculate.</div>
+ </div>
+</div>
+</div>
+<footer><a href="/">FreeSpaceStore</a></footer>
+
+<script>
+const cR=document.getElementById('cRocket'),ctxR=cR.getContext('2d');
+const cC=document.getElementById('cCompare'),ctxC=cC.getContext('2d');
+const RW=800,RH=300,CmpW=800,CmpH=220;
+
+const ENGINES={
+  'Merlin 1D':{isp:282,thrust:845,mass:470},
+  'Raptor':{isp:350,thrust:2200,mass:1600},
+  'RS-25':{isp:452,thrust:2279,mass:3527},
+  'Rutherford':{isp:303,thrust:25,mass:35},
+  'RL-10':{isp:462,thrust:110,mass:168},
+  'RD-180':{isp:311,thrust:4152,mass:5480},
+  'J-2':{isp:421,thrust:1033,mass:1788},
+  'F-1':{isp:263,thrust:6770,mass:8400},
+};
+
+const PROPELLANTS={
+  'RP-1/LOX':{density:1020},
+  'LH2/LOX':{density:360},
+  'Methalox':{density:830},
+};
+
+let nStages=2;
+let payloadMass=5000;
+let stageData=[];
+
+function buildStageUI(){
+  nStages=+document.getElementById('nStages').value;
+  const container=document.getElementById('stageConfig');
+  const engOpts=Object.keys(ENGINES).map(e=>`<option value="${e}">${e}</option>`).join('');
+  const propOpts=Object.keys(PROPELLANTS).map(p=>`<option value="${p}">${p}</option>`).join('');
+
+  let html='';
+  const defaults=[
+    {engine:'Merlin 1D',prop:'RP-1/LOX',propMass:400000,structMass:25000,nEngines:9},
+    {engine:'Merlin 1D',prop:'RP-1/LOX',propMass:100000,structMass:4000,nEngines:1},
+    {engine:'RL-10',prop:'LH2/LOX',propMass:20000,structMass:2000,nEngines:1},
+  ];
+  for(let i=0;i<nStages;i++){
+    const d=defaults[i]||defaults[0];
+    html+=`<div class="stage-row"><h4>Stage ${i+1} ${i===0?'(Bottom)':i===nStages-1?'(Top)':''}</h4><div class="fields">
+      <div><label>Engine</label><select class="sEngine" data-i="${i}">${engOpts}</select></div>
+      <div><label>Propellant</label><select class="sProp" data-i="${i}">${propOpts}</select></div>
+      <div><label># Engines</label><input type="number" class="sNeng" data-i="${i}" value="${d.nEngines}" min="1" max="40"></div>
+      <div><label>Prop Mass (kg)</label><input type="number" class="sPropM" data-i="${i}" value="${d.propMass}" min="100"></div>
+      <div><label>Struct Mass (kg)</label><input type="number" class="sStructM" data-i="${i}" value="${d.structMass}" min="50"></div>
+    </div></div>`;
+  }
+  container.innerHTML=html;
+}
+
+function readStages(){
+  stageData=[];
+  for(let i=0;i<nStages;i++){
+    const engineName=document.querySelector(`.sEngine[data-i="${i}"]`).value;
+    const propName=document.querySelector(`.sProp[data-i="${i}"]`).value;
+    const nEng=+document.querySelector(`.sNeng[data-i="${i}"]`).value;
+    const propMass=+document.querySelector(`.sPropM[data-i="${i}"]`).value;
+    const structMass=+document.querySelector(`.sStructM[data-i="${i}"]`).value;
+    const eng=ENGINES[engineName];
+    const engineMass=eng.mass*nEng;
+    stageData.push({
+      engineName,propName,nEng,propMass,structMass,engineMass,
+      isp:eng.isp,thrust:eng.thrust*nEng,
+      dryMass:structMass+engineMass,
+    });
+  }
+}
+
+function calcDeltaV(){
+  readStages();
+  payloadMass=+document.getElementById('payload').value;
+  let results=[];
+  let totalDv=0;
+
+  // Stages fire from bottom (index 0) to top
+  // For stage i, payload = everything above it
+  for(let i=0;i<nStages;i++){
+    const stage=stageData[i];
+    // Mass above this stage
+    let upperMass=payloadMass;
+    for(let j=i+1;j<nStages;j++){
+      upperMass+=stageData[j].propMass+stageData[j].dryMass;
+    }
+    const m0=upperMass+stage.propMass+stage.dryMass;
+    const mf=upperMass+stage.dryMass;
+    const ve=stage.isp*9.81;
+    const dv=ve*Math.log(m0/mf);
+    const massRatio=m0/mf;
+    const burnTime=stage.propMass/(stage.thrust/(stage.isp*9.81));
+    results.push({stage:i+1,dv,massRatio,m0,mf,ve,burnTime,isp:stage.isp});
+    totalDv+=dv;
+  }
+
+  // Display results
+  let html='';
+  results.forEach(r=>{
+    html+=`<div>Stage ${r.stage}: dv = <b>${(r.dv/1000).toFixed(2)} km/s</b> | MR = ${r.massRatio.toFixed(2)} | Isp = ${r.isp}s | Burn = ${Math.round(r.burnTime)}s</div>`;
+    html+=`<div style="font-size:.68rem;color:#555;margin-bottom:4px">dv = ${r.isp} x 9.81 x ln(${Math.round(r.m0)}/${Math.round(r.mf)})</div>`;
+  });
+  html+=`<div class="total">Total dv: ${(totalDv/1000).toFixed(2)} km/s</div>`;
+
+  // Can we reach orbit?
+  const targets=[
+    {name:'LEO',dv:9400},{name:'GTO',dv:12000},{name:'Moon',dv:15500},{name:'Mars',dv:18000}
+  ];
+  html+='<div style="margin-top:6px;font-size:.72rem">';
+  targets.forEach(t=>{
+    const ok=totalDv>=t.dv;
+    html+=`<span style="color:${ok?'#22c55e':'#ef4444'}">${ok?'Y':'X'} ${t.name} (${(t.dv/1000).toFixed(1)} km/s) </span>`;
+  });
+  html+='</div>';
+  document.getElementById('results').innerHTML=html;
+
+  drawRocket(results);
+  drawComparison();
+}
+
+function drawRocket(results){
+  ctxR.clearRect(0,0,RW,RH);
+
+  // Draw rocket stages
+  const rocketX=150,rocketW=80;
+  let y=RH-40;
+
+  // Payload on top
+  const payloadH=20;
+  const totalH=RH-80;
+
+  // Scale stages by mass
+  const totalMass=stageData.reduce((s,st)=>s+st.propMass+st.dryMass,0)+payloadMass;
+
+  const COLORS=['#3b82f6','#22c55e','#a855f7'];
+
+  // Draw from bottom up
+  for(let i=0;i<nStages;i++){
+    const stage=stageData[i];
+    const mass=stage.propMass+stage.dryMass;
+    const h=Math.max(30,(mass/totalMass)*totalH);
+    const w=rocketW-i*15;
+    const x=rocketX+(rocketW-w)/2;
+    y-=h;
+
+    // Stage body
+    ctxR.fillStyle=COLORS[i]+'44';ctxR.strokeStyle=COLORS[i];ctxR.lineWidth=2;
+    ctxR.beginPath();ctxR.roundRect(x,y,w,h,4);ctxR.fill();ctxR.stroke();
+
+    // Label
+    ctxR.fillStyle=COLORS[i];ctxR.font='bold 11px Manrope,system-ui';ctx_textAlign(ctxR,x+w/2,y+h/2+4,`S${i+1}`);
+
+    // Engines at bottom
+    if(i===0){
+      const nEng=Math.min(stage.nEng,5);
+      for(let e=0;e<nEng;e++){
+        const ex=x+w*(e+0.5)/nEng-4;
+        ctxR.fillStyle='#f59e0b';ctxR.fillRect(ex,y+h,8,8);
+      }
+    }
+
+    // DV bar on right
+    if(results[i]){
+      const barX=rocketX+rocketW+40;
+      const barMaxW=300;
+      const barW=Math.min(barMaxW,(results[i].dv/20000)*barMaxW);
+      ctxR.fillStyle=COLORS[i]+'66';
+      ctxR.fillRect(barX,y+h/2-8,barW,16);
+      ctxR.fillStyle=COLORS[i];ctxR.font='11px Manrope,system-ui';
+      ctxR.fillText(`dv=${(results[i].dv/1000).toFixed(2)} km/s | Isp=${results[i].isp}s`,barX+barW+8,y+h/2+4);
+    }
+  }
+
+  // Payload fairing
+  y-=payloadH;
+  const pw=rocketW-nStages*15-10;
+  const px=rocketX+(rocketW-pw)/2;
+  ctxR.fillStyle='#f59e0b44';ctxR.strokeStyle='#f59e0b';ctxR.lineWidth=2;
+  ctxR.beginPath();
+  ctxR.moveTo(px,y+payloadH);ctxR.lineTo(px,y+6);
+  ctxR.quadraticCurveTo(px+pw/2,y-10,px+pw,y+6);
+  ctxR.lineTo(px+pw,y+payloadH);ctxR.closePath();
+  ctxR.fill();ctxR.stroke();
+  ctxR.fillStyle='#f59e0b';ctxR.font='10px Manrope,system-ui';
+  ctx_textAlign(ctxR,px+pw/2,y+payloadH-4,`${payloadMass}kg`);
+
+  // Tsiolkovsky equation
+  ctxR.fillStyle='#737373';ctxR.font='12px Manrope,system-ui';
+  ctxR.fillText('Tsiolkovsky: dv = Isp * g0 * ln(m0 / mf)',rocketX+rocketW+40,RH-15);
+}
+
+function ctx_textAlign(c,x,y,text){
+  c.textAlign='center';c.fillText(text,x,y);c.textAlign='left';
+}
+
+function drawComparison(){
+  ctxC.clearRect(0,0,CmpW,CmpH);
+  readStages();
+
+  const configs=[
+    {name:'1-Stage',stages:1},
+    {name:'2-Stage',stages:2},
+    {name:'3-Stage',stages:3},
+  ];
+
+  const margin={l:80,r:30,t:30,b:40};
+  const pw=CmpW-margin.l-margin.r;
+  const ph=CmpH-margin.t-margin.b;
+
+  // For each config, compute total dv using equal mass split
+  const totalPropMass=stageData.reduce((s,st)=>s+st.propMass,0);
+  const totalStructMass=stageData.reduce((s,st)=>s+st.dryMass,0);
+  const avgIsp=stageData.reduce((s,st)=>s+st.isp,0)/nStages;
+
+  const dvs=configs.map(cfg=>{
+    let dv=0;
+    const perStageProp=totalPropMass/cfg.stages;
+    const perStageStruct=totalStructMass/cfg.stages;
+    for(let i=0;i<cfg.stages;i++){
+      let upper=payloadMass;
+      for(let j=i+1;j<cfg.stages;j++) upper+=perStageProp+perStageStruct;
+      const m0=upper+perStageProp+perStageStruct;
+      const mf=upper+perStageStruct;
+      dv+=avgIsp*9.81*Math.log(m0/mf);
+    }
+    return{...cfg,dv};
+  });
+
+  const maxDv=Math.max(...dvs.map(d=>d.dv),1);
+
+  // Bars
+  const barH=(ph-20)/3;
+  const COLORS=['#ef4444','#3b82f6','#22c55e'];
+
+  dvs.forEach((d,i)=>{
+    const y=margin.t+i*(barH+10);
+    const w=d.dv/maxDv*pw;
+    ctxC.fillStyle=COLORS[i]+'44';
+    ctxC.beginPath();ctxC.roundRect(margin.l,y,w,barH-5,4);ctxC.fill();
+    ctxC.fillStyle=COLORS[i];
+    ctxC.beginPath();ctxC.roundRect(margin.l,y,4,barH-5,2);ctxC.fill();
+    ctxC.fillStyle=COLORS[i];ctxC.font='bold 12px Manrope,system-ui';
+    ctxC.fillText(`${(d.dv/1000).toFixed(2)} km/s`,margin.l+w+10,y+barH/2);
+    ctxC.fillStyle='#aaa';ctxC.font='11px Manrope,system-ui';ctxC.textAlign='right';
+    ctxC.fillText(d.name,margin.l-10,y+barH/2);ctxC.textAlign='left';
+  });
+
+  // Target lines
+  const targets=[{name:'LEO',dv:9400},{name:'GTO',dv:12000}];
+  targets.forEach(t=>{
+    const x=margin.l+t.dv/maxDv*pw;
+    if(x<CmpW-margin.r){
+      ctxC.strokeStyle='#f59e0b44';ctxC.setLineDash([4,4]);ctxC.lineWidth=1;
+      ctxC.beginPath();ctxC.moveTo(x,margin.t-5);ctxC.lineTo(x,CmpH-margin.b);ctxC.stroke();
+      ctxC.setLineDash([]);
+      ctxC.fillStyle='#f59e0b';ctxC.font='9px Manrope,system-ui';
+      ctxC.fillText(t.name,x+3,margin.t-2);
+    }
+  });
+}
+
+document.getElementById('nStages').addEventListener('change',buildStageUI);
+document.getElementById('payload').addEventListener('input',e=>{document.getElementById('payloadV').textContent=e.target.value;});
+
+document.getElementById('calc').addEventListener('click',calcDeltaV);
+document.getElementById('optimize').addEventListener('click',()=>{
+  // Simple optimization: redistribute mass for equal dv per stage
+  readStages();
+  const total=stageData.reduce((s,st)=>s+st.propMass,0);
+  for(let i=0;i<nStages;i++){
+    // More prop in lower stages
+    const frac=i===0?0.65:i===1?0.25:0.10;
+    document.querySelector(`.sPropM[data-i="${i}"]`).value=Math.round(total*frac);
+  }
+  calcDeltaV();
+});
+
+document.getElementById('saturn').addEventListener('click',()=>{
+  document.getElementById('nStages').value='3';buildStageUI();
+  document.getElementById('payload').value=45000;document.getElementById('payloadV').textContent='45000';
+  // S-IC
+  setStage(0,'F-1','RP-1/LOX',5,2160000,130000);
+  // S-II
+  setStage(1,'J-2','LH2/LOX',5,444000,36000);
+  // S-IVB
+  setStage(2,'J-2','LH2/LOX',1,107000,11000);
+  calcDeltaV();
+});
+
+document.getElementById('falcon').addEventListener('click',()=>{
+  document.getElementById('nStages').value='2';buildStageUI();
+  document.getElementById('payload').value=22800;document.getElementById('payloadV').textContent='22800';
+  setStage(0,'Merlin 1D','RP-1/LOX',9,411000,26000);
+  setStage(1,'Merlin 1D','RP-1/LOX',1,107000,4000);
+  calcDeltaV();
+});
+
+document.getElementById('electron').addEventListener('click',()=>{
+  document.getElementById('nStages').value='2';buildStageUI();
+  document.getElementById('payload').value=300;document.getElementById('payloadV').textContent='300';
+  setStage(0,'Rutherford','RP-1/LOX',9,9250,950);
+  setStage(1,'Rutherford','RP-1/LOX',1,2050,250);
+  calcDeltaV();
+});
+
+function setStage(i,engine,prop,nEng,propM,structM){
+  document.querySelector(`.sEngine[data-i="${i}"]`).value=engine;
+  document.querySelector(`.sProp[data-i="${i}"]`).value=prop;
+  document.querySelector(`.sNeng[data-i="${i}"]`).value=nEng;
+  document.querySelector(`.sPropM[data-i="${i}"]`).value=propM;
+  document.querySelector(`.sStructM[data-i="${i}"]`).value=structM;
+}
+
+buildStageUI();calcDeltaV();
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

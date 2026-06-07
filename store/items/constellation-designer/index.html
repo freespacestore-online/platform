@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Satellite Constellation Designer - FreeSpaceStore</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#fafafa;font-family:"Manrope",system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+a{color:#3b82f6;text-decoration:none}
+.top-bar{padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #1a1a1a}
+.top-bar a{font-size:.82rem;font-weight:600}
+h1{text-align:center;color:#3b82f6;margin:14px 0 4px;font-size:1.35rem}
+.desc{text-align:center;color:#737373;font-size:.82rem;margin-bottom:10px;max-width:700px;margin-left:auto;margin-right:auto}
+.main{display:flex;gap:14px;padding:0 16px;flex:1;max-width:1200px;margin:0 auto;width:100%}
+.left{flex:1;min-width:0}
+.right{width:300px;flex-shrink:0}
+canvas{width:100%;background:#080810;border:1px solid #222;border-radius:8px}
+.panel{background:#141414;border:1px solid #1a1a1a;border-radius:8px;padding:12px;margin-bottom:10px}
+.panel h3{font-size:.82rem;color:#3b82f6;margin-bottom:8px}
+label{font-size:.75rem;color:#aaa;display:block;margin-bottom:4px}
+select,input[type=range],input[type=number]{background:#222;color:#fafafa;border:1px solid #333;padding:5px 8px;border-radius:4px;font-size:.78rem;width:100%;font-family:inherit;margin-bottom:8px}
+input[type=range]{padding:0;accent-color:#3b82f6}
+button{background:#3b82f6;color:#fafafa;border:none;padding:6px 14px;border-radius:4px;font-size:.78rem;cursor:pointer;font-weight:600;font-family:inherit}
+button:hover{background:#2563eb}
+button.secondary{background:#222;color:#fafafa;border:1px solid #333}
+button.secondary:hover{background:#333}
+.btn-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.stat-box{background:#1a1a1a;border-radius:6px;padding:8px;text-align:center}
+.stat-val{font-size:1rem;font-weight:700;color:#3b82f6}
+.stat-label{font-size:.65rem;color:#737373;margin-top:2px}
+footer{border-top:1px solid #1a1a1a;padding:12px;text-align:center;font-size:.7rem;color:#404040;margin-top:auto}
+@media(max-width:800px){.main{flex-direction:column}.right{width:100%}}
+</style>
+</head>
+<body>
+<div class="top-bar"><a href="/">&#8592; FreeSpaceStore</a></div>
+<h1>Satellite Constellation Designer</h1>
+<p class="desc">Design Walker, sun-synchronous, and polar constellations. Visualize coverage and revisit times.</p>
+<div class="main">
+<div class="left">
+ <canvas id="c" width="800" height="540"></canvas>
+</div>
+<div class="right">
+ <div class="panel">
+  <h3>Constellation Parameters</h3>
+  <label>Type</label>
+  <select id="type">
+   <option value="walker" selected>Walker Delta</option>
+   <option value="polar">Polar</option>
+   <option value="sunsync">Sun-Synchronous</option>
+  </select>
+  <label>Orbital Planes: <span id="planesV">6</span></label>
+  <input type="range" id="planes" min="1" max="12" value="6">
+  <label>Satellites per Plane: <span id="satsV">4</span></label>
+  <input type="range" id="sats" min="1" max="12" value="4">
+  <label>Inclination: <span id="inclV">55</span>deg</label>
+  <input type="range" id="incl" min="0" max="90" value="55">
+  <label>Altitude: <span id="altV">550</span> km</label>
+  <input type="range" id="alt" min="200" max="36000" step="50" value="550">
+  <div class="btn-row" style="margin-top:8px">
+   <button id="apply">Build Constellation</button>
+  </div>
+  <div class="btn-row">
+   <button class="secondary" id="starlink">Starlink</button>
+   <button class="secondary" id="gps">GPS</button>
+   <button class="secondary" id="iridium">Iridium</button>
+  </div>
+ </div>
+ <div class="panel">
+  <h3>Coverage Stats</h3>
+  <div class="stats-grid">
+   <div class="stat-box"><div class="stat-val" id="totalSats">24</div><div class="stat-label">Total Satellites</div></div>
+   <div class="stat-box"><div class="stat-val" id="coverage">0%</div><div class="stat-label">Ground Coverage</div></div>
+   <div class="stat-box"><div class="stat-val" id="revisit">-</div><div class="stat-label">Avg Revisit (min)</div></div>
+   <div class="stat-box"><div class="stat-val" id="period">-</div><div class="stat-label">Orbital Period (min)</div></div>
+  </div>
+ </div>
+ <div class="panel">
+  <h3>View Controls</h3>
+  <label>Rotation Speed</label>
+  <input type="range" id="rotSpeed" min="0" max="5" step="0.1" value="1">
+  <label><input type="checkbox" id="showCoverage" checked> Show Coverage Cones</label>
+  <label><input type="checkbox" id="showTrails"> Show Orbit Trails</label>
+ </div>
+</div>
+</div>
+<footer><a href="/">FreeSpaceStore</a></footer>
+
+<script>
+const C=document.getElementById('c'),ctx=C.getContext('2d');
+const W=800,H=540;
+const CX=W/2,CY=H/2;
+const EARTH_R=120; // pixels
+const RE=6371; // km
+
+let satellites=[];
+let viewAngle=0.4; // tilt
+let rotAngle=0;
+let nPlanes=6,nSats=4,incl=55,altitude=550;
+let showCoverage=true,showTrails=false;
+
+function buildConstellation(){
+  nPlanes=+document.getElementById('planes').value;
+  nSats=+document.getElementById('sats').value;
+  incl=+document.getElementById('incl').value;
+  altitude=+document.getElementById('alt').value;
+
+  satellites=[];
+  const orbR=EARTH_R*(1+altitude/RE);
+  const inclRad=incl*Math.PI/180;
+
+  for(let p=0;p<nPlanes;p++){
+    const raan=(2*Math.PI*p)/nPlanes; // right ascension
+    for(let s=0;s<nSats;s++){
+      const phase=(2*Math.PI*s)/nSats+(2*Math.PI*p)/(nPlanes*nSats); // Walker phasing
+      satellites.push({plane:p,idx:s,raan,phase,inclRad,orbR,trueAnomaly:phase});
+    }
+  }
+
+  // Compute stats
+  const total=nPlanes*nSats;
+  const period=2*Math.PI*Math.sqrt(Math.pow(RE+altitude,3)/(3.986e5));// seconds
+  const periodMin=period/60;
+  // Simplified coverage estimate
+  const halfAngle=Math.acos(RE/(RE+altitude));
+  const singleCovFrac=(1-Math.cos(halfAngle))/2;
+  const coveragePct=Math.min(100,Math.round(singleCovFrac*total*100*1.5));
+  const revisitMin=Math.round(periodMin/Math.max(1,total/nPlanes)*2);
+
+  document.getElementById('totalSats').textContent=total;
+  document.getElementById('coverage').textContent=coveragePct+'%';
+  document.getElementById('revisit').textContent=revisitMin;
+  document.getElementById('period').textContent=Math.round(periodMin);
+}
+
+function project3D(x,y,z){
+  // Simple oblique projection with tilt
+  const cosT=Math.cos(viewAngle),sinT=Math.sin(viewAngle);
+  const cosR=Math.cos(rotAngle),sinR=Math.sin(rotAngle);
+  // Rotate around Y axis
+  const rx=x*cosR-z*sinR;
+  const rz=x*sinR+z*cosR;
+  // Tilt around X axis
+  const ry=y*cosT-rz*sinT;
+  const rz2=y*sinT+rz*cosT;
+  return{x:CX+rx,y:CY-ry,z:rz2};
+}
+
+function satPosition(sat,t){
+  const angle=sat.trueAnomaly+t*0.002*(550/(sat.orbR-EARTH_R+100));
+  // Orbit in orbital plane then rotate by RAAN and inclination
+  const xOrb=sat.orbR*Math.cos(angle);
+  const yOrb=sat.orbR*Math.sin(angle);
+  // Rotate by inclination around X
+  const xi=xOrb;
+  const yi=yOrb*Math.cos(sat.inclRad);
+  const zi=yOrb*Math.sin(sat.inclRad);
+  // Rotate by RAAN around Z (Y in our view)
+  const xf=xi*Math.cos(sat.raan)-yi*Math.sin(sat.raan);
+  const yf=xi*Math.sin(sat.raan)+yi*Math.cos(sat.raan);
+  const zf=zi;
+  return{x:xf,y:yf,z:zf};
+}
+
+let t=0;
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const speed=+document.getElementById('rotSpeed').value;
+  rotAngle+=0.003*speed;
+  showCoverage=document.getElementById('showCoverage').checked;
+  showTrails=document.getElementById('showTrails').checked;
+  t++;
+
+  // Draw Earth
+  ctx.beginPath();
+  ctx.arc(CX,CY,EARTH_R,0,Math.PI*2);
+  const grad=ctx.createRadialGradient(CX-20,CY-20,10,CX,CY,EARTH_R);
+  grad.addColorStop(0,'#1e3a5f');grad.addColorStop(0.5,'#1e40af');grad.addColorStop(1,'#0c1e3d');
+  ctx.fillStyle=grad;ctx.fill();
+  ctx.strokeStyle='#3b82f644';ctx.lineWidth=1;ctx.stroke();
+
+  // Latitude lines
+  for(let lat=-60;lat<=60;lat+=30){
+    const r=EARTH_R*Math.cos(lat*Math.PI/180);
+    const y3d=EARTH_R*Math.sin(lat*Math.PI/180);
+    const p=project3D(0,y3d,0);
+    ctx.strokeStyle='#ffffff11';ctx.lineWidth=0.5;
+    ctx.beginPath();ctx.ellipse(CX,p.y,r,r*Math.abs(Math.sin(viewAngle))*0.3,0,0,Math.PI*2);ctx.stroke();
+  }
+
+  // Equator
+  ctx.strokeStyle='#ffffff22';ctx.lineWidth=1;
+  ctx.beginPath();ctx.ellipse(CX,CY,EARTH_R,EARTH_R*Math.sin(viewAngle)*0.3,0,0,Math.PI*2);ctx.stroke();
+
+  // Collect all sats with projected positions for depth sorting
+  const satData=satellites.map(sat=>{
+    const pos=satPosition(sat,t);
+    const proj=project3D(pos.x,pos.y,pos.z);
+    return{sat,pos,proj};
+  });
+  satData.sort((a,b)=>a.proj.z-b.proj.z);
+
+  // Draw orbit trails
+  if(showTrails){
+    const seen=new Set();
+    for(const sd of satData){
+      const key=sd.sat.plane;
+      if(seen.has(key)) continue;seen.add(key);
+      ctx.strokeStyle=`hsl(${key*360/nPlanes},70%,40%)`;ctx.lineWidth=0.5;
+      ctx.beginPath();
+      for(let a=0;a<Math.PI*2;a+=0.05){
+        const orig=sd.sat.trueAnomaly;
+        sd.sat.trueAnomaly=a;
+        const p=satPosition(sd.sat,0);
+        const pp=project3D(p.x,p.y,p.z);
+        if(a===0)ctx.moveTo(pp.x,pp.y);else ctx.lineTo(pp.x,pp.y);
+        sd.sat.trueAnomaly=orig;
+      }
+      ctx.closePath();ctx.stroke();
+    }
+  }
+
+  // Draw satellites
+  for(const sd of satData){
+    const{proj,sat}=sd;
+    const behind=sd.proj.z<0;
+    const alpha=behind?0.3:1;
+
+    // Coverage cone
+    if(showCoverage&&!behind){
+      const halfAngle=Math.acos(RE/(RE+altitude));
+      const coneR=sat.orbR*Math.sin(halfAngle)*0.7;
+      ctx.fillStyle=`hsla(${sat.plane*360/nPlanes},70%,50%,0.06)`;
+      ctx.beginPath();ctx.arc(proj.x,proj.y,coneR,0,Math.PI*2);ctx.fill();
+    }
+
+    // Satellite dot
+    const hue=sat.plane*360/nPlanes;
+    ctx.beginPath();ctx.arc(proj.x,proj.y,behind?2:3.5,0,Math.PI*2);
+    ctx.fillStyle=`hsla(${hue},80%,60%,${alpha})`;ctx.fill();
+
+    // Line to Earth surface
+    if(!behind){
+      ctx.strokeStyle=`hsla(${hue},60%,40%,0.2)`;ctx.lineWidth=0.5;
+      ctx.beginPath();
+      const earthSurf=project3D(sd.pos.x/sat.orbR*EARTH_R,sd.pos.y/sat.orbR*EARTH_R,sd.pos.z/sat.orbR*EARTH_R);
+      ctx.moveTo(proj.x,proj.y);ctx.lineTo(earthSurf.x,earthSurf.y);ctx.stroke();
+    }
+  }
+
+  // Labels
+  ctx.fillStyle='#737373';ctx.font='10px Manrope,system-ui';
+  ctx.fillText(`Alt: ${altitude} km | Inc: ${incl}deg | ${nPlanes}P x ${nSats}S = ${satellites.length}`,10,H-10);
+
+  requestAnimationFrame(draw);
+}
+
+function bindSlider(id,sp){document.getElementById(id).addEventListener('input',e=>{
+  document.getElementById(sp).textContent=e.target.value;
+});}
+bindSlider('planes','planesV');bindSlider('sats','satsV');bindSlider('incl','inclV');bindSlider('alt','altV');
+
+document.getElementById('apply').addEventListener('click',buildConstellation);
+
+document.getElementById('starlink').addEventListener('click',()=>{
+  document.getElementById('planes').value=72;document.getElementById('planesV').textContent='72';
+  document.getElementById('sats').value=22;// capped at 12 in UI
+  document.getElementById('sats').value=12;document.getElementById('satsV').textContent='12';
+  document.getElementById('incl').value=53;document.getElementById('inclV').textContent='53';
+  document.getElementById('alt').value=550;document.getElementById('altV').textContent='550';
+  document.getElementById('planes').value=8;document.getElementById('planesV').textContent='8';
+  buildConstellation();
+});
+
+document.getElementById('gps').addEventListener('click',()=>{
+  document.getElementById('planes').value=6;document.getElementById('planesV').textContent='6';
+  document.getElementById('sats').value=4;document.getElementById('satsV').textContent='4';
+  document.getElementById('incl').value=55;document.getElementById('inclV').textContent='55';
+  document.getElementById('alt').value=20200;document.getElementById('altV').textContent='20200';
+  buildConstellation();
+});
+
+document.getElementById('iridium').addEventListener('click',()=>{
+  document.getElementById('planes').value=6;document.getElementById('planesV').textContent='6';
+  document.getElementById('sats').value=11;document.getElementById('satsV').textContent='11';
+  document.getElementById('incl').value=86;document.getElementById('inclV').textContent='86';
+  document.getElementById('alt').value=780;document.getElementById('altV').textContent='780';
+  buildConstellation();
+});
+
+buildConstellation();draw();
+</script>
+<script src="/related.js"></script>
+</body>
+</html>
