@@ -259,6 +259,28 @@
       "creator": "serge-ivo",
       "creatorName": "Serge",
       "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
+      "id": "telescope-sim",
+      "name": "Telescope Simulator",
+      "description": "Refractor, reflector, radio telescopes. Adjust aperture, focal length. Light gathering, Airy disk resolution, views of Moon/planets/galaxies/nebulae.",
+      "category": "observation",
+      "icon": "🔭",
+      "iconBg": "#3b82f6",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
+    },
+    {
+      "id": "space-debris",
+      "name": "Space Debris Simulation",
+      "description": "Kessler syndrome visualization. Thousands of debris particles, collision cascades, mitigation strategies. Add satellites, watch exponential fragmentation.",
+      "category": "orbital",
+      "icon": "💥",
+      "iconBg": "#3b82f6",
+      "creator": "serge-ivo",
+      "creatorName": "Serge",
+      "creatorAvatar": "https://github.com/serge-ivo.png?size=96"
     }
   ]
 }

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Telescope Simulator - FreeSpaceStore</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0a;--text:#fafafa;--muted:#888;--accent:#3b82f6;--panel:#111;--border:#1a1a1a}
+body{background:var(--bg);color:var(--text);font-family:'Manrope',system-ui,sans-serif;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+.back{position:absolute;top:16px;left:20px;font-size:13px;font-weight:600;opacity:.7}
+.back:hover{opacity:1}
+header{text-align:center;padding:20px 20px 10px;border-bottom:1px solid var(--border)}
+header h1{font-size:1.4rem;font-weight:700;color:var(--accent)}
+header p{font-size:.82rem;color:var(--muted);margin-top:4px}
+.layout{max-width:1100px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr 280px;gap:14px}
+@media(max-width:800px){.layout{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px}
+h2{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+canvas{display:block;width:100%;border-radius:8px;background:#020208}
+.btn{background:var(--accent);color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn:hover{background:#2563eb}
+.btn-sec{background:var(--border);color:var(--accent);border:1px solid #252525}
+.btn-sec:hover{background:#1f1f1f}
+.btn-row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.ctrl{margin-bottom:12px}
+.ctrl label{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);margin-bottom:3px}
+.ctrl label span{color:var(--accent);font-weight:600}
+.ctrl input[type=range]{width:100%;accent-color:var(--accent)}
+.ctrl select{background:#1a1a1a;border:1px solid #333;color:var(--text);padding:5px 8px;border-radius:6px;font-size:.78rem;width:100%;font-family:inherit}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
+.stat{background:#080808;border-radius:6px;padding:8px;text-align:center}
+.stat .val{font-size:.9rem;font-weight:700;color:var(--accent)}
+.stat .lbl{font-size:.65rem;color:var(--muted)}
+.info{font-size:.75rem;color:var(--muted);line-height:1.6;margin:8px 0}
+.info strong{color:var(--text)}
+.target-btns{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:8px 0}
+.target-btn{padding:6px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:.72rem;cursor:pointer;font-family:inherit;text-align:center}
+.target-btn:hover,.target-btn.active{border-color:var(--accent);color:var(--accent)}
+footer{text-align:center;padding:12px;font-size:.7rem;color:#555}
+footer a{color:var(--accent)}
+</style>
+<meta name="description" content="Telescope simulator: refractor, reflector, radio. Adjust aperture, see light gathering, resolution, and views of celestial objects.">
+<meta property="og:title" content="Telescope Simulator - FreeSpaceStore">
+<meta property="og:description" content="Telescope simulator: refractor, reflector, radio. Adjust aperture, see light gathering, resolution, and views.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://freespacestore.pages.dev/items/telescope-sim/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Telescope Simulator">
+<meta name="twitter:description" content="Compare telescope types, apertures, and views of celestial objects.">
+<link rel="canonical" href="https://freespacestore.pages.dev/items/telescope-sim/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body>
+<a class="back" href="/items/">&larr; FreeSpaceStore</a>
+<header>
+  <h1>Telescope Simulator</h1>
+  <p>Choose telescope type and aperture. See how different objects appear through the eyepiece.</p>
+</header>
+<div class="layout">
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div class="panel">
+      <h2>Eyepiece View</h2>
+      <canvas id="view-canvas" width="600" height="400"></canvas>
+    </div>
+    <div class="panel" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div>
+        <h2>Light Gathering Comparison</h2>
+        <canvas id="light-canvas" width="280" height="160"></canvas>
+      </div>
+      <div>
+        <h2>Airy Disk / Resolution</h2>
+        <canvas id="airy-canvas" width="280" height="160"></canvas>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div class="panel">
+      <h2>Telescope Type</h2>
+      <div class="ctrl">
+        <select id="type">
+          <option value="refractor">Refractor (Lens)</option>
+          <option value="reflector" selected>Reflector (Mirror)</option>
+          <option value="radio">Radio Telescope</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label>Aperture <span id="ap-v">200 mm</span></label>
+        <input type="range" id="aperture" min="50" max="1000" step="10" value="200">
+      </div>
+      <div class="ctrl">
+        <label>Focal Length <span id="fl-v">1000 mm</span></label>
+        <input type="range" id="focal" min="200" max="5000" step="100" value="1000">
+      </div>
+      <div class="ctrl">
+        <label>Eyepiece <span id="ep-v">25 mm</span></label>
+        <input type="range" id="eyepiece" min="4" max="40" step="1" value="25">
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Target Object</h2>
+      <div class="target-btns">
+        <button class="target-btn active" data-target="moon">Moon</button>
+        <button class="target-btn" data-target="jupiter">Jupiter</button>
+        <button class="target-btn" data-target="saturn">Saturn</button>
+        <button class="target-btn" data-target="andromeda">Andromeda</button>
+        <button class="target-btn" data-target="orion">Orion Nebula</button>
+        <button class="target-btn" data-target="star">Double Star</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Specifications</h2>
+      <div class="stats">
+        <div class="stat"><div class="val" id="s-mag">40x</div><div class="lbl">Magnification</div></div>
+        <div class="stat"><div class="val" id="s-fov">1.25</div><div class="lbl">FOV (degrees)</div></div>
+        <div class="stat"><div class="val" id="s-res">0.58"</div><div class="lbl">Resolution</div></div>
+        <div class="stat"><div class="val" id="s-light">1x</div><div class="lbl">Light Gathering</div></div>
+      </div>
+      <div class="info">
+        <strong>Rayleigh Criterion:</strong> Angular resolution = 1.22 * wavelength / aperture.<br>
+        <strong>Light Gathering:</strong> Proportional to aperture squared. A 200mm scope gathers 816x more light than your eye (7mm pupil).<br>
+        <strong>Max Useful Mag:</strong> ~2x aperture in mm.
+      </div>
+    </div>
+  </div>
+</div>
+<footer><a href="/items/">FreeSpaceStore</a></footer>
+
+<script>
+const viewCanvas = document.getElementById('view-canvas');
+const vCtx = viewCanvas.getContext('2d');
+const lightCanvas = document.getElementById('light-canvas');
+const lCtx = lightCanvas.getContext('2d');
+const airyCanvas = document.getElementById('airy-canvas');
+const aCtx = airyCanvas.getContext('2d');
+
+let target = 'moon';
+let time = 0;
+
+const targets = {
+  moon: {name:'Moon', angSize:1800, brightness:1, color:'#e2e8f0', type:'surface'},
+  jupiter: {name:'Jupiter', angSize:45, brightness:0.8, color:'#f5d0a9', type:'planet'},
+  saturn: {name:'Saturn', angSize:18, brightness:0.5, color:'#fde68a', type:'ringed'},
+  andromeda: {name:'Andromeda Galaxy', angSize:180, brightness:0.02, color:'#94a3b8', type:'galaxy'},
+  orion: {name:'Orion Nebula', angSize:65, brightness:0.05, color:'#c084fc', type:'nebula'},
+  star: {name:'Double Star (Albireo)', angSize:34, brightness:0.3, color:'#fbbf24', type:'double'}
+};
+
+function getParams() {
+  return {
+    aperture: parseInt(document.getElementById('aperture').value),
+    focal: parseInt(document.getElementById('focal').value),
+    eyepiece: parseInt(document.getElementById('eyepiece').value),
+    type: document.getElementById('type').value
+  };
+}
+
+function calcSpecs(p) {
+  const mag = p.focal / p.eyepiece;
+  const fov = 50 / mag; // apparent 50 degree eyepiece
+  const resolution = 138.4 / p.aperture; // Dawes limit (arcsec)
+  const lightGather = Math.pow(p.aperture / 7, 2);
+  return {mag, fov, resolution, lightGather};
+}
+
+function updateStats() {
+  const p = getParams();
+  const s = calcSpecs(p);
+  document.getElementById('s-mag').textContent = Math.round(s.mag) + 'x';
+  document.getElementById('s-fov').textContent = s.fov.toFixed(2) + '°';
+  document.getElementById('s-res').textContent = s.resolution.toFixed(2) + '"';
+  document.getElementById('s-light').textContent = Math.round(s.lightGather) + 'x';
+  document.getElementById('ap-v').textContent = p.aperture + ' mm';
+  document.getElementById('fl-v').textContent = p.focal + ' mm';
+  document.getElementById('ep-v').textContent = p.eyepiece + ' mm';
+}
+
+function drawView() {
+  const W = viewCanvas.width, H = viewCanvas.height;
+  const p = getParams();
+  const s = calcSpecs(p);
+  const t = targets[target];
+  time += 0.01;
+
+  vCtx.clearRect(0,0,W,H);
+
+  // Circular FOV mask
+  const cx = W/2, cy = H/2, r = Math.min(W,H)*0.42;
+  vCtx.save();
+  vCtx.beginPath(); vCtx.arc(cx, cy, r, 0, Math.PI*2); vCtx.clip();
+
+  // Sky background — darker with more light gathering
+  const skyBrightness = Math.min(15, 3 + s.lightGather*0.005);
+  vCtx.fillStyle = `rgb(${skyBrightness},${skyBrightness},${skyBrightness+5})`;
+  vCtx.fillRect(0,0,W,H);
+
+  // Stars in background
+  const seed = 42;
+  for (let i = 0; i < 80; i++) {
+    const sx = ((i*137.5+seed)%1)*W;
+    const sy = ((i*241.3+seed)%1)*H;
+    const brightness = Math.min(255, (s.lightGather*0.05 + 10) * (0.3+((i*73)%100)/100));
+    if (brightness > 20) {
+      vCtx.fillStyle = `rgba(255,255,255,${brightness/255})`;
+      vCtx.beginPath(); vCtx.arc(sx, sy, 0.8, 0, Math.PI*2); vCtx.fill();
+    }
+  }
+
+  // Object size in view (pixels)
+  const angSizeInFov = (t.angSize / 3600) / s.fov; // fraction of FOV
+  const objR = angSizeInFov * r;
+  const effectiveBrightness = Math.min(1, t.brightness * Math.sqrt(s.lightGather) / s.mag);
+
+  if (t.type === 'surface') {
+    // Moon-like: show craters
+    const mr = Math.min(r*0.9, objR);
+    vCtx.fillStyle = `rgba(200,200,210,${effectiveBrightness})`;
+    vCtx.beginPath(); vCtx.arc(cx, cy, mr, 0, Math.PI*2); vCtx.fill();
+    // Craters (detail based on resolution)
+    const numCraters = s.resolution < 2 ? 20 : s.resolution < 5 ? 10 : 3;
+    for (let i = 0; i < numCraters; i++) {
+      const crx = cx + (((i*97+13)%100)/100 - 0.5)*mr*1.4;
+      const cry = cy + (((i*53+7)%100)/100 - 0.5)*mr*1.4;
+      const crr = mr * (0.03 + ((i*31)%50)/500);
+      const dist = Math.sqrt((crx-cx)**2 + (cry-cy)**2);
+      if (dist + crr < mr) {
+        vCtx.strokeStyle = `rgba(120,120,130,${effectiveBrightness*0.6})`;
+        vCtx.lineWidth = 1;
+        vCtx.beginPath(); vCtx.arc(crx, cry, crr, 0, Math.PI*2); vCtx.stroke();
+        vCtx.fillStyle = `rgba(150,150,160,${effectiveBrightness*0.3})`;
+        vCtx.beginPath(); vCtx.arc(crx+crr*0.3, cry+crr*0.3, crr*0.6, 0, Math.PI*2); vCtx.fill();
+      }
+    }
+  } else if (t.type === 'planet') {
+    // Jupiter: bands
+    const pr = Math.max(3, Math.min(r*0.4, objR));
+    vCtx.fillStyle = `rgba(245,208,169,${effectiveBrightness})`;
+    vCtx.beginPath(); vCtx.arc(cx, cy, pr, 0, Math.PI*2); vCtx.fill();
+    if (pr > 8) {
+      const bands = Math.min(6, Math.floor(pr/5));
+      for (let i = 0; i < bands; i++) {
+        const by = cy - pr + (i+0.5)*(2*pr/bands);
+        vCtx.strokeStyle = `rgba(180,140,100,${effectiveBrightness*0.5})`;
+        vCtx.lineWidth = pr/bands*0.4;
+        vCtx.beginPath(); vCtx.moveTo(cx-pr*0.9, by); vCtx.lineTo(cx+pr*0.9, by); vCtx.stroke();
+      }
+      // Great red spot
+      if (pr > 20) {
+        vCtx.fillStyle = `rgba(200,100,80,${effectiveBrightness*0.6})`;
+        vCtx.beginPath(); vCtx.ellipse(cx+pr*0.3, cy+pr*0.2, pr*0.15, pr*0.08, 0, 0, Math.PI*2); vCtx.fill();
+      }
+    }
+    // Moons
+    if (pr > 5) {
+      for (let i = 0; i < 4; i++) {
+        const mx = cx + (pr+10+i*12)*Math.cos(time+i*1.5);
+        const my = cy + 3*Math.sin(time+i*1.5);
+        vCtx.fillStyle = `rgba(255,255,255,${effectiveBrightness})`;
+        vCtx.beginPath(); vCtx.arc(mx, my, 1.5, 0, Math.PI*2); vCtx.fill();
+      }
+    }
+  } else if (t.type === 'ringed') {
+    // Saturn: ring
+    const pr = Math.max(3, Math.min(r*0.3, objR));
+    vCtx.fillStyle = `rgba(253,230,138,${effectiveBrightness})`;
+    vCtx.beginPath(); vCtx.arc(cx, cy, pr, 0, Math.PI*2); vCtx.fill();
+    if (pr > 5) {
+      vCtx.strokeStyle = `rgba(253,230,138,${effectiveBrightness*0.6})`;
+      vCtx.lineWidth = Math.max(1, pr*0.15);
+      vCtx.beginPath(); vCtx.ellipse(cx, cy, pr*2.2, pr*0.5, 0, 0, Math.PI*2); vCtx.stroke();
+      vCtx.strokeStyle = `rgba(200,180,100,${effectiveBrightness*0.4})`;
+      vCtx.lineWidth = Math.max(1, pr*0.08);
+      vCtx.beginPath(); vCtx.ellipse(cx, cy, pr*1.7, pr*0.4, 0, 0, Math.PI*2); vCtx.stroke();
+    }
+  } else if (t.type === 'galaxy') {
+    // Fuzzy ellipse
+    const gr = Math.max(5, Math.min(r*0.5, objR));
+    const grad = vCtx.createRadialGradient(cx, cy, 0, cx, cy, gr);
+    grad.addColorStop(0, `rgba(200,200,220,${effectiveBrightness*3})`);
+    grad.addColorStop(0.3, `rgba(148,163,184,${effectiveBrightness*2})`);
+    grad.addColorStop(1, 'rgba(148,163,184,0)');
+    vCtx.fillStyle = grad;
+    vCtx.beginPath(); vCtx.ellipse(cx, cy, gr, gr*0.4, 0.3, 0, Math.PI*2); vCtx.fill();
+    // Spiral hint if large enough
+    if (gr > 30 && effectiveBrightness > 0.1) {
+      vCtx.strokeStyle = `rgba(200,200,240,${effectiveBrightness*0.5})`;
+      vCtx.lineWidth = 1;
+      vCtx.beginPath();
+      for (let a = 0; a < Math.PI*4; a += 0.1) {
+        const sr = 5 + a*gr*0.08;
+        const sx = cx + sr*Math.cos(a+0.3)*0.9;
+        const sy = cy + sr*Math.sin(a+0.3)*0.35;
+        if (a === 0) vCtx.moveTo(sx,sy); else vCtx.lineTo(sx,sy);
+      }
+      vCtx.stroke();
+    }
+  } else if (t.type === 'nebula') {
+    // Colorful gas cloud
+    const nr = Math.max(8, Math.min(r*0.5, objR));
+    const colors = ['rgba(192,132,252,', 'rgba(96,165,250,', 'rgba(248,113,113,'];
+    for (let i = 0; i < 3; i++) {
+      const grad = vCtx.createRadialGradient(
+        cx+(i-1)*nr*0.3, cy+(i-1)*nr*0.2, 0,
+        cx+(i-1)*nr*0.3, cy+(i-1)*nr*0.2, nr*(0.5+i*0.2)
+      );
+      grad.addColorStop(0, colors[i]+`${effectiveBrightness*3})`);
+      grad.addColorStop(1, colors[i]+'0)');
+      vCtx.fillStyle = grad;
+      vCtx.beginPath(); vCtx.arc(cx+(i-1)*nr*0.3, cy+(i-1)*nr*0.2, nr, 0, Math.PI*2); vCtx.fill();
+    }
+    // Stars within
+    for (let i = 0; i < 6; i++) {
+      const sx = cx + (((i*67)%100)/100-0.5)*nr;
+      const sy = cy + (((i*43)%100)/100-0.5)*nr*0.6;
+      vCtx.fillStyle = `rgba(255,255,255,${effectiveBrightness*5})`;
+      vCtx.beginPath(); vCtx.arc(sx, sy, 1.5, 0, Math.PI*2); vCtx.fill();
+    }
+  } else if (t.type === 'double') {
+    // Two stars — can you resolve them?
+    const separation = 34; // arcsec
+    const canResolve = s.resolution < separation;
+    const sepPx = (separation/3600/s.fov)*r;
+
+    if (canResolve && sepPx > 3) {
+      vCtx.fillStyle = `rgba(251,191,36,${effectiveBrightness*3})`;
+      vCtx.beginPath(); vCtx.arc(cx-sepPx/2, cy, 3, 0, Math.PI*2); vCtx.fill();
+      vCtx.fillStyle = `rgba(96,165,250,${effectiveBrightness*3})`;
+      vCtx.beginPath(); vCtx.arc(cx+sepPx/2, cy, 2.5, 0, Math.PI*2); vCtx.fill();
+    } else {
+      // Unresolved blob
+      vCtx.fillStyle = `rgba(200,200,200,${effectiveBrightness*3})`;
+      vCtx.beginPath(); vCtx.arc(cx, cy, 4, 0, Math.PI*2); vCtx.fill();
+    }
+    // Label
+    vCtx.fillStyle = '#555'; vCtx.font = '10px Manrope'; vCtx.textAlign = 'center';
+    vCtx.fillText(canResolve ? 'Resolved!' : 'Unresolved (need more aperture)', cx, cy+30);
+  }
+
+  vCtx.restore();
+
+  // Circular border
+  vCtx.strokeStyle = '#333'; vCtx.lineWidth = 3;
+  vCtx.beginPath(); vCtx.arc(cx, cy, r, 0, Math.PI*2); vCtx.stroke();
+
+  // Vignette outside circle
+  vCtx.fillStyle = '#0a0a0a';
+  vCtx.beginPath(); vCtx.rect(0,0,W,H);
+  vCtx.arc(cx, cy, r, 0, Math.PI*2, true);
+  vCtx.fill();
+
+  // Crosshair
+  vCtx.strokeStyle = 'rgba(59,130,246,0.2)'; vCtx.lineWidth = 0.5;
+  vCtx.beginPath(); vCtx.moveTo(cx-r, cy); vCtx.lineTo(cx+r, cy); vCtx.stroke();
+  vCtx.beginPath(); vCtx.moveTo(cx, cy-r); vCtx.lineTo(cx, cy+r); vCtx.stroke();
+
+  // Target name
+  vCtx.fillStyle = '#3b82f6'; vCtx.font = 'bold 12px Manrope'; vCtx.textAlign = 'left';
+  vCtx.fillText(t.name, 16, H-16);
+  vCtx.fillStyle = '#555'; vCtx.font = '10px Manrope';
+  vCtx.fillText(`${Math.round(s.mag)}x | FOV ${s.fov.toFixed(1)}°`, 16, H-32);
+}
+
+function drawLightGathering() {
+  const W = lightCanvas.width, H = lightCanvas.height;
+  const p = getParams();
+  lCtx.clearRect(0,0,W,H);
+
+  const apertures = [50, p.aperture, 500];
+  const labels = ['50mm', `${p.aperture}mm`, '500mm'];
+  const maxR = 50;
+
+  apertures.forEach((ap, i) => {
+    const cx = 50 + i*90;
+    const cy = H/2;
+    const r = (ap/1000)*maxR*2;
+    const brightness = Math.pow(ap/7, 2);
+
+    // Aperture circle
+    lCtx.strokeStyle = i === 1 ? '#3b82f6' : '#444';
+    lCtx.lineWidth = i === 1 ? 2 : 1;
+    lCtx.beginPath(); lCtx.arc(cx, cy, Math.max(3,r), 0, Math.PI*2); lCtx.stroke();
+
+    // Fill with brightness indication
+    const alpha = Math.min(0.8, brightness/5000);
+    lCtx.fillStyle = `rgba(59,130,246,${alpha})`;
+    lCtx.beginPath(); lCtx.arc(cx, cy, Math.max(3,r), 0, Math.PI*2); lCtx.fill();
+
+    // Label
+    lCtx.fillStyle = i === 1 ? '#3b82f6' : '#666';
+    lCtx.font = '9px Manrope'; lCtx.textAlign = 'center';
+    lCtx.fillText(labels[i], cx, cy+maxR+20);
+    lCtx.fillText(`${Math.round(brightness)}x eye`, cx, cy+maxR+32);
+  });
+}
+
+function drawAiryDisk() {
+  const W = airyCanvas.width, H = airyCanvas.height;
+  const p = getParams();
+  const s = calcSpecs(p);
+  aCtx.clearRect(0,0,W,H);
+
+  const cx = W/2, cy = H/2;
+  // Draw Airy pattern
+  const scale = 200 / p.aperture; // larger aperture = smaller disk
+
+  for (let r = 40; r > 0; r -= 1) {
+    const x = r * scale;
+    // Airy function approximation: (2*J1(x)/x)^2
+    const sinc = x < 0.01 ? 1 : Math.pow(2*Math.sin(x*Math.PI)/(x*Math.PI), 2);
+    const intensity = Math.max(0, sinc);
+    aCtx.strokeStyle = `rgba(59,130,246,${intensity*0.8})`;
+    aCtx.lineWidth = scale*1.5;
+    aCtx.beginPath(); aCtx.arc(cx, cy, r*scale*0.5, 0, Math.PI*2); aCtx.stroke();
+  }
+  // Central bright spot
+  aCtx.fillStyle = '#3b82f6';
+  aCtx.beginPath(); aCtx.arc(cx, cy, Math.max(2, 3*scale), 0, Math.PI*2); aCtx.fill();
+
+  // Rayleigh limit text
+  aCtx.fillStyle = '#888'; aCtx.font = '9px Manrope'; aCtx.textAlign = 'center';
+  aCtx.fillText(`Rayleigh: ${s.resolution.toFixed(2)} arcsec`, cx, H-10);
+  aCtx.fillText(`Aperture: ${p.aperture}mm`, cx, 14);
+}
+
+function loop() {
+  drawView();
+  drawLightGathering();
+  drawAiryDisk();
+  updateStats();
+  requestAnimationFrame(loop);
+}
+
+// Bindings
+['aperture','focal','eyepiece'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateStats);
+});
+document.getElementById('type').addEventListener('change', updateStats);
+document.querySelectorAll('.target-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.target-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    target = btn.dataset.target;
+  });
+});
+
+loop();
+</script>
+<script src="/related.js"></script>
+</body>
+</html>

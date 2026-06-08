@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Space Debris Simulation - FreeSpaceStore</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0a;--text:#fafafa;--muted:#888;--accent:#3b82f6;--panel:#111;--border:#1a1a1a}
+body{background:var(--bg);color:var(--text);font-family:'Manrope',system-ui,sans-serif;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+.back{position:absolute;top:16px;left:20px;font-size:13px;font-weight:600;opacity:.7}
+.back:hover{opacity:1}
+header{text-align:center;padding:20px 20px 10px;border-bottom:1px solid var(--border)}
+header h1{font-size:1.4rem;font-weight:700;color:var(--accent)}
+header p{font-size:.82rem;color:var(--muted);margin-top:4px}
+.layout{max-width:1100px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr 260px;gap:14px}
+@media(max-width:800px){.layout{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px}
+h2{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+canvas{display:block;width:100%;border-radius:8px;background:#020208}
+.btn{background:var(--accent);color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn:hover{background:#2563eb}
+.btn-sec{background:var(--border);color:var(--accent);border:1px solid #252525}
+.btn-sec:hover{background:#1f1f1f}
+.btn-danger{background:#dc2626;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-danger:hover{background:#b91c1c}
+.btn-row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.ctrl{margin-bottom:12px}
+.ctrl label{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);margin-bottom:3px}
+.ctrl label span{color:var(--accent);font-weight:600}
+.ctrl input[type=range]{width:100%;accent-color:var(--accent)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
+.stat{background:#080808;border-radius:6px;padding:8px;text-align:center}
+.stat .val{font-size:.9rem;font-weight:700;color:var(--accent)}
+.stat .lbl{font-size:.65rem;color:var(--muted)}
+.info{font-size:.75rem;color:var(--muted);line-height:1.6;margin:8px 0}
+.info strong{color:var(--text)}
+.legend{display:flex;gap:8px;font-size:.7rem;margin:6px 0;flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:3px}
+.legend .dot{width:8px;height:8px;border-radius:50%}
+.mitigation-btns button{width:100%;margin:3px 0;text-align:left;padding:8px 12px}
+footer{text-align:center;padding:12px;font-size:.7rem;color:#555}
+footer a{color:var(--accent)}
+</style>
+<meta name="description" content="Space debris simulation with Kessler syndrome. Collision cascades, mitigation strategies, time controls.">
+<meta property="og:title" content="Space Debris Simulation - FreeSpaceStore">
+<meta property="og:description" content="Space debris simulation with Kessler syndrome. Collision cascades, mitigation strategies.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://freespacestore.pages.dev/items/space-debris/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Space Debris Simulation">
+<meta name="twitter:description" content="Kessler syndrome visualization. Add satellites, watch collision cascades.">
+<link rel="canonical" href="https://freespacestore.pages.dev/items/space-debris/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body>
+<a class="back" href="/items/">&larr; FreeSpaceStore</a>
+<header>
+  <h1>Space Debris Simulation</h1>
+  <p>Thousands of debris particles orbit Earth. Collisions fragment into more pieces — witness the Kessler syndrome cascade.</p>
+</header>
+<div class="layout">
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div class="panel">
+      <h2>Orbital View</h2>
+      <canvas id="sim-canvas" width="700" height="500"></canvas>
+      <div class="legend">
+        <span><span class="dot" style="background:#3b82f6"></span> Satellite</span>
+        <span><span class="dot" style="background:#6b7280"></span> Debris</span>
+        <span><span class="dot" style="background:#ef4444"></span> Collision</span>
+        <span><span class="dot" style="background:#10b981"></span> Deorbiting</span>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Debris Count Over Time</h2>
+      <canvas id="chart-canvas" width="700" height="140"></canvas>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div class="panel">
+      <h2>Statistics</h2>
+      <div class="stats">
+        <div class="stat"><div class="val" id="s-debris">0</div><div class="lbl">Debris Objects</div></div>
+        <div class="stat"><div class="val" id="s-sats">0</div><div class="lbl">Active Satellites</div></div>
+        <div class="stat"><div class="val" id="s-collisions">0</div><div class="lbl">Total Collisions</div></div>
+        <div class="stat"><div class="val" id="s-risk" style="color:#10b981">Low</div><div class="lbl">Kessler Risk</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Time Control</h2>
+      <div class="ctrl">
+        <label>Speed <span id="speed-v">10x</span></label>
+        <input type="range" id="speed" min="1" max="100" value="10">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-sec" id="pause-btn">Pause</button>
+        <button class="btn btn-sec" id="reset-btn">Reset</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Add Objects</h2>
+      <div class="btn-row">
+        <button class="btn" id="add-sat">Launch Satellite</button>
+        <button class="btn btn-sec" id="add-constellation">Add Constellation (30)</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn-danger" id="explode">Simulate Explosion</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Mitigation Strategies</h2>
+      <div class="mitigation-btns">
+        <button class="btn btn-sec" id="mit-deorbit">Deorbit (remove lowest 10)</button>
+        <button class="btn btn-sec" id="mit-laser">Laser Nudge (slow 20 debris)</button>
+        <button class="btn btn-sec" id="mit-net">Net Capture (remove 5 large)</button>
+      </div>
+      <div class="info" style="margin-top:10px">
+        <strong>Kessler Syndrome:</strong> A collision cascade where each impact creates fragments that hit other objects, exponentially increasing debris density. Above ~1000 objects in LEO, the cascade becomes self-sustaining.
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Orbital Shells</h2>
+      <div class="info">
+        <strong>LEO</strong> (200-2000 km): Most debris, ISS, Starlink<br>
+        <strong>MEO</strong> (2000-35786 km): GPS, navigation<br>
+        <strong>GEO</strong> (35786 km): Communications, weather
+      </div>
+    </div>
+  </div>
+</div>
+<footer><a href="/items/">FreeSpaceStore</a></footer>
+
+<script>
+const simCanvas = document.getElementById('sim-canvas');
+const sCtx = simCanvas.getContext('2d');
+const chartCanvas = document.getElementById('chart-canvas');
+const cCtx = chartCanvas.getContext('2d');
+
+const EARTH_R = 80; // pixels
+const LEO = {min:100, max:130}; // pixel radius from center
+const MEO = {min:130, max:180};
+const GEO = {min:210, max:220};
+
+let objects = []; // {x,y,angle,radius,speed,type:'satellite'|'debris'|'deorbiting',size}
+let collisions = []; // {x,y,age}
+let totalCollisions = 0;
+let paused = false;
+let time = 0;
+let history = [];
+
+function rng(min,max) { return min + Math.random()*(max-min); }
+
+function addDebris(radius, count) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random()*Math.PI*2;
+    const r = radius || rng(LEO.min, LEO.max);
+    const speed = 0.3 / Math.sqrt(r/100); // Kepler: faster at lower orbits
+    objects.push({
+      angle, radius:r, speed: speed*(0.8+Math.random()*0.4),
+      type:'debris', size: 1+Math.random()*2
+    });
+  }
+}
+
+function addSatellite(radius) {
+  const r = radius || rng(LEO.min, LEO.max);
+  const angle = Math.random()*Math.PI*2;
+  const speed = 0.3 / Math.sqrt(r/100);
+  objects.push({angle, radius:r, speed, type:'satellite', size:4});
+}
+
+function init() {
+  objects = [];
+  collisions = [];
+  totalCollisions = 0;
+  history = [];
+  time = 0;
+  // Initial debris field
+  addDebris(null, 200);
+  // Some satellites
+  for (let i = 0; i < 15; i++) addSatellite();
+  // A few in MEO/GEO
+  for (let i = 0; i < 5; i++) addSatellite(rng(MEO.min, MEO.max));
+  for (let i = 0; i < 3; i++) addSatellite(rng(GEO.min, GEO.max));
+}
+
+function update(dt) {
+  const speed = parseInt(document.getElementById('speed').value);
+  const step = dt * speed * 0.01;
+  time += step;
+
+  // Move objects
+  for (const obj of objects) {
+    obj.angle += obj.speed * step;
+    if (obj.type === 'deorbiting') {
+      obj.radius -= 0.02 * step;
+      if (obj.radius < EARTH_R) obj.radius = -1; // mark for removal
+    }
+  }
+
+  // Remove burned-up objects
+  objects = objects.filter(o => o.radius > 0);
+
+  // Collision detection (simplified: check proximity)
+  const collisionDist = 4;
+  for (let i = 0; i < objects.length; i++) {
+    for (let j = i+1; j < objects.length; j++) {
+      const a = objects[i], b = objects[j];
+      if (a.type === 'deorbiting' || b.type === 'deorbiting') continue;
+      if (Math.abs(a.radius - b.radius) > collisionDist) continue;
+      const angleDiff = Math.abs(((a.angle - b.angle + Math.PI) % (Math.PI*2)) - Math.PI);
+      if (angleDiff < 0.05) {
+        // Collision!
+        const cx = (a.radius)*Math.cos(a.angle);
+        const cy = (a.radius)*Math.sin(a.angle);
+        collisions.push({x:cx, y:cy, age:0});
+        totalCollisions++;
+
+        // Fragment both objects
+        const fragCount = Math.min(20, 3 + Math.floor(a.size + b.size));
+        const fragRadius = a.radius;
+        for (let f = 0; f < fragCount && objects.length < 2000; f++) {
+          objects.push({
+            angle: a.angle + (Math.random()-0.5)*0.3,
+            radius: fragRadius + (Math.random()-0.5)*10,
+            speed: a.speed * (0.7 + Math.random()*0.6),
+            type: 'debris',
+            size: 1 + Math.random()
+          });
+        }
+
+        // Remove originals
+        objects[i] = null; objects[j] = null;
+        objects = objects.filter(o => o !== null);
+        break;
+      }
+    }
+    if (objects[i] === null) break;
+  }
+
+  // Age collisions
+  collisions = collisions.filter(c => {
+    c.age += step;
+    return c.age < 3;
+  });
+
+  // Record history
+  if (history.length === 0 || time - (history[history.length-1]?.t||0) > 0.5) {
+    const debrisCount = objects.filter(o => o.type === 'debris').length;
+    history.push({t: time, count: debrisCount});
+    if (history.length > 200) history.shift();
+  }
+
+  updateStats();
+}
+
+function updateStats() {
+  const debris = objects.filter(o => o.type === 'debris').length;
+  const sats = objects.filter(o => o.type === 'satellite').length;
+  document.getElementById('s-debris').textContent = debris;
+  document.getElementById('s-sats').textContent = sats;
+  document.getElementById('s-collisions').textContent = totalCollisions;
+
+  let risk = 'Low', color = '#10b981';
+  if (debris > 800) { risk = 'Critical'; color = '#ef4444'; }
+  else if (debris > 500) { risk = 'High'; color = '#f59e0b'; }
+  else if (debris > 300) { risk = 'Medium'; color = '#eab308'; }
+  const riskEl = document.getElementById('s-risk');
+  riskEl.textContent = risk;
+  riskEl.style.color = color;
+}
+
+function draw() {
+  const W = simCanvas.width, H = simCanvas.height;
+  const cx = W/2, cy = H/2;
+  sCtx.clearRect(0,0,W,H);
+
+  // Orbital shells (rings)
+  const shells = [
+    {r1:LEO.min, r2:LEO.max, label:'LEO', color:'rgba(59,130,246,0.05)'},
+    {r1:MEO.min, r2:MEO.max, label:'MEO', color:'rgba(16,185,129,0.03)'},
+    {r1:GEO.min, r2:GEO.max, label:'GEO', color:'rgba(245,158,11,0.03)'}
+  ];
+  shells.forEach(s => {
+    sCtx.fillStyle = s.color;
+    sCtx.beginPath(); sCtx.arc(cx,cy,s.r2,0,Math.PI*2);
+    sCtx.arc(cx,cy,s.r1,0,Math.PI*2,true);
+    sCtx.fill();
+    sCtx.fillStyle = '#333'; sCtx.font = '9px Manrope'; sCtx.textAlign = 'left';
+    sCtx.fillText(s.label, cx+s.r2+4, cy);
+  });
+
+  // Earth
+  const earthGrad = sCtx.createRadialGradient(cx-10,cy-10,EARTH_R*0.3, cx,cy,EARTH_R);
+  earthGrad.addColorStop(0, '#1e40af');
+  earthGrad.addColorStop(0.5, '#1e3a5f');
+  earthGrad.addColorStop(1, '#0f172a');
+  sCtx.fillStyle = earthGrad;
+  sCtx.beginPath(); sCtx.arc(cx,cy,EARTH_R,0,Math.PI*2); sCtx.fill();
+  sCtx.strokeStyle = '#1e3a5f'; sCtx.lineWidth = 1;
+  sCtx.beginPath(); sCtx.arc(cx,cy,EARTH_R,0,Math.PI*2); sCtx.stroke();
+
+  // Continents hint
+  sCtx.fillStyle = 'rgba(34,197,94,0.15)';
+  sCtx.beginPath(); sCtx.ellipse(cx-20,cy-10,25,35,0.3,0,Math.PI*2); sCtx.fill();
+  sCtx.beginPath(); sCtx.ellipse(cx+25,cy+15,15,20,-0.2,0,Math.PI*2); sCtx.fill();
+
+  // Objects
+  for (const obj of objects) {
+    const x = cx + obj.radius * Math.cos(obj.angle);
+    const y = cy + obj.radius * Math.sin(obj.angle);
+
+    if (obj.type === 'satellite') {
+      sCtx.fillStyle = '#3b82f6';
+      sCtx.shadowColor = '#3b82f6'; sCtx.shadowBlur = 4;
+      sCtx.fillRect(x-2, y-2, 4, 4);
+      sCtx.shadowBlur = 0;
+    } else if (obj.type === 'deorbiting') {
+      sCtx.fillStyle = '#10b981';
+      sCtx.beginPath(); sCtx.arc(x,y,1.5,0,Math.PI*2); sCtx.fill();
+      // Trail
+      sCtx.strokeStyle = 'rgba(16,185,129,0.3)'; sCtx.lineWidth = 0.5;
+      const tx = cx + (obj.radius+3)*Math.cos(obj.angle-0.1);
+      const ty = cy + (obj.radius+3)*Math.sin(obj.angle-0.1);
+      sCtx.beginPath(); sCtx.moveTo(x,y); sCtx.lineTo(tx,ty); sCtx.stroke();
+    } else {
+      sCtx.fillStyle = `rgba(156,163,175,${0.4+obj.size*0.15})`;
+      sCtx.beginPath(); sCtx.arc(x,y,obj.size*0.5,0,Math.PI*2); sCtx.fill();
+    }
+  }
+
+  // Collision explosions
+  for (const c of collisions) {
+    const x = cx + c.x;
+    const y = cy + c.y;
+    const alpha = Math.max(0, 1-c.age/3);
+    const r = 5 + c.age*8;
+    sCtx.strokeStyle = `rgba(239,68,68,${alpha})`;
+    sCtx.lineWidth = 2;
+    sCtx.beginPath(); sCtx.arc(x,y,r,0,Math.PI*2); sCtx.stroke();
+    sCtx.fillStyle = `rgba(239,68,68,${alpha*0.3})`;
+    sCtx.beginPath(); sCtx.arc(x,y,r*0.5,0,Math.PI*2); sCtx.fill();
+  }
+
+  // HUD
+  sCtx.fillStyle = '#555'; sCtx.font = '10px Manrope'; sCtx.textAlign = 'left';
+  sCtx.fillText(`Time: ${(time*10).toFixed(0)} days`, 10, 16);
+  sCtx.fillText(`Objects: ${objects.length}`, 10, 30);
+}
+
+function drawChart() {
+  const W = chartCanvas.width, H = chartCanvas.height;
+  cCtx.clearRect(0,0,W,H);
+  if (history.length < 2) return;
+
+  const maxCount = Math.max(300, ...history.map(h => h.count));
+  const dx = W / history.length;
+
+  // Danger zone
+  cCtx.fillStyle = 'rgba(239,68,68,0.05)';
+  cCtx.fillRect(0, 0, W, H*(1-800/maxCount));
+
+  // Grid
+  cCtx.strokeStyle = '#1a1a1a'; cCtx.lineWidth = 1;
+  cCtx.setLineDash([2,4]);
+  for (let i = 0; i <= 4; i++) {
+    const y = (i/4)*H;
+    cCtx.beginPath(); cCtx.moveTo(0,y); cCtx.lineTo(W,y); cCtx.stroke();
+  }
+  cCtx.setLineDash([]);
+
+  // Line
+  cCtx.strokeStyle = '#3b82f6'; cCtx.lineWidth = 2;
+  cCtx.beginPath();
+  history.forEach((h, i) => {
+    const x = i*dx;
+    const y = H - (h.count/maxCount)*H;
+    if (i === 0) cCtx.moveTo(x,y); else cCtx.lineTo(x,y);
+  });
+  cCtx.stroke();
+
+  // Labels
+  cCtx.fillStyle = '#555'; cCtx.font = '9px Manrope'; cCtx.textAlign = 'right';
+  cCtx.fillText(maxCount.toString(), W-5, 12);
+  cCtx.fillText('0', W-5, H-4);
+}
+
+let lastTime = performance.now();
+function loop(now) {
+  if (!paused) {
+    const dt = Math.min(0.05, (now-lastTime)/1000);
+    update(dt);
+    draw();
+    drawChart();
+  }
+  lastTime = now;
+  requestAnimationFrame(loop);
+}
+
+// Controls
+document.getElementById('speed').addEventListener('input', e => {
+  document.getElementById('speed-v').textContent = e.target.value + 'x';
+});
+document.getElementById('pause-btn').addEventListener('click', () => {
+  paused = !paused;
+  document.getElementById('pause-btn').textContent = paused ? 'Resume' : 'Pause';
+});
+document.getElementById('reset-btn').addEventListener('click', init);
+document.getElementById('add-sat').addEventListener('click', () => addSatellite());
+document.getElementById('add-constellation').addEventListener('click', () => {
+  const r = rng(LEO.min+5, LEO.max-5);
+  for (let i = 0; i < 30; i++) addSatellite(r + (Math.random()-0.5)*5);
+});
+document.getElementById('explode').addEventListener('click', () => {
+  // Pick a random satellite and explode it
+  const sats = objects.filter(o => o.type === 'satellite');
+  if (sats.length === 0) return;
+  const target = sats[Math.floor(Math.random()*sats.length)];
+  const idx = objects.indexOf(target);
+  collisions.push({x: target.radius*Math.cos(target.angle), y: target.radius*Math.sin(target.angle), age:0});
+  totalCollisions++;
+  // Generate fragments
+  for (let i = 0; i < 40 && objects.length < 2000; i++) {
+    objects.push({
+      angle: target.angle + (Math.random()-0.5)*0.5,
+      radius: target.radius + (Math.random()-0.5)*15,
+      speed: target.speed * (0.5 + Math.random()),
+      type: 'debris',
+      size: 1 + Math.random()*2
+    });
+  }
+  objects.splice(idx, 1);
+});
+
+// Mitigation
+document.getElementById('mit-deorbit').addEventListener('click', () => {
+  const debris = objects.filter(o => o.type === 'debris').sort((a,b) => a.radius - b.radius);
+  for (let i = 0; i < Math.min(10, debris.length); i++) {
+    debris[i].type = 'deorbiting';
+  }
+});
+document.getElementById('mit-laser').addEventListener('click', () => {
+  const debris = objects.filter(o => o.type === 'debris');
+  for (let i = 0; i < Math.min(20, debris.length); i++) {
+    debris[i].speed *= 0.7; // slow down to lower orbit
+    debris[i].radius -= 3;
+  }
+});
+document.getElementById('mit-net').addEventListener('click', () => {
+  const debris = objects.filter(o => o.type === 'debris').sort((a,b) => b.size - a.size);
+  for (let i = 0; i < Math.min(5, debris.length); i++) {
+    const idx = objects.indexOf(debris[i]);
+    if (idx !== -1) objects.splice(idx, 1);
+  }
+});
+
+init();
+requestAnimationFrame(loop);
+</script>
+<script src="/related.js"></script>
+</body>
+</html>
